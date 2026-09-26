@@ -91,7 +91,7 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
 
     public function database(): DatabaseConfig
     {
-        $credentials = $this->databaseCredentials;
+        $credentials = $this->loadMissing('databaseCredentials')->databaseCredentials;
 
         if ($credentials === null) {
             throw TenantDatabaseNotProvisioned::for($this);
@@ -150,7 +150,7 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
 
     public function primaryHost(DomainKind $kind): ?string
     {
-        $domain = $this->domains
+        $domain = $this->loadMissing('domains')->domains
             ->first(fn (Domain $domain): bool => $domain->kind === $kind && $domain->is_primary);
 
         return $domain?->hostname;

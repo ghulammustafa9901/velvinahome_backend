@@ -13,11 +13,14 @@
         </testsuite>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
-            <directory>modules/*/tests/Unit</directory>
         </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
-            <directory>modules/*/tests/Feature</directory>
+        </testsuite>
+        <!-- Tenant isolation: the release blocker (spec §4.8). Its own suite so an isolation
+             failure is never mistaken for an ordinary one. -->
+        <testsuite name="Isolation">
+            <directory>tests/Isolation</directory>
         </testsuite>
     </testsuites>
     <source>
@@ -26,25 +29,42 @@
             <directory>modules</directory>
         </include>
         <exclude>
-            <directory>modules/*/tests</directory>
             <directory>modules/*/database</directory>
         </exclude>
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
-        <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
-        <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
-        <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
-        <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+
+        <!-- Real PostgreSQL, never SQLite: Phase 1 exists to prove per-database isolation,
+             and proving it against anything else would prove nothing (ADR-0009). A separate
+             landlord database and a separate prefix keep test tenants apart from the local
+             demo tenants on the same server. -->
+        <env name="DB_CONNECTION" value="landlord"/>
+        <env name="DB_LANDLORD_DATABASE" value="platform_landlord_test"/>
+        <env name="TENANT_DB_NAME_PREFIX" value="ptest_"/>
+        <env name="TENANT_DB_ROLE_PREFIX" value="ptest_"/>
+        <env name="PLATFORM_HOST" value="platform.test"/>
+        <env name="TENANCY_TOPOLOGY" value="shared"/>
+        <env name="TENANCY_PINNED_TENANT" value=""/>
+        <env name="OBJECT_STORAGE_DRIVER" value="local"/>
+
+        <!-- The array store supports tags, which tenant cache scoping relies on. -->
+        <env name="CACHE_STORE" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+
+        <!-- Argon2id stays on (it is what production uses) with minimal cost for speed. -->
+        <env name="HASH_DRIVER" value="argon2id"/>
+        <env name="ARGON_MEMORY" value="1024"/>
+        <env name="ARGON_TIME" value="1"/>
+
+        <env name="PASSWORD_BREACH_CHECK" value="false"/>
         <!-- Staff 2FA is mandatory in every real environment (spec §6.2); tests that are not
              about 2FA relax it so they do not all have to enrol a second factor. -->
         <env name="STAFF_2FA_REQUIRED" value="false"/>

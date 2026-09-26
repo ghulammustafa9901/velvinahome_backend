@@ -35,11 +35,19 @@ final class PlatformServiceProvider extends ModuleServiceProvider
     {
         $this->app->singleton(TenantResolver::class);
         $this->app->scoped(FeatureFlags::class, PlanFeatureFlags::class);
+    }
 
-        // Laravel binds the default cache repository as a singleton. Resolved once before
-        // tenancy starts, every class injecting Cache\Repository would keep writing untagged,
-        // cross-tenant keys. Re-resolving through the (tenant-aware) cache manager on every
-        // injection closes that channel (spec §4.4, isolation channel 4).
+    /**
+     * Laravel binds the default cache repository as a singleton (from a deferred provider, so
+     * it can only be overridden once that provider has loaded). Resolved once before tenancy
+     * starts, every class injecting Cache\Repository would keep writing untagged,
+     * cross-tenant keys. Re-resolving through the tenant tag on every injection closes that
+     * channel (spec §4.4, isolation channel 4).
+     */
+    private function scopeInjectedCacheRepository(): void
+    {
+        $this->app->make('cache');
+
         $this->app->bind('cache.store', function ($app) {
             $store = $app['cache']->driver();
 
@@ -57,6 +65,8 @@ final class PlatformServiceProvider extends ModuleServiceProvider
     {
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
         Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+
+        $this->scopeInjectedCacheRepository();
     }
 
     protected function consoleCommands(): array

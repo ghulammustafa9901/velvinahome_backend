@@ -77,7 +77,7 @@ final class PlanFeatureFlags implements FeatureFlags
     {
         $flags = self::DEFAULTS;
 
-        foreach ($tenant->plan->default_features ?? [] as $key => $enabled) {
+        foreach ($tenant->loadMissing('plan')->plan->default_features ?? [] as $key => $enabled) {
             $flags[(string) $key] = (bool) $enabled;
         }
 

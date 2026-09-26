@@ -9,14 +9,14 @@ use Tests\TestCase;
 | Test Case bindings
 |--------------------------------------------------------------------------
 |
-| Feature tests boot the application. Architecture and Unit tests do not need it: they
-| inspect source code and exercise pure value objects, so keeping them application-free
-| makes them fast and makes a failure unambiguous.
+| Feature and Isolation tests boot the application against real PostgreSQL and Redis.
+| Architecture and Unit tests do not need it: they inspect source code and exercise pure
+| value objects, so keeping them application-free makes them fast and makes a failure
+| unambiguous.
 |
 */
 
-pest()->extend(TestCase::class)->in('Feature');
-pest()->extend(TestCase::class)->in('../modules/*/tests/Feature');
+pest()->extend(TestCase::class)->in('Feature', 'Isolation');
 
 /*
 |--------------------------------------------------------------------------
@@ -30,3 +30,4 @@ pest()->extend(TestCase::class)->in('../modules/*/tests/Feature');
 */
 
 pest()->group('architecture')->in('Architecture');
+pest()->group('isolation')->in('Isolation');
