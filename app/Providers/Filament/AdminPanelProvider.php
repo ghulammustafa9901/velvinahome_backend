@@ -18,7 +18,12 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Modules\Identity\Contracts\StaffDirectory;
+use Modules\Platform\Contracts\OwnerBrands;
+use Modules\Platform\Http\Middleware\EnforceImpersonationExpiry;
 use Modules\Platform\Http\Middleware\ScopeSessionToTenant;
 
 /**
@@ -47,12 +52,19 @@ final class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: base_path('modules/Settings/src/Filament/Resources'), for: 'Modules\\Settings\\Filament\\Resources')
             ->discoverPages(in: base_path('modules/Settings/src/Filament/Pages'), for: 'Modules\\Settings\\Filament\\Pages')
             ->pages([Dashboard::class])
+            ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn (): View => view('filament.brand-switcher', [
+                'current' => (string) tenant()?->getAttribute('name'),
+                'brands' => ($staffUlid = app(StaffDirectory::class)->currentStaffUlid()) === null
+                    ? []
+                    : app(OwnerBrands::class)->otherBrandsFor($staffUlid),
+            ]))
             ->middleware([
                 'tenant:admin',
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
                 ScopeSessionToTenant::class,
+                EnforceImpersonationExpiry::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,

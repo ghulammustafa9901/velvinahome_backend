@@ -45,6 +45,21 @@ final class EloquentStaffDirectory implements StaffDirectory
         return StaffUser::query()->whereRaw('lower(email) = ?', [strtolower($email)])->value('ulid');
     }
 
+    public function ownerUlid(): ?string
+    {
+        return StaffUser::role(StaffRole::Owner->value, 'staff')
+            ->where('status', 'active')
+            ->orderBy('id')
+            ->value('ulid');
+    }
+
+    public function currentStaffUlid(): ?string
+    {
+        $user = $this->auth->guard('staff')->user();
+
+        return $user instanceof StaffUser ? $user->ulid : null;
+    }
+
     public function isActive(string $staffUlid): bool
     {
         return StaffUser::query()->where('ulid', $staffUlid)->where('status', 'active')->exists();

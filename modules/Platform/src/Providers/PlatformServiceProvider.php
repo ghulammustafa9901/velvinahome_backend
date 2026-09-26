@@ -16,6 +16,8 @@ use Modules\Platform\Console\TenantExportCommand;
 use Modules\Platform\Console\TenantsMigrateCommand;
 use Modules\Platform\Console\TenantSuspendCommand;
 use Modules\Platform\Contracts\FeatureFlags;
+use Modules\Platform\Contracts\OwnerBrands;
+use Modules\Platform\Support\OwnerBrandDirectory;
 use Modules\Platform\Support\PlanFeatureFlags;
 use Modules\Platform\Tenancy\TenantResolver;
 use Modules\Support\Providers\ModuleServiceProvider;
@@ -35,6 +37,7 @@ final class PlatformServiceProvider extends ModuleServiceProvider
     {
         $this->app->singleton(TenantResolver::class);
         $this->app->scoped(FeatureFlags::class, PlanFeatureFlags::class);
+        $this->app->bind(OwnerBrands::class, OwnerBrandDirectory::class);
     }
 
     /**
@@ -67,6 +70,8 @@ final class PlatformServiceProvider extends ModuleServiceProvider
         Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
         $this->scopeInjectedCacheRepository();
+
+        $this->loadRoutesFrom($this->modulePath().'/routes/admin.php');
     }
 
     protected function consoleCommands(): array

@@ -21,6 +21,17 @@ interface StaffDirectory
 
     public function findUlidByEmail(string $email): ?string;
 
+    /**
+     * The oldest active account holding the Owner role — the default target of platform
+     * support access.
+     */
+    public function ownerUlid(): ?string;
+
+    /**
+     * The ULID of the staff member signed in to the admin in this request, if any.
+     */
+    public function currentStaffUlid(): ?string;
+
     public function isActive(string $staffUlid): bool;
 
     /**
