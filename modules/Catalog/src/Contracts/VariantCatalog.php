@@ -17,7 +17,7 @@ interface VariantCatalog
     public function findById(int $variantId): ?VariantReference;
 
     /**
-     * @param  list<int>  $variantIds
+     * @param  array<int>  $variantIds
      * @return array<int, VariantReference> keyed by variant id
      */
     public function findMany(array $variantIds): array;

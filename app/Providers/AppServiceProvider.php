@@ -50,6 +50,12 @@ final class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('auth', fn (Request $request): Limit => Limit::perMinute(10)
             ->by($tenantKey().'|'.$request->ip()));
+
+        RateLimiter::for('catalog', fn (Request $request): Limit => Limit::perMinute(120)
+            ->by($tenantKey().'|'.$request->ip()));
+
+        RateLimiter::for('search', fn (Request $request): Limit => Limit::perMinute(60)
+            ->by($tenantKey().'|'.$request->ip()));
     }
 
     /**

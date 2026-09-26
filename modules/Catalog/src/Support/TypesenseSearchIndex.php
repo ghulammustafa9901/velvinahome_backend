@@ -37,7 +37,7 @@ final class TypesenseSearchIndex implements SearchIndex
             ->with(['variants', 'brand', 'categories'])
             ->chunkById(200, function ($products) use (&$count): void {
                 $searchable = $products->filter(fn (Product $product): bool => $product->shouldBeSearchable());
-                $searchable->searchable();
+                (new Product)->queueMakeSearchable($searchable);
                 $count += $searchable->count();
             });
 

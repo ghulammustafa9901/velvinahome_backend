@@ -34,7 +34,7 @@ final class Ledger
     /**
      * Lock (creating when missing) the stock rows for the given pairs.
      *
-     * @param  list<array{0: int, 1: int}>  $pairs  [variant_id, location_id]
+     * @param  array<array{0: int, 1: int}>  $pairs  [variant_id, location_id]
      * @return array<string, StockLevel> keyed "variantId:locationId"
      */
     public function lock(array $pairs): array

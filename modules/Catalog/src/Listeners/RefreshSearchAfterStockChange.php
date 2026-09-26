@@ -15,9 +15,10 @@ final class RefreshSearchAfterStockChange
 {
     public function handle(StockChanged $event): void
     {
-        Product::query()
+        $products = Product::query()
             ->whereHas('variants', fn ($query) => $query->whereIn('id', $event->variantIds))
-            ->get()
-            ->searchable();
+            ->get();
+
+        (new Product)->queueMakeSearchable($products);
     }
 }

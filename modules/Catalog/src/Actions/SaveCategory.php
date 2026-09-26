@@ -56,7 +56,7 @@ final class SaveCategory implements Action
                     'INSERT INTO category_closure (ancestor_id, descendant_id, depth)
                      SELECT ancestor_id, ?::bigint, depth + 1 FROM category_closure WHERE descendant_id = ?::bigint
                      UNION ALL SELECT ?::bigint, ?::bigint, 0',
-                    [$category->id, $parent?->id ?? 0, $category->id, $category->id],
+                    [$category->id, $parent === null ? 0 : $parent->id, $category->id, $category->id],
                 );
 
                 return $category;

@@ -19,8 +19,6 @@ use RuntimeException;
  * - The document id is the product ULID — internal ids never leave the database.
  * - Only active, published products are indexed; anything else is removed from the index.
  * - Typo tolerance on title, brand, categories and tags; none on SKUs.
- *
- * @phpstan-require-extends \Modules\Catalog\Models\Product
  */
 trait ProductSearch
 {
@@ -119,8 +117,9 @@ trait ProductSearch
                 ['name' => 'sales_rank', 'type' => 'int32'],
                 ['name' => 'created_at', 'type' => 'int64'],
             ],
+            // No custom token separators: a SKU such as "VH-CC-001" must stay one token, or
+            // a partial SKU would match every product sharing its prefix.
             'default_sorting_field' => 'created_at',
-            'token_separators' => ['-', '/'],
         ];
     }
 

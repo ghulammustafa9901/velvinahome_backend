@@ -12,7 +12,7 @@ namespace Modules\Inventory\Contracts;
 interface StockReader
 {
     /**
-     * @param  list<int>  $variantIds
+     * @param  array<int>  $variantIds
      * @return array<int, int> variant id => available quantity (0 when never stocked)
      */
     public function available(array $variantIds): array;

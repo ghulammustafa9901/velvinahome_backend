@@ -61,7 +61,7 @@ it('hashes customer passwords with Argon2id', function (): void {
 it('rejects a weak password at registration', function (): void {
     $this->postJson($this->api.'/auth/register', ['email' => $this->email, 'password' => 'short'])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors('password');
+        ->assertJsonValidationErrors('password', 'error.details')->assertJsonPath('error.code', 'validation_failed');
 });
 
 it('refuses a duplicate registration', function (): void {
@@ -69,7 +69,7 @@ it('refuses a duplicate registration', function (): void {
 
     $this->postJson($this->api.'/auth/register', ['email' => strtoupper($this->email), 'password' => 'Sufficiently-long-9'])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors('email');
+        ->assertJsonValidationErrors('email', 'error.details');
 });
 
 it('gives the same answer for a wrong password and an unknown account, and audits both', function (): void {
@@ -81,7 +81,7 @@ it('gives the same answer for a wrong password and an unknown account, and audit
     $wrongPassword->assertUnprocessable();
     $unknown->assertUnprocessable();
 
-    expect($wrongPassword->json('errors.email'))->toBe($unknown->json('errors.email'));
+    expect($wrongPassword->json('error.details.email'))->toBe($unknown->json('error.details.email'));
 
     $reasons = TestPlatform::brand(TestPlatform::BRAND_B)->run(fn () => LoginAudit::query()
         ->whereIn('email_attempted', [$this->email, 'nobody-'.$this->email])

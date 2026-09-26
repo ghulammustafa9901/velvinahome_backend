@@ -76,7 +76,8 @@ final class TestPlatform
         foreach ([self::BRAND_A, self::BRAND_B, self::BRAND_C] as $slug) {
             $tenant = Tenant::query()->where('slug', $slug)->firstOrFail();
             app(SeedTenant::class)->handle($tenant);
-            $tenant->run(fn () => app(SearchIndex::class)->ensureCollections());
+            // Rebuild (not just ensure) so a schema change in code reaches the fixtures.
+            $tenant->run(fn () => app(SearchIndex::class)->reindex());
         }
 
         self::$prepared = true;

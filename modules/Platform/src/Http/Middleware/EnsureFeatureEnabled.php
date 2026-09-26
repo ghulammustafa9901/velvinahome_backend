@@ -6,6 +6,7 @@ namespace Modules\Platform\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Context;
 use Modules\Platform\Contracts\FeatureFlags;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -24,6 +25,7 @@ final class EnsureFeatureEnabled
                 'error' => [
                     'code' => 'feature_disabled',
                     'message' => "The {$feature} feature is not enabled for this store.",
+                    'request_id' => Context::get('request_id'),
                 ],
             ], 403);
         }

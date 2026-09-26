@@ -11,6 +11,7 @@ use Modules\Platform\Http\Middleware\EnsureFeatureEnabled;
 use Modules\Platform\Http\Middleware\EnsurePlatformHost;
 use Modules\Platform\Http\Middleware\InitializeTenancyByHost;
 use Modules\Platform\Http\Middleware\InitializeTenancyForPanelRequest;
+use Modules\Support\Http\ApiErrorRenderer;
 use Modules\Support\Http\AssignRequestId;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -45,4 +46,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Storefront API errors use one envelope everywhere (api-conventions §3).
+        $exceptions->render(fn (Throwable $exception, Request $request) => (new ApiErrorRenderer)($exception, $request));
+
+        // Expected domain outcomes are not incidents.
+        $exceptions->dontReport([
+            Modules\Inventory\Exceptions\InsufficientStock::class,
+        ]);
     })->create();
