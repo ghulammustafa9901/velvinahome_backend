@@ -11,6 +11,7 @@ use Modules\Platform\Http\Middleware\EnsureFeatureEnabled;
 use Modules\Platform\Http\Middleware\EnsurePlatformHost;
 use Modules\Platform\Http\Middleware\InitializeTenancyByHost;
 use Modules\Platform\Http\Middleware\InitializeTenancyForPanelRequest;
+use Modules\Support\Http\AssignRequestId;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,6 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'platform.host' => EnsurePlatformHost::class,
             'feature' => EnsureFeatureEnabled::class,
         ]);
+
+        $middleware->prepend(AssignRequestId::class);
 
         // Tenancy must be initialised before sessions, authentication and route-model
         // binding run, or they would all read the landlord database.

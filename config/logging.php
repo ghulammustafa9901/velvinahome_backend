@@ -67,6 +67,17 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Structured logs (spec §9): one JSON object per line. request_id and tenant_id
+        // arrive through Laravel Context on every record. The path is resolved when config
+        // loads, before any tenant is initialised, so logs never scatter into tenant storage.
+        'json' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/platform.json.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'formatter' => Monolog\Formatter\JsonFormatter::class,
+            'replace_placeholders' => true,
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
