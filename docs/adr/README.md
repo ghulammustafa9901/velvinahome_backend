@@ -15,12 +15,16 @@ accepted — it is **superseded** by a newer ADR, which keeps the reasoning hist
 | [0006](0006-category-tree-closure-table.md) | Category tree as a closure table rather than `ltree` | Accepted |
 | [0007](0007-module-structure-and-layering.md) | Module internal structure and enforced layering | Accepted |
 | [0008](0008-identifier-and-money-representation.md) | ULID public identifiers, integer minor-unit money | Accepted |
+| [0009](0009-local-development-environment-on-windows.md) | Local development environment on Windows, without Docker | Accepted |
+| [0010](0010-cod-stock-commitment-at-order-placement.md) | COD stock commitment at order placement | Accepted |
+| [0011](0011-module-autoloading-through-root-psr4.md) | Module autoloading through the root composer.json | Accepted |
+| [0012](0012-tenant-scoping-of-cache-sessions-and-framework-singletons.md) | Tenant scoping of cache, sessions and framework singletons | Accepted |
+| [0013](0013-owner-identity-without-credentials-and-handoff-tokens.md) | Company owner identity without credentials; hand-off tokens | Accepted |
 
 ## Deferred — ADRs to write when the decision is reached
 
 | Topic | Blocked on | Phase |
 |---|---|---|
-| Local development environment (the spec's Docker Compose vs an alternative on the current Windows/XAMPP machine) | owner decision on the development machine — see the Phase 0 checkpoint | before Phase 1 |
 | PostgreSQL hosting (self-managed on the VPS vs managed service) — weigh point-in-time recovery against per-tenant database count | owner budget decision | Phase 7 |
 | Next.js hosting (self-hosted Node vs managed platform) — weigh per-tenant cost | owner decision | Phase 5 |
 | Transactional email provider (SES / Postmark / Resend) | owner decision, spec §16.3 | Phase 3 |

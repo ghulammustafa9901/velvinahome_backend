@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Platform\Providers;
 
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
 use Modules\Platform\Console\CompanyCreateCommand;
 use Modules\Platform\Console\LandlordMigrateCommand;
@@ -17,6 +19,7 @@ use Modules\Platform\Console\TenantsMigrateCommand;
 use Modules\Platform\Console\TenantSuspendCommand;
 use Modules\Platform\Contracts\FeatureFlags;
 use Modules\Platform\Contracts\OwnerBrands;
+use Modules\Platform\Listeners\AuditPlatformAuthentication;
 use Modules\Platform\Support\OwnerBrandDirectory;
 use Modules\Platform\Support\PlanFeatureFlags;
 use Modules\Platform\Tenancy\TenantResolver;
@@ -68,6 +71,8 @@ final class PlatformServiceProvider extends ModuleServiceProvider
     {
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
         Event::listen(TenancyEnded::class, RevertToCentralContext::class);
+        Event::listen(Failed::class, [AuditPlatformAuthentication::class, 'handleFailed']);
+        Event::listen(Login::class, [AuditPlatformAuthentication::class, 'handleLogin']);
 
         $this->scopeInjectedCacheRepository();
 

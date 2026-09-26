@@ -47,6 +47,18 @@ final class StaffUser extends Authenticatable implements FilamentUser, HasAppAut
 
     protected string $guard_name = 'staff';
 
+    /**
+     * A freshly created account has not enrolled a second factor yet; say so explicitly so
+     * the MFA checks never read a missing attribute.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'two_factor_secret' => null,
+        'two_factor_recovery_codes' => null,
+        'two_factor_confirmed_at' => null,
+    ];
+
     protected $hidden = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'];
 
     protected function casts(): array

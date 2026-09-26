@@ -5,108 +5,108 @@ panel, platform (landlord) control panel, queue workers and tenant lifecycle too
 
 **One tenant = one brand = one website = one PostgreSQL database.**
 
-> **Current status: Phase 0 (Planning & Architecture).** The application is not scaffolded
-> yet. This repository currently holds the architecture documentation, ADRs, the local
-> environment definition and the CI skeleton. Application code begins after the Phase 0
-> checkpoint is approved — see [docs/phase-0-checkpoint.md](docs/phase-0-checkpoint.md).
+> **Current status: Phase 1 (Platform Foundation) built — awaiting the Phase 1 checkpoint.**
+> Tenancy, provisioning, identity, both admin shells, settings/flags, outbox and the tenant
+> isolation suite are in place. No commerce module exists yet (Phase 2 onward).
+> See [docs/phase-1-checkpoint.md](docs/phase-1-checkpoint.md) and [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Documentation
 
 | Document | Purpose |
 |---|---|
-| [docs/architecture/overview.md](docs/architecture/overview.md) | Start here: components, request lifecycle, layering |
+| [docs/phase-1-checkpoint.md](docs/phase-1-checkpoint.md) | What Phase 1 delivered, deviations, open questions |
+| [docs/architecture/overview.md](docs/architecture/overview.md) | Components, request lifecycle, layering |
 | [docs/architecture/tenancy.md](docs/architecture/tenancy.md) | Tenant resolution, isolation of every concern, lifecycle, migrations |
 | [docs/architecture/modules.md](docs/architecture/modules.md) | Module map and the internal layout every module follows |
 | [docs/architecture/data-model.md](docs/architecture/data-model.md) | Landlord and tenant ERDs, schema conventions, invariants |
 | [docs/architecture/database-roles.md](docs/architecture/database-roles.md) | PostgreSQL roles, privileges, append-only ledger grants |
-| [docs/architecture/api-conventions.md](docs/architecture/api-conventions.md) | REST conventions: resources, errors, pagination, idempotency, rate limits |
+| [docs/architecture/api-conventions.md](docs/architecture/api-conventions.md) | REST conventions |
 | [docs/adr/](docs/adr/) | Architecture Decision Records |
-| [docs/plans/phase-1.md](docs/plans/phase-1.md) | Phase 1 milestone plan with tests per milestone |
-| [docs/PROGRESS.md](docs/PROGRESS.md) | Live phase and milestone status |
 | [docs/runbooks/](docs/runbooks/) | Operational procedures |
 
-The requirements themselves live in `Commerce_Platform_Master_Spec.md`. That document is the
-contract; everything here explains how it is implemented and never overrides it.
+The requirements live in `Commerce_Platform_Master_Spec.md`. That document is the contract.
 
 ## Stack
 
-PHP 8.4+ · Laravel · PostgreSQL 17+ (one database per tenant) · PgBouncer · Redis ·
-Horizon · Typesense (Laravel Scout) · Filament (two panels) · Sanctum ·
-spatie/laravel-permission · stancl/tenancy (multi-database) · Cloudflare R2 ·
-Pest / Larastan / Pint.
+PHP 8.4 · Laravel 13 · PostgreSQL 17 (one database per tenant) · Redis · Horizon ·
+Filament 5 (two panels) · Sanctum · spatie/laravel-permission, -activitylog, -data ·
+stancl/tenancy 3 (multi-database) · Scramble (OpenAPI) · Pest 4 / Larastan / Pint.
 
 ## Local setup
 
-**Prerequisites:** Docker (or Podman with compose), PHP 8.4+, Composer 2. Shared hosting and
-XAMPP's bundled MySQL/Apache are not supported — the platform requires PostgreSQL, Redis and
-Typesense.
+The canonical environment is `docker-compose.yml`. On the current Windows machine the
+services run natively from a portable toolchain instead (ADR-0009):
+
+```powershell
+# every new shell: toolchain on PATH (PHP 8.4, composer, psql, redis, git, node)
+. $env:USERPROFILE\devtools\env.ps1
+
+# after a reboot: start PostgreSQL 17 and Redis
+powershell -File $env:USERPROFILE\devtools\start-services.ps1
+```
+
+First-time setup on any machine:
 
 ```bash
-# 1. Backing services: PostgreSQL 17, PgBouncer, Redis, Typesense, Mailpit, MinIO
-docker compose up -d
-
-# 2. Application (from Phase 1 onward)
 composer install
-cp .env.example .env
-php artisan key:generate
-
-# 3. Landlord schema
-php artisan migrate --database=landlord
-
-# 4. Demo data: 2 companies, 3 brands (one company owns two), all on *.localhost
-php artisan platform:seed-demo
+cp .env.example .env && php artisan key:generate
+# roles + landlord database (run as a PostgreSQL superuser; passwords go into .env)
+psql -U postgres -h 127.0.0.1 -f database/setup/bootstrap-landlord.sql \
+     -v app_password="'...'" -v migrator_password="'...'" \
+     -v provisioner_password="'...'" -v backup_password="'...'"
+php artisan landlord:migrate          # landlord schema, as the migration role
+php artisan platform:seed-demo        # 2 companies, 3 brands, all on *.localhost
+php artisan platform:user you@example.com "Your Name" --role=owner
+php artisan filament:assets
 ```
 
-Then add to your hosts file:
+Serve locally (browsers resolve `*.localhost` to 127.0.0.1 without a hosts file):
 
-```text
-127.0.0.1  platform.localhost
-127.0.0.1  prifit.localhost        admin.prifit.localhost        api.prifit.localhost
-127.0.0.1  velvina.localhost       admin.velvina.localhost       api.velvina.localhost
-127.0.0.1  vogsix.localhost        admin.vogsix.localhost        api.vogsix.localhost
+```powershell
+php artisan serve --host=127.0.0.1 --port=8000
 ```
 
-| Service | URL |
+| Surface | URL |
 |---|---|
-| Platform (landlord) panel | http://platform.localhost |
-| A tenant admin | http://admin.prifit.localhost |
-| Mailpit | http://localhost:8025 |
-| MinIO console | http://localhost:9001 |
-| Typesense | http://localhost:8108 |
-| Horizon | http://platform.localhost/horizon |
+| Platform (landlord) panel | http://platform.localhost:8000 |
+| Tenant admin, demo brands | http://admin.alpha.localhost:8000 · admin.bravo · admin.charlie |
+| Storefront API | http://api.alpha.localhost:8000/api/v1/storefront/config |
+| Horizon / API docs | http://platform.localhost:8000/horizon · /docs/api |
+
+`bravo` and `charlie` belong to the same company: sign in to one as its owner and the brand
+switcher in the top bar moves you to the other.
 
 ## Commands
 
 | Command | Purpose |
 |---|---|
-| `php artisan company:create` | Create a company (landlord record only, no database) |
-| `php artisan tenant:create` | Provision a brand end to end. Idempotent, re-runnable after a failure |
-| `php artisan tenant:suspend` / `tenant:activate` | Change a brand's status |
-| `php artisan tenant:export` | Full export (DB dump + media manifest) for backup or client exit |
-| `php artisan tenant:delete` | Requires confirmation **and** a fresh verified backup |
-| `php artisan tenants:migrate` | Migrate every tenant database — part of every deployment |
-| `php artisan search:reindex --tenant=` | Rebuild a tenant's Typesense collections |
-| `php artisan platform:seed-demo` | Local demo companies and brands |
+| `landlord:migrate` | Landlord migrations as the migration role, plus audit-table lockdown |
+| `company:create {slug} {name}` | Company (landlord record only, no database) |
+| `tenant:create {company} {slug} {name} --storefront=` | Provision a brand end to end; idempotent, re-run to resume after a failure |
+| `tenant:suspend` / `tenant:activate {slug}` | Change a brand's status (suspended → 503) |
+| `tenant:export {slug}` | `pg_dump` + media manifest |
+| `tenant:delete {slug} --confirm={slug}` | Requires a successful backup from the last hour |
+| `tenants:migrate [--tenant=]` | Every tenant, one transaction each; non-zero exit on any failure |
+| `platform:user {email} {name} --role=` | Platform panel user (password shown once) |
+| `platform:seed-demo` | Local demo companies and brands |
 
 ## Quality gates
 
 ```bash
-vendor/bin/pint                      # formatting
-vendor/bin/phpstan analyse           # Larastan, level 8 on new code
+vendor/bin/pint --test               # formatting
+vendor/bin/phpstan analyse           # Larastan level 8
 vendor/bin/pest --group=architecture # module boundaries and layering
 vendor/bin/pest --group=isolation    # tenant isolation — a release blocker
-vendor/bin/pest --coverage           # full suite
-composer audit                       # dependency advisories
+vendor/bin/pest                      # full suite (real PostgreSQL + Redis)
+composer audit
 ```
 
-All of these run in CI. `main` is protected on them, and **tenant isolation is its own
-required check** so a failure there is never mistaken for an ordinary test break.
+Tests use a separate landlord database (`platform_landlord_test`) and `ptest_`-prefixed tenant
+databases; the three fixture brands are provisioned once and reused across runs.
 
 ## Working rules
 
-- Business logic lives in **Actions**. Controllers, Filament resources, commands, jobs and
-  webhook handlers are thin callers.
+- Business logic lives in **Actions**. Controllers, Filament pages, commands and jobs are thin callers.
 - A module never touches another module's tables or models — only its contracts and events.
-- Every feature ships with tests. Every feature is tenant-aware from its first line.
+- Every feature ships with tests and is tenant-aware from its first line.
 - **Never commit a secret.** `.env.example` carries placeholders only.
-- Code is never edited on a server. Deployment is the only path to production.

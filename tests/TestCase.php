@@ -16,6 +16,15 @@ abstract class TestCase extends BaseTestCase
         TestPlatform::prepare();
     }
 
+    /**
+     * Re-create the application, for settings that take effect only at boot (for example
+     * Filament's route-level middleware).
+     */
+    public function rebootApplication(): void
+    {
+        $this->refreshApplication();
+    }
+
     protected function tearDown(): void
     {
         // A test that fails mid-way must not leave the next one inside a tenant.

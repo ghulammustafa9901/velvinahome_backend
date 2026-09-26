@@ -105,3 +105,22 @@ Supporting decisions:
 | A Linux development VPS | Best parity, extra cost, slower edit-test loop. Worth revisiting if the team grows. |
 | Keep XAMPP's MySQL and defer PostgreSQL | Would invalidate the entire tenancy design: transactional DDL, `jsonb`, partial indexes, per-database `CONNECT` grants and append-only ledger privileges all come from PostgreSQL. Not an option at any price. |
 | SQLite locally, PostgreSQL only in CI | Phase 1 exists to prove per-database tenant isolation. Proving it against SQLite would prove nothing. |
+
+## Update — actual state found when Phase 1 started (2026-09-26)
+
+The table above describes the setup that was intended. When Phase 1 implementation began,
+the machine actually had **none** of it: XAMPP's PHP was 8.2.12 (not 8.3), `php.ini` had no
+PostgreSQL extensions enabled, and neither PostgreSQL nor Memurai was installed. The decision
+of this ADR (native services, Compose file stays canonical) stands; the implementation is:
+
+| Service | Local (this machine), all portable under `%USERPROFILE%\devtools`, no admin rights, no services registered |
+|---|---|
+| PHP | **8.4.26** NTS (official Windows build) with its own `php.ini` — the version gap with CI is now closed. XAMPP's PHP is untouched. |
+| Composer | `composer.phar` 2.10 next to that PHP |
+| PostgreSQL | **17.11** binaries (EnterpriseDB zip), cluster in `devtools\pgdata`, started with `pg_ctl`; superuser password in `devtools\pg-superuser.txt` (never in the repo) |
+| Redis | **Redis 8.10** Windows build (msys2) instead of Memurai |
+| Git / Node | MinGit 2.55, Node 24 LTS |
+| Object storage | `OBJECT_STORAGE_DRIVER=local` (per-tenant directories) until MinIO is available |
+
+`devtools\start-services.ps1` starts PostgreSQL and Redis after a reboot; `devtools\env.ps1`
+puts the toolchain on `PATH`. Removing the `devtools` folder removes everything.
