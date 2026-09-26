@@ -1,0 +1,15 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "modules/catalog",
+    "description": "Catalog module: products, variants, options, categories, brands, collections, search documents.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Catalog\\": "src/"
+        }
+    }
+}

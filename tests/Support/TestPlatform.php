@@ -5,17 +5,20 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use Illuminate\Support\Str;
+use Modules\Catalog\Contracts\SearchIndex;
 use Modules\Identity\Models\StaffUser;
 use Modules\Platform\Actions\CreateCompany;
 use Modules\Platform\Actions\CreateTenant;
 use Modules\Platform\Actions\MigrateLandlord;
 use Modules\Platform\Actions\MigrateTenants;
+use Modules\Platform\Actions\SeedTenant;
 use Modules\Platform\Data\CompanyData;
 use Modules\Platform\Data\TenantData;
 use Modules\Platform\Models\Tenant;
 use Modules\Platform\Support\Provisioning\PostgresProvisioner;
 use Modules\Platform\Support\Provisioning\TenantDatabaseNames;
 use RuntimeException;
+use Throwable;
 
 /**
  * The isolation fixture (plan 1.8): company X owns brand A; company Y owns brands B and C —
@@ -66,6 +69,14 @@ final class TestPlatform
 
         if ($failed !== []) {
             throw new RuntimeException('Fixture tenant migration failed: '.array_values($failed)[0]->error);
+        }
+
+        // Fixture tenants outlive the code that provisioned them; bring their seeds and search
+        // collections up to date the way a deploy would.
+        foreach ([self::BRAND_A, self::BRAND_B, self::BRAND_C] as $slug) {
+            $tenant = Tenant::query()->where('slug', $slug)->firstOrFail();
+            app(SeedTenant::class)->handle($tenant);
+            $tenant->run(fn () => app(SearchIndex::class)->ensureCollections());
         }
 
         self::$prepared = true;
@@ -143,6 +154,12 @@ final class TestPlatform
     {
         if (tenancy()->initialized) {
             tenancy()->end();
+        }
+
+        try {
+            $tenant->run(fn () => app(SearchIndex::class)->dropCollections());
+        } catch (Throwable) {
+            // A tenant that crashed before its database existed has no collection either.
         }
 
         app(PostgresProvisioner::class)->dropDatabase(TenantDatabaseNames::forSlug($tenant->slug));

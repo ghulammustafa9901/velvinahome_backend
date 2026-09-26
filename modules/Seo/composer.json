@@ -1,0 +1,15 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "modules/seo",
+    "description": "Seo module: per-entity meta, slugs and automatic 301 redirects.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Seo\\": "src/"
+        }
+    }
+}

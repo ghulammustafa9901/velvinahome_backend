@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Inventory\Providers;
+
+use Modules\Inventory\Contracts\StockReader;
+use Modules\Inventory\Seeders\DefaultLocationSeeder;
+use Modules\Inventory\Support\DatabaseStockReader;
+use Modules\Support\Providers\ModuleServiceProvider;
+
+final class InventoryServiceProvider extends ModuleServiceProvider
+{
+    protected function moduleName(): string
+    {
+        return 'Inventory';
+    }
+
+    protected function registerModule(): void
+    {
+        $this->app->bind(StockReader::class, DatabaseStockReader::class);
+    }
+
+    protected function appendOnlyTables(): array
+    {
+        return ['inventory_movements', 'stock_snapshots_daily'];
+    }
+
+    protected function tenantSeeders(): array
+    {
+        return [DefaultLocationSeeder::class];
+    }
+}

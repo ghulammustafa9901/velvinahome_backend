@@ -54,6 +54,9 @@
         <env name="TENANCY_TOPOLOGY" value="shared"/>
         <env name="TENANCY_PINNED_TENANT" value=""/>
         <env name="OBJECT_STORAGE_DRIVER" value="local"/>
+        <!-- Real Typesense; test collections are prefixed so they never touch dev ones. -->
+        <env name="SCOUT_DRIVER" value="typesense"/>
+        <env name="SCOUT_PREFIX" value="test_"/>
 
         <!-- The array store supports tags, which tenant cache scoping relies on. -->
         <env name="CACHE_STORE" value="array"/>

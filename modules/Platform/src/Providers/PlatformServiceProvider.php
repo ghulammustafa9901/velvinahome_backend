@@ -19,7 +19,9 @@ use Modules\Platform\Console\TenantsMigrateCommand;
 use Modules\Platform\Console\TenantSuspendCommand;
 use Modules\Platform\Contracts\FeatureFlags;
 use Modules\Platform\Contracts\OwnerBrands;
+use Modules\Platform\Contracts\TenantDirectory;
 use Modules\Platform\Listeners\AuditPlatformAuthentication;
+use Modules\Platform\Support\LandlordTenantDirectory;
 use Modules\Platform\Support\OwnerBrandDirectory;
 use Modules\Platform\Support\PlanFeatureFlags;
 use Modules\Platform\Tenancy\TenantResolver;
@@ -41,6 +43,7 @@ final class PlatformServiceProvider extends ModuleServiceProvider
         $this->app->singleton(TenantResolver::class);
         $this->app->scoped(FeatureFlags::class, PlanFeatureFlags::class);
         $this->app->bind(OwnerBrands::class, OwnerBrandDirectory::class);
+        $this->app->bind(TenantDirectory::class, LandlordTenantDirectory::class);
     }
 
     /**

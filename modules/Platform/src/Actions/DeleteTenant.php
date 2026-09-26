@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Platform\Actions;
 
+use Modules\Catalog\Contracts\SearchIndex;
 use Modules\Platform\Enums\TenantStatus;
 use Modules\Platform\Exceptions\TenantLifecycleViolation;
 use Modules\Platform\Models\PlatformUser;
@@ -29,6 +30,7 @@ final class DeleteTenant implements Action
     public function __construct(
         private readonly PostgresProvisioner $provisioner,
         private readonly PlatformAudit $audit,
+        private readonly SearchIndex $search,
     ) {}
 
     public function handle(Tenant $tenant, string $confirmation, ?PlatformUser $actor = null): Tenant
@@ -49,6 +51,7 @@ final class DeleteTenant implements Action
             throw TenantLifecycleViolation::noFreshBackup($tenant->slug, self::BACKUP_MAX_AGE_MINUTES);
         }
 
+        $tenant->run(fn () => $this->search->dropCollections());
         $this->provisioner->dropDatabase(TenantDatabaseNames::forSlug($tenant->slug));
 
         $tenant->databaseCredentials()->delete();

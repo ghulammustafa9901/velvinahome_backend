@@ -6,6 +6,7 @@ namespace Modules\Platform\Actions;
 
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Facades\Storage;
+use Modules\Catalog\Contracts\SearchIndex;
 use Modules\Identity\Contracts\StaffDirectory;
 use Modules\Identity\Data\OwnerAccountData;
 use Modules\Platform\Data\ProvisioningResult;
@@ -52,6 +53,7 @@ final class CreateTenant implements Action
         private readonly StaffDirectory $staff,
         private readonly PlatformAudit $audit,
         private readonly DatabaseManager $db,
+        private readonly SearchIndex $search,
     ) {}
 
     public function handle(TenantData $data, ?PlatformUser $actor = null): ProvisioningResult
@@ -168,9 +170,7 @@ final class CreateTenant implements Action
             ProvisioningStep::Database => $this->createDatabase($tenant),
             ProvisioningStep::Migrations => $this->migrate($tenant),
             ProvisioningStep::Seed => $this->seedTenant->handle($tenant),
-            // Typesense collections arrive with the Search work in Phase 2; the step exists
-            // now so every tenant's provisioning record has the same shape.
-            ProvisioningStep::SearchCollections => null,
+            ProvisioningStep::SearchCollections => $tenant->run(fn () => $this->search->ensureCollections()),
             ProvisioningStep::StoragePrefix => $this->prepareStorage($tenant),
             ProvisioningStep::OwnerAccount => $result->owner = $this->createOwner($tenant, $data),
             ProvisioningStep::Activate => $tenant->forceFill(['status' => TenantStatus::Active])->save(),
