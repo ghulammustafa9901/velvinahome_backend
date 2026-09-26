@@ -18,8 +18,8 @@ final class DatabaseOutbox implements Outbox
             'available_at' => now(),
         ]);
 
-        // Queue connections are configured with after_commit, so this dispatch is held until
-        // the surrounding transaction commits — and discarded if it rolls back.
+        // The job is ShouldQueueAfterCommit: held until the surrounding transaction commits,
+        // and discarded if it rolls back.
         PublishOutboxMessages::dispatch();
 
         return $message->ulid;

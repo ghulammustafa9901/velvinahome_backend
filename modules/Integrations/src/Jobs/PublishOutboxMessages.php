@@ -6,13 +6,17 @@ namespace Modules\Integrations\Jobs;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Modules\Integrations\Actions\PublishPendingOutboxMessages;
 use Modules\Support\Queue\TenantAware;
 
-final class PublishOutboxMessages implements ShouldBeUnique, ShouldQueue
+/**
+ * After-commit by contract, not only by queue configuration: whatever connection it is
+ * dispatched on, a publish for a rolled-back transaction is discarded.
+ */
+final class PublishOutboxMessages implements ShouldBeUnique, ShouldQueueAfterCommit
 {
     use Dispatchable;
     use InteractsWithQueue;
