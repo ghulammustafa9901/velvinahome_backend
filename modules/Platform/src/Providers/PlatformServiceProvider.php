@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Platform\Providers;
 
+use Illuminate\Support\Facades\Event;
 use Modules\Platform\Console\CompanyCreateCommand;
 use Modules\Platform\Console\LandlordMigrateCommand;
 use Modules\Platform\Console\PlatformDemoCommand;
@@ -18,7 +19,6 @@ use Modules\Platform\Contracts\FeatureFlags;
 use Modules\Platform\Support\PlanFeatureFlags;
 use Modules\Platform\Tenancy\TenantResolver;
 use Modules\Support\Providers\ModuleServiceProvider;
-use Illuminate\Support\Facades\Event;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;

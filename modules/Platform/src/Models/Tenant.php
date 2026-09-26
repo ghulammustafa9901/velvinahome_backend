@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Platform\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -55,7 +56,7 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
 
     protected static function booted(): void
     {
-        static::creating(function (self $tenant): void {
+        self::creating(function (self $tenant): void {
             if (blank($tenant->getAttribute('id'))) {
                 $tenant->setAttribute('id', (string) Str::ulid());
             }
@@ -87,6 +88,26 @@ final class Tenant extends BaseTenant implements TenantWithDatabase
             'health_checked_at' => 'datetime',
             'last_backup_at' => 'datetime',
         ];
+    }
+
+    /**
+     * stancl's TenantCollection is not generic, so a plain get() loses the model type. Every
+     * loop over tenants goes through here instead.
+     *
+     * @param  Builder<self>  $query
+     * @return list<self>
+     */
+    public static function listOf(Builder $query): array
+    {
+        $tenants = [];
+
+        foreach ($query->get() as $tenant) {
+            if ($tenant instanceof self) {
+                $tenants[] = $tenant;
+            }
+        }
+
+        return $tenants;
     }
 
     public function database(): DatabaseConfig

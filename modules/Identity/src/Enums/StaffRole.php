@@ -20,7 +20,7 @@ enum StaffRole: string
     case Accountant = 'Accountant';
 
     /**
-     * @return list<StaffPermission>
+     * @return list<P>
      */
     public function permissions(): array
     {

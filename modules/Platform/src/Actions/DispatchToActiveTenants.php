@@ -27,12 +27,11 @@ final class DispatchToActiveTenants implements Action
     {
         $report = [];
 
-        $tenants = Tenant::query()
+        $tenants = Tenant::listOf(Tenant::query()
             ->where('status', TenantStatus::Active->value)
             ->has('databaseCredentials')
             ->with('databaseCredentials')
-            ->orderBy('slug')
-            ->get();
+            ->orderBy('slug'));
 
         foreach ($tenants as $tenant) {
             try {

@@ -85,5 +85,5 @@ it('lets a support-role platform user suspend nothing', function (): void {
         'role' => PlatformRole::Support, 'status' => 'active',
     ]);
 
-    app(\Modules\Platform\Actions\ChangeTenantStatus::class)->handle($this->tenant, TenantStatus::Suspended, 'no', $support);
+    app(Modules\Platform\Actions\ChangeTenantStatus::class)->handle($this->tenant, TenantStatus::Suspended, 'no', $support);
 })->throws(Illuminate\Auth\Access\AuthorizationException::class);

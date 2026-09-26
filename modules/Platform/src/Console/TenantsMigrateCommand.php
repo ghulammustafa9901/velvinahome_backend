@@ -37,7 +37,7 @@ final class TenantsMigrateCommand extends Command
 
         foreach ($runs as $run) {
             /** @var TenantMigrationRun $run */
-            $slug = $run->loadMissing('tenant')->tenant->slug;
+            $slug = $run->loadMissing('tenant')->tenant->slug ?? $run->tenant_id;
 
             if ($run->status === 'succeeded') {
                 $this->components->twoColumnDetail($slug, sprintf('<fg=green>%d applied</>', $run->migrations_applied));

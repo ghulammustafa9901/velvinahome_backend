@@ -15,6 +15,7 @@ use Modules\Platform\Data\TenantData;
 use Modules\Platform\Models\Tenant;
 use Modules\Platform\Support\Provisioning\PostgresProvisioner;
 use Modules\Platform\Support\Provisioning\TenantDatabaseNames;
+use RuntimeException;
 
 /**
  * The isolation fixture (plan 1.8): company X owns brand A; company Y owns brands B and C —
@@ -64,7 +65,7 @@ final class TestPlatform
         );
 
         if ($failed !== []) {
-            throw new \RuntimeException('Fixture tenant migration failed: '.array_values($failed)[0]->error);
+            throw new RuntimeException('Fixture tenant migration failed: '.array_values($failed)[0]->error);
         }
 
         self::$prepared = true;
@@ -133,7 +134,7 @@ final class TestPlatform
      */
     public static function dropTemporaryTenants(): void
     {
-        foreach (Tenant::query()->where('slug', 'like', 'tmp-%')->get() as $tenant) {
+        foreach (Tenant::listOf(Tenant::query()->where('slug', 'like', 'tmp-%')) as $tenant) {
             self::destroy($tenant);
         }
     }

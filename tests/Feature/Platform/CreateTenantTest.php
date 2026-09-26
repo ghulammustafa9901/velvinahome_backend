@@ -90,7 +90,7 @@ it('refuses a hostname that belongs to another tenant', function (): void {
     $this->slug = TestPlatform::temporarySlug();
     $data = TestPlatform::tenantData($this->slug, 'fixture-x');
 
-    app(CreateTenant::class)->handle(new \Modules\Platform\Data\TenantData(
+    app(CreateTenant::class)->handle(new Modules\Platform\Data\TenantData(
         company: $data->company,
         name: $data->name,
         slug: $data->slug,

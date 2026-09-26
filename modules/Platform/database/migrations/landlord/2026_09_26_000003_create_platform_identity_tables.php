@@ -83,7 +83,7 @@ return new class extends Migration
             $table->text('user_agent')->nullable();
         });
 
-        DB::statement("ALTER TABLE impersonation_sessions ADD CONSTRAINT impersonation_sessions_reason_check CHECK (length(trim(reason)) >= 10)");
+        DB::statement('ALTER TABLE impersonation_sessions ADD CONSTRAINT impersonation_sessions_reason_check CHECK (length(trim(reason)) >= 10)');
         DB::statement('ALTER TABLE impersonation_sessions ADD CONSTRAINT impersonation_sessions_expiry_check CHECK (expires_at > started_at)');
 
         // Multi-brand owner access (spec §4.1a): one landlord identity, linked to a staff row

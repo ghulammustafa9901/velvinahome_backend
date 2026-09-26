@@ -16,8 +16,11 @@ final class EnsurePlatformHost
 {
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless(strtolower($request->getHost()) === strtolower((string) config('platform.host')), 404);
-        abort_if(tenancy()->initialized, 404);
+        $isPlatformHost = strtolower($request->getHost()) === strtolower((string) config('platform.host'));
+
+        if (! $isPlatformHost || tenancy()->initialized) {
+            abort(404);
+        }
 
         return $next($request);
     }

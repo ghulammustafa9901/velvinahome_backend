@@ -62,8 +62,8 @@ it('keeps settings of one brand from changing its sibling brand', function (): v
 
     TestPlatform::brand(TestPlatform::BRAND_B)->run(fn () => app(UpdateSetting::class)->handle('probe', $marker, 'brand-b'));
 
-    $inC = TestPlatform::brand(TestPlatform::BRAND_C)->run(fn () => app(\Modules\Settings\Contracts\TenantSettings::class)->get('probe.'.$marker));
-    $inB = TestPlatform::brand(TestPlatform::BRAND_B)->run(fn () => app(\Modules\Settings\Contracts\TenantSettings::class)->get('probe.'.$marker));
+    $inC = TestPlatform::brand(TestPlatform::BRAND_C)->run(fn () => app(Modules\Settings\Contracts\TenantSettings::class)->get('probe.'.$marker));
+    $inB = TestPlatform::brand(TestPlatform::BRAND_B)->run(fn () => app(Modules\Settings\Contracts\TenantSettings::class)->get('probe.'.$marker));
 
     expect($inC)->toBeNull()->and($inB)->toBe('brand-b');
 });

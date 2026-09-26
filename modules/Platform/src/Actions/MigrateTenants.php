@@ -29,15 +29,14 @@ final class MigrateTenants implements Action
     {
         $runs = [];
 
-        $tenants = Tenant::query()
+        $tenants = Tenant::listOf(Tenant::query()
             ->whereIn('status', array_map(
                 fn (TenantStatus $status): string => $status->value,
                 array_filter(TenantStatus::cases(), fn (TenantStatus $status): bool => $status->isMigratable()),
             ))
             ->has('databaseCredentials')
             ->when($onlySlugs !== null, fn ($query) => $query->whereIn('slug', $onlySlugs))
-            ->orderBy('slug')
-            ->get();
+            ->orderBy('slug'));
 
         foreach ($tenants as $tenant) {
             $runs[] = $this->migrateTenant->handle($tenant);

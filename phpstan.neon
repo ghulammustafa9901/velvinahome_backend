@@ -9,11 +9,15 @@ parameters:
     paths:
         - app
         - modules
-        - tests
+        - tests/Support
 
+    # Pest test files are closures bound to the test case at runtime; PHPStan sees `$this` as
+    # a Pest TestCall and every assertion becomes a false positive. The shared test support
+    # code is still analysed at level 8.
     excludePaths:
         analyseAndScan:
             - modules/*/database/migrations
+            - tests/Support/Migrations
         analyse:
             - bootstrap/cache
 

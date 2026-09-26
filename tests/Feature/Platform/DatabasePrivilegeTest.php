@@ -21,7 +21,7 @@ use Tests\Support\TestPlatform;
 /**
  * @param  array<string, mixed>  $overrides
  */
-function connectAs(string $name, array $config, array $overrides = []): \Illuminate\Database\Connection
+function connectAs(string $name, array $config, array $overrides = []): Illuminate\Database\Connection
 {
     config(["database.connections.{$name}" => array_merge($config, $overrides)]);
     DB::purge($name);
@@ -29,7 +29,7 @@ function connectAs(string $name, array $config, array $overrides = []): \Illumin
     return DB::connection($name);
 }
 
-function appConnection(string $slug, array $overrides = []): \Illuminate\Database\Connection
+function appConnection(string $slug, array $overrides = []): Illuminate\Database\Connection
 {
     /** @var TenantDatabaseConfig $database */
     $database = TestPlatform::brand($slug)->database();
