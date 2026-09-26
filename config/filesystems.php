@@ -49,17 +49,47 @@ return [
             'report' => false,
         ],
 
-        's3' => [
+        /*
+         * Tenant object storage (ADR-0004). One bucket; the FilesystemTenancyBootstrapper
+         * rewrites each root to tenants/{tenant_id}/... so a tenant can only ever address its
+         * own prefix. OBJECT_STORAGE_DRIVER=local keeps files on disk for machines without
+         * MinIO (ADR-0009) — never in production, where uploads never touch the app server.
+         */
+        'tenant_media' => env('OBJECT_STORAGE_DRIVER', 's3') === 'local' ? [
+            'driver' => 'local',
+            'root' => storage_path('app/media'),
+            'visibility' => 'public',
+            'throw' => true,
+        ] : [
             'driver' => 's3',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
-            'url' => env('AWS_URL'),
-            'endpoint' => env('AWS_ENDPOINT'),
-            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-            'throw' => false,
-            'report' => false,
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_REGION', 'auto'),
+            'bucket' => env('R2_BUCKET'),
+            'url' => env('R2_PUBLIC_URL'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'public',
+            'throw' => true,
+        ],
+
+        // Invoices, exports, payment receipts: private, served only through signed,
+        // expiring URLs (spec §6.9).
+        'tenant_private' => env('OBJECT_STORAGE_DRIVER', 's3') === 'local' ? [
+            'driver' => 'local',
+            'root' => storage_path('app/private-objects'),
+            'visibility' => 'private',
+            'throw' => true,
+        ] : [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => env('R2_REGION', 'auto'),
+            'bucket' => env('R2_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'private',
+            'throw' => true,
         ],
 
     ],

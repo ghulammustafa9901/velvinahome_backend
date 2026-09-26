@@ -21,6 +21,9 @@ final class UlidFixtureModel extends Model
 {
     use HasUlid;
 
+    // A pure trait test: no tenancy, no PostgreSQL.
+    protected $connection = 'sqlite';
+
     protected $table = 'ulid_fixtures';
 
     protected $guarded = [];

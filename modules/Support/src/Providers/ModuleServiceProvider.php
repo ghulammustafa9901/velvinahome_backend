@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Support\Providers;
 
+use Illuminate\Console\Application as Artisan;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\Support\Modules\ModuleRegistry;
 use ReflectionClass;
 use RuntimeException;
 
@@ -32,12 +34,54 @@ abstract class ModuleServiceProvider extends ServiceProvider
         $this->registerApiRoutes();
         $this->registerPolicies();
         $this->registerEventListeners();
+        $this->registerConsoleCommands();
         $this->bootModule();
     }
 
     public function register(): void
     {
+        $this->app->singletonIf(ModuleRegistry::class);
+
+        $this->app->make(ModuleRegistry::class)->register(
+            $this->moduleName(),
+            $this->tenantMigrationPath(),
+            $this->landlordMigrationPath(),
+            $this->appendOnlyTables(),
+            $this->tenantSeeders(),
+        );
+
         $this->registerModule();
+    }
+
+    /**
+     * Tenant tables this module owns that are append-only ledgers. The application role
+     * loses UPDATE, DELETE and TRUNCATE on them after every migration run (spec §6.3).
+     *
+     * @return list<string>
+     */
+    protected function appendOnlyTables(): array
+    {
+        return [];
+    }
+
+    /**
+     * Idempotent seeders that give a newly provisioned tenant this module's defaults.
+     *
+     * @return list<class-string>
+     */
+    protected function tenantSeeders(): array
+    {
+        return [];
+    }
+
+    /**
+     * Artisan commands this module provides.
+     *
+     * @return list<class-string>
+     */
+    protected function consoleCommands(): array
+    {
+        return [];
     }
 
     /**
@@ -98,6 +142,10 @@ abstract class ModuleServiceProvider extends ServiceProvider
         return is_dir($path) ? $path : null;
     }
 
+    /**
+     * Storefront API routes. Every one of them is tenant API: the `tenant:api` middleware
+     * resolves the tenant from the host (and 404s otherwise) before anything else runs.
+     */
     protected function registerApiRoutes(): void
     {
         $routes = $this->modulePath().'/routes/api_v1.php';
@@ -106,10 +154,30 @@ abstract class ModuleServiceProvider extends ServiceProvider
             return;
         }
 
-        Route::middleware('api')
+        Route::middleware(['tenant:api', 'api'])
             ->prefix('api/v1')
             ->name('api.v1.')
             ->group($routes);
+    }
+
+    /**
+     * Commands are registered once the whole application has booted, so a module command
+     * deliberately named like a package command (our `tenants:migrate` versus
+     * stancl/tenancy's) is the one Artisan keeps.
+     */
+    protected function registerConsoleCommands(): void
+    {
+        $commands = $this->consoleCommands();
+
+        if ($commands === [] || ! $this->app->runningInConsole()) {
+            return;
+        }
+
+        $this->app->booted(function () use ($commands): void {
+            Artisan::starting(function ($artisan) use ($commands): void {
+                $artisan->resolveCommands($commands);
+            });
+        });
     }
 
     protected function registerPolicies(): void

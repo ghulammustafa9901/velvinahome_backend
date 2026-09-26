@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 use Tests\Support\Fixtures\UlidFixtureModel;
 
 beforeEach(function (): void {
-    Schema::create('ulid_fixtures', function (Blueprint $table): void {
+    Schema::connection('sqlite')->create('ulid_fixtures', function (Blueprint $table): void {
         $table->id();
         $table->char('ulid', 26)->unique();
         $table->string('name')->nullable();
@@ -15,7 +15,7 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
-    Schema::dropIfExists('ulid_fixtures');
+    Schema::connection('sqlite')->dropIfExists('ulid_fixtures');
 });
 
 it('assigns a ULID on create', function (): void {

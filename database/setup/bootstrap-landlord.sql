@@ -21,6 +21,13 @@
 
 \set ON_ERROR_STOP on
 
+-- The landlord database name. Defaults to platform_landlord; the test suite bootstraps a
+-- separate platform_landlord_test with -v landlord_db=platform_landlord_test.
+\if :{?landlord_db}
+\else
+\set landlord_db platform_landlord
+\endif
+
 -- ---------------------------------------------------------------------------------------
 -- Roles
 -- ---------------------------------------------------------------------------------------
@@ -65,15 +72,15 @@ WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'backup_reader')
 -- ---------------------------------------------------------------------------------------
 
 -- CREATE DATABASE cannot run inside a transaction, hence \gexec here too.
-SELECT 'CREATE DATABASE platform_landlord OWNER landlord_migrator ENCODING ''UTF8'' TEMPLATE template0'
-WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'platform_landlord')
+SELECT format('CREATE DATABASE %I OWNER landlord_migrator ENCODING ''UTF8'' TEMPLATE template0', :'landlord_db')
+WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = :'landlord_db')
 \gexec
 
 -- Nobody connects by default; only the landlord's own roles may.
-REVOKE CONNECT ON DATABASE platform_landlord FROM PUBLIC;
-GRANT  CONNECT ON DATABASE platform_landlord TO landlord_app, landlord_migrator, backup_reader;
+REVOKE CONNECT ON DATABASE :"landlord_db" FROM PUBLIC;
+GRANT  CONNECT ON DATABASE :"landlord_db" TO landlord_app, landlord_migrator, backup_reader;
 
-\connect platform_landlord
+\connect :landlord_db
 
 -- The public schema belongs to the migrator. PUBLIC gets nothing.
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
@@ -107,4 +114,4 @@ ORDER BY rolname;
 \echo '--- landlord database ---'
 SELECT datname, pg_get_userbyid(datdba) AS owner, pg_encoding_to_char(encoding) AS encoding
 FROM pg_database
-WHERE datname = 'platform_landlord';
+WHERE datname = :'landlord_db';

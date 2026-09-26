@@ -3,131 +3,89 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Str;
-use Pdo\Mysql;
+
+/*
+|--------------------------------------------------------------------------
+| Database connections (spec §4, §6.3, docs/architecture/database-roles.md)
+|--------------------------------------------------------------------------
+|
+| PostgreSQL only. Every connection here maps to exactly one PostgreSQL role, because the
+| privilege model — not application discipline — is what makes tenant isolation real:
+|
+|   landlord           landlord_app          DML on the landlord DB, the central default
+|   landlord_migrator  landlord_migrator     owns the landlord schema; deploys only
+|   provisioner        platform_provisioner  CREATEDB/CREATEROLE, never a superuser
+|   tenant_template    (none)                host/port/options every tenant connection copies
+|   tenant             tenant_<slug>_app     created at runtime once a tenant is resolved
+|   tenant_migrator    tenant_<slug>_migrator created at runtime by tenant migrations only
+|
+| `tenant` and `tenant_migrator` are never declared here: they are built from the encrypted
+| credentials in the landlord `tenant_databases` table, so a tenant connection cannot exist
+| before a tenant has been resolved.
+|
+*/
+
+$pgsql = static fn (array $overrides): array => array_merge([
+    'driver' => 'pgsql',
+    'url' => null,
+    'host' => env('DB_LANDLORD_HOST', '127.0.0.1'),
+    'port' => env('DB_LANDLORD_PORT', '5432'),
+    'charset' => 'utf8',
+    'prefix' => '',
+    'prefix_indexes' => true,
+    'search_path' => 'public',
+    'sslmode' => env('DB_LANDLORD_SSLMODE', 'prefer'),
+], $overrides);
 
 return [
 
-    /*
-    |--------------------------------------------------------------------------
-    | Default Database Connection Name
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify which of the database connections below you wish
-    | to use as your default connection for database operations. This is
-    | the connection which will be utilized unless another connection
-    | is explicitly specified when you execute a query / statement.
-    |
-    */
-
-    'default' => env('DB_CONNECTION', 'sqlite'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Database Connections
-    |--------------------------------------------------------------------------
-    |
-    | Below are all of the database connections defined for your application.
-    | An example configuration is provided for each database system which
-    | is supported by Laravel. You're free to add / remove connections.
-    |
-    */
+    'default' => env('DB_CONNECTION', 'landlord'),
 
     'connections' => [
 
+        'landlord' => $pgsql([
+            'database' => env('DB_LANDLORD_DATABASE', 'platform_landlord'),
+            'username' => env('DB_LANDLORD_USERNAME', 'landlord_app'),
+            'password' => env('DB_LANDLORD_PASSWORD', ''),
+        ]),
+
+        'landlord_migrator' => $pgsql([
+            'database' => env('DB_LANDLORD_DATABASE', 'platform_landlord'),
+            'username' => env('DB_LANDLORD_MIGRATOR_USERNAME', 'landlord_migrator'),
+            'password' => env('DB_LANDLORD_MIGRATOR_PASSWORD', ''),
+        ]),
+
+        // Connects to the maintenance database only; tenant databases are created from here.
+        'provisioner' => $pgsql([
+            'host' => env('DB_PROVISIONER_HOST', env('DB_LANDLORD_HOST', '127.0.0.1')),
+            'port' => env('DB_PROVISIONER_PORT', env('DB_LANDLORD_PORT', '5432')),
+            'database' => env('DB_PROVISIONER_DATABASE', 'postgres'),
+            'username' => env('DB_PROVISIONER_USERNAME', 'platform_provisioner'),
+            'password' => env('DB_PROVISIONER_PASSWORD', ''),
+        ]),
+
+        // Never connected to directly. Tenant connections are this plus the tenant's own
+        // database name and role credentials.
+        'tenant_template' => $pgsql([
+            'host' => env('DB_TENANT_HOST', env('DB_LANDLORD_HOST', '127.0.0.1')),
+            'port' => env('DB_TENANT_PORT', env('DB_LANDLORD_PORT', '5432')),
+            'database' => null,
+            'username' => null,
+            'password' => null,
+            'sslmode' => env('DB_TENANT_SSLMODE', env('DB_LANDLORD_SSLMODE', 'prefer')),
+        ]),
+
+        // Only for the Support module's own test fixtures, which exercise pure model
+        // behaviour without any tenancy.
         'sqlite' => [
             'driver' => 'sqlite',
-            'url' => env('DB_URL'),
-            'database' => env('DB_DATABASE', database_path('database.sqlite')),
+            'url' => null,
+            'database' => ':memory:',
             'prefix' => '',
-            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
-            'busy_timeout' => null,
-            'journal_mode' => null,
-            'synchronous' => null,
-            'transaction_mode' => 'DEFERRED',
-        ],
-
-        'mysql' => [
-            'driver' => 'mysql',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
-
-        'mariadb' => [
-            'driver' => 'mariadb',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
-
-        'pgsql' => [
-            'driver' => 'pgsql',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'charset' => env('DB_CHARSET', 'utf8'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
-        ],
-
-        'sqlsrv' => [
-            'driver' => 'sqlsrv',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', 'localhost'),
-            'port' => env('DB_PORT', '1433'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'charset' => env('DB_CHARSET', 'utf8'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            // 'encrypt' => env('DB_ENCRYPT', 'yes'),
-            // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
+            'foreign_key_constraints' => true,
         ],
 
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Migration Repository Table
-    |--------------------------------------------------------------------------
-    |
-    | This table keeps track of all the migrations that have already run for
-    | your application. Using this information, we can determine which of
-    | the migrations on disk haven't actually been run on the database.
-    |
-    */
 
     'migrations' => [
         'table' => 'migrations',
@@ -136,22 +94,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Redis Databases
+    | Redis
     |--------------------------------------------------------------------------
     |
-    | Redis is an open source, fast, and advanced key-value store that also
-    | provides a richer body of commands than a typical key-value system
-    | such as Memcached. You may define your connection settings here.
+    | predis, not phpredis: it is pure PHP and so behaves the same on every developer
+    | machine, including Windows (ADR-0009). Separate logical databases keep queues, cache
+    | and sessions from ever sharing a keyspace.
     |
     */
 
     'redis' => [
 
-        'client' => env('REDIS_CLIENT', 'phpredis'),
+        'client' => env('REDIS_CLIENT', 'predis'),
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'platform')).':'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 
@@ -162,10 +120,6 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', '0'),
-            'max_retries' => env('REDIS_MAX_RETRIES', 3),
-            'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
-            'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
-            'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
         ],
 
         'cache' => [
@@ -175,10 +129,15 @@ return [
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_CACHE_DB', '1'),
-            'max_retries' => env('REDIS_MAX_RETRIES', 3),
-            'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
-            'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
-            'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
+        ],
+
+        'session' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_SESSION_DB', '2'),
         ],
 
     ],
