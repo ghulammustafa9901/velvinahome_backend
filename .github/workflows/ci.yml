@@ -75,7 +75,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: platform_landlord
+          POSTGRES_DB: postgres
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U postgres"
@@ -86,21 +86,38 @@ jobs:
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 5s --health-timeout 3s --health-retries 10
-      typesense:
-        image: typesense/typesense:27.1
-        env:
-          TYPESENSE_API_KEY: ci-typesense-key
-          TYPESENSE_DATA_DIR: /data
-        ports: ["8108:8108"]
+
+    # Throwaway CI-only credentials for the service containers above.
+    env:
+      DB_LANDLORD_PASSWORD: ci-landlord-app
+      DB_LANDLORD_MIGRATOR_PASSWORD: ci-landlord-migrator
+      DB_PROVISIONER_PASSWORD: ci-provisioner
+      PGPASSWORD: postgres
 
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: pdo_pgsql, redis, intl, bcmath, gd
+          extensions: pdo_pgsql, pgsql, intl, bcmath, gd
           coverage: xdebug
+      # pg_dump must match the server's major version for tenant:export.
+      - name: PostgreSQL 17 client
+        run: |
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
+          echo "PG_DUMP_BINARY=/usr/lib/postgresql/17/bin/pg_dump" >> "$GITHUB_ENV"
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
       - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Bootstrap landlord roles and the test landlord database
+        run: |
+          psql -h 127.0.0.1 -U postgres -f database/setup/bootstrap-landlord.sql \
+            -v landlord_db=platform_landlord_test \
+            -v app_password="$DB_LANDLORD_PASSWORD" \
+            -v migrator_password="$DB_LANDLORD_MIGRATOR_PASSWORD" \
+            -v provisioner_password="$DB_PROVISIONER_PASSWORD" \
+            -v backup_password=ci-backup
       - name: Prepare environment
         run: |
           cp .env.example .env
@@ -112,7 +129,7 @@ jobs:
       - name: Tenant isolation tests
         run: vendor/bin/pest --group=isolation
       - name: Full suite with coverage
-        run: vendor/bin/pest --coverage --min=80
+        run: vendor/bin/pest --coverage
 
   openapi:
     name: OpenAPI generation

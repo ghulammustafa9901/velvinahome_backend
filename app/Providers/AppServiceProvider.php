@@ -7,7 +7,11 @@ namespace App\Providers;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Laravel\Horizon\Horizon;
+use Modules\Platform\Enums\PlatformRole;
+use Modules\Platform\Models\PlatformUser;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -24,6 +28,13 @@ final class AppServiceProvider extends ServiceProvider
 
         $this->configureRateLimiting();
         $this->configureLivewireEndpoints();
+
+        // Horizon is operations tooling: platform engineers and owners only, on the platform
+        // host only (see config/horizon.php).
+        Gate::define('viewHorizon', fn ($user = null): bool => $user instanceof PlatformUser
+            && $user->status === 'active'
+            && $user->role !== PlatformRole::Support);
+        Horizon::auth(fn (Request $request): bool => Gate::forUser($request->user('platform'))->allows('viewHorizon'));
     }
 
     /**

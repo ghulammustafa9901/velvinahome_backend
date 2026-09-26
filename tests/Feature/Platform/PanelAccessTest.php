@@ -37,6 +37,15 @@ it('shows platform users every brand in the platform panel', function (): void {
     $this->get('http://platform.test/companies')->assertOk()->assertSee('Fixture Y');
 });
 
+it('serves Horizon only on the platform host and only to engineers', function (): void {
+    $this->get('http://'.TestPlatform::adminHost(TestPlatform::BRAND_B).'/horizon')->assertNotFound();
+    $this->get('http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/horizon')->assertNotFound();
+
+    $this->actingAs(platformUser(PlatformRole::Support), 'platform')
+        ->get('http://platform.test/horizon')
+        ->assertForbidden();
+});
+
 it('redirects guests to the platform login', function (): void {
     $this->get('http://platform.test/tenants')->assertRedirect('http://platform.test/login');
 });
