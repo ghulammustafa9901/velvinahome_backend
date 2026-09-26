@@ -9,14 +9,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
-use Laravel\Horizon\Horizon;
-use Modules\Platform\Enums\PlatformRole;
-use Modules\Platform\Models\PlatformUser;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Horizon\Horizon;
 use Livewire\Livewire;
+use Modules\Platform\Enums\PlatformRole;
 use Modules\Platform\Http\Middleware\InitializeTenancyForPanelRequest;
 use Modules\Platform\Http\Middleware\ScopeSessionToTenant;
+use Modules\Platform\Models\PlatformUser;
 
 final class AppServiceProvider extends ServiceProvider
 {
