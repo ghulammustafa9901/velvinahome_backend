@@ -1,0 +1,82 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "platform/platform-api",
+    "type": "project",
+    "description": "Multi-brand commerce platform: API, tenant admin, landlord panel, jobs.",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.3",
+        "laravel/framework": "^13.17",
+        "laravel/tinker": "^3.0",
+        "modules/support": "@dev",
+        "modules/platform": "@dev",
+        "modules/identity": "@dev",
+        "modules/settings": "@dev"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.0",
+        "laravel/pail": "^1.2.5",
+        "laravel/pint": "^1.27",
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^8.6",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "pestphp/pest-plugin-type-coverage": "^4.0"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "modules/*",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "lint": "pint",
+        "lint:check": "pint --test",
+        "stan": "phpstan analyse",
+        "test": "pest",
+        "test:arch": "pest --group=architecture",
+        "test:isolation": "pest --group=isolation",
+        "test:coverage": "pest --coverage",
+        "check": [
+            "@lint:check",
+            "@stan",
+            "@test"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

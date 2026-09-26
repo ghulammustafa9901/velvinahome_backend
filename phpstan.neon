@@ -1,0 +1,20 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    # Spec §12.1 targets level 8 on new code. The project starts at 8 so it never has to be
+    # ratcheted up across 20 modules later.
+    level: 8
+
+    paths:
+        - app
+        - modules
+        - tests
+
+    excludePaths:
+        analyseAndScan:
+            - modules/*/database/migrations
+        analyse:
+            - bootstrap/cache
+
+    treatPhpDocTypesAsCertain: false

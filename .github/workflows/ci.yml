@@ -1,0 +1,177 @@
+name: CI
+
+# Quality gates from spec §10 and §12.2. During Phase 0 the application does not exist yet,
+# so each job checks for composer.json first and reports "not yet scaffolded" instead of
+# failing. From Phase 1 Milestone 1 onward every job runs for real and main is protected on
+# these checks.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: "8.4"
+
+jobs:
+  detect:
+    name: Detect application
+    runs-on: ubuntu-latest
+    outputs:
+      scaffolded: ${{ steps.check.outputs.scaffolded }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          if [ -f composer.json ]; then
+            echo "scaffolded=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "scaffolded=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Laravel app not scaffolded yet (Phase 0). Skipping PHP jobs."
+          fi
+
+  lint:
+    name: Pint (formatting)
+    needs: detect
+    if: needs.detect.outputs.scaffolded == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: vendor/bin/pint --test
+
+  static-analysis:
+    name: Larastan
+    needs: detect
+    if: needs.detect.outputs.scaffolded == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: vendor/bin/phpstan analyse --no-progress
+
+  tests:
+    name: Pest (unit, feature, architecture, isolation)
+    needs: detect
+    if: needs.detect.outputs.scaffolded == 'true'
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: platform_landlord
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      typesense:
+        image: typesense/typesense:27.1
+        env:
+          TYPESENSE_API_KEY: ci-typesense-key
+          TYPESENSE_DATA_DIR: /data
+        ports: ["8108:8108"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_pgsql, redis, intl, bcmath, gd
+          coverage: xdebug
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+      # Tenant isolation tests (spec §4.8) are a release blocker, so they run as their own
+      # required check rather than being buried in the rest of the suite.
+      - name: Architecture tests
+        run: vendor/bin/pest --group=architecture
+      - name: Tenant isolation tests
+        run: vendor/bin/pest --group=isolation
+      - name: Full suite with coverage
+        run: vendor/bin/pest --coverage --min=80
+
+  openapi:
+    name: OpenAPI generation
+    needs: detect
+    if: needs.detect.outputs.scaffolded == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: cp .env.example .env && php artisan key:generate
+      # The OpenAPI document is generated from code and is the single source of truth for
+      # the contract (spec §6.1). It is published as an artifact so platform-web can
+      # regenerate its TypeScript client from exactly this build.
+      - name: Generate OpenAPI document
+        run: php artisan scramble:export --path=openapi.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openapi
+          path: openapi.json
+
+  security:
+    name: Dependency audit
+    needs: detect
+    if: needs.detect.outputs.scaffolded == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: composer audit
+
+  docs:
+    name: Documentation checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # These run from Phase 0, because the docs exist from Phase 0.
+      - name: No secrets in tracked files
+        run: |
+          # Catches an assigned value on a secret-shaped key. Empty assignments (the
+          # .env.example form) are fine; a populated one is not.
+          if grep -rInE '(PASSWORD|SECRET|API_KEY|ACCESS_KEY|DSN)[[:space:]]*=[[:space:]]*[^[:space:]"'"'"']+' \
+               --include='*.env*' --include='*.yml' --include='*.yaml' --include='*.md' . \
+             | grep -vE '(local-|ci-|placeholder|example|minio-secret|postgres$|\$\{)' ; then
+            echo "::error::Possible committed secret. Use placeholders only (spec §8)."
+            exit 1
+          fi
+      - name: ADR index is complete
+        run: |
+          missing=0
+          for f in docs/adr/[0-9]*.md; do
+            base=$(basename "$f")
+            grep -q "$base" docs/adr/README.md || { echo "::error::$base missing from ADR index"; missing=1; }
+          done
+          exit $missing
