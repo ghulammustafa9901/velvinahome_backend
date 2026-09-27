@@ -5,6 +5,8 @@
 /public/storage
 /storage/*.key
 /storage/pail
+# Per-tenant local object storage (OBJECT_STORAGE_DRIVER=local): runtime data, never source.
+/storage/tenant_*
 /bootstrap/cache/*
 !/bootstrap/cache/.gitkeep
 .env
