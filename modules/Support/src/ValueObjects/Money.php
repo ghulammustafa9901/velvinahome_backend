@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Support\ValueObjects;
 
+use InvalidArgumentException;
 use JsonSerializable;
 use Modules\Support\Enums\Currency;
 use Modules\Support\Exceptions\CurrencyMismatch;
@@ -50,6 +51,32 @@ final readonly class Money implements JsonSerializable, Stringable
         $resolved = self::resolveCurrency($currency);
 
         return new self($majorUnits * $resolved->minorUnitsPerMajor(), $resolved);
+    }
+
+    /**
+     * Parse a human-entered decimal amount ("2499", "2,499.50", "0.5") into minor units by
+     * string arithmetic — never through a float. More fractional digits than the currency
+     * has are rejected rather than rounded, so nobody's price is silently changed.
+     */
+    public static function parse(string $value, Currency|string $currency): self
+    {
+        $resolved = self::resolveCurrency($currency);
+        $clean = str_replace([',', ' '], '', trim($value));
+
+        if (preg_match('/^(-?)(\d+)(?:\.(\d+))?$/', $clean, $parts) !== 1) {
+            throw new InvalidArgumentException("[{$value}] is not a valid amount.");
+        }
+
+        $digits = $resolved->minorUnitDigits();
+        $fraction = $parts[3] ?? '';
+
+        if (strlen($fraction) > $digits) {
+            throw new InvalidArgumentException("[{$value}] has more than {$digits} decimal places.");
+        }
+
+        $minor = (int) ($parts[2].str_pad($fraction, $digits, '0'));
+
+        return new self($parts[1] === '-' ? -$minor : $minor, $resolved);
     }
 
     public function plus(self $other): self

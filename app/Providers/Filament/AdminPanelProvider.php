@@ -50,6 +50,8 @@ final class AdminPanelProvider extends PanelProvider
             ->colors(['primary' => Color::Slate])
             ->discoverResources(in: base_path('modules/Identity/src/Filament/Resources'), for: 'Modules\\Identity\\Filament\\Resources')
             ->discoverResources(in: base_path('modules/Settings/src/Filament/Resources'), for: 'Modules\\Settings\\Filament\\Resources')
+            ->discoverResources(in: base_path('modules/Catalog/src/Filament/Resources'), for: 'Modules\\Catalog\\Filament\\Resources')
+            ->discoverResources(in: base_path('modules/Inventory/src/Filament/Resources'), for: 'Modules\\Inventory\\Filament\\Resources')
             ->discoverPages(in: base_path('modules/Settings/src/Filament/Pages'), for: 'Modules\\Settings\\Filament\\Pages')
             ->pages([Dashboard::class])
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn (): View => view('filament.brand-switcher', [

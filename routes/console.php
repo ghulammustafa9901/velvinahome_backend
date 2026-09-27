@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Schedule;
 use Modules\Integrations\Jobs\PublishOutboxMessages;
+use Modules\Inventory\Jobs\RunInventoryMaintenance;
 use Modules\Platform\Actions\DispatchToActiveTenants;
 
 /*
@@ -22,3 +23,15 @@ use Modules\Platform\Actions\DispatchToActiveTenants;
 Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
     fn () => PublishOutboxMessages::dispatch(),
 ))->everyMinute()->name('tenants:outbox-sweep')->withoutOverlapping()->onOneServer();
+
+// Inventory (spec §6.5): abandoned-checkout reservations, nightly ledger reconciliation and
+// daily valuation snapshots, per active tenant.
+foreach ([
+    'expire-reservations' => fn ($event) => $event->everyMinute(),
+    'reconcile' => fn ($event) => $event->dailyAt('02:30'),
+    'snapshot' => fn ($event) => $event->dailyAt('23:55'),
+] as $task => $frequency) {
+    $frequency(Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
+        fn () => RunInventoryMaintenance::dispatch($task),
+    )))->name('tenants:inventory-'.$task)->withoutOverlapping()->onOneServer();
+}

@@ -7,8 +7,10 @@ namespace Modules\Catalog\Providers;
 use Modules\Catalog\Console\SearchReindexCommand;
 use Modules\Catalog\Contracts\SearchIndex;
 use Modules\Catalog\Contracts\VariantCatalog;
+use Modules\Catalog\Contracts\VariantLookup;
 use Modules\Catalog\Listeners\RefreshSearchAfterStockChange;
 use Modules\Catalog\Support\EloquentVariantCatalog;
+use Modules\Catalog\Support\EloquentVariantLookup;
 use Modules\Catalog\Support\TypesenseSearchIndex;
 use Modules\Inventory\Events\StockChanged;
 use Modules\Support\Providers\ModuleServiceProvider;
@@ -25,6 +27,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
     {
         $this->app->bind(VariantCatalog::class, EloquentVariantCatalog::class);
         $this->app->bind(SearchIndex::class, TypesenseSearchIndex::class);
+        $this->app->bind(VariantLookup::class, EloquentVariantLookup::class);
         $this->app->singleton(Client::class, fn (): Client => new Client((array) config('scout.typesense.client-settings')));
     }
 
