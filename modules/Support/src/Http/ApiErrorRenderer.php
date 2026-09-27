@@ -22,8 +22,8 @@ use Throwable;
  *   { "error": { "code": "validation_failed", "message": "…", "details": {…}, "request_id": "…" } }
  *
  * Codes are stable and machine-readable. A 500 never carries a stack trace, path or SQL.
- * Domain exceptions opt into a status and code by class name (see CODES), so modules need
- * not depend on this renderer.
+ * Domain exceptions opt into a status and code by class name (see CODES), and into `details`
+ * with a public `details(): array` method, so modules need not depend on this renderer.
  */
 final class ApiErrorRenderer
 {
@@ -36,6 +36,7 @@ final class ApiErrorRenderer
         'InsufficientStock' => [409, 'stock_unavailable'],
         'PriceChanged' => [409, 'price_changed'],
         'IdempotencyKeyReused' => [409, 'idempotency_key_reused'],
+        'CouponUnavailable' => [409, 'coupon_unavailable'],
     ];
 
     public function __invoke(Throwable $exception, Request $request): ?JsonResponse
@@ -91,7 +92,8 @@ final class ApiErrorRenderer
                 self::CODES[class_basename($exception)][0],
                 self::CODES[class_basename($exception)][1],
                 $exception->getMessage(),
-                null,
+                // A domain exception may carry structured details, e.g. the new totals.
+                method_exists($exception, 'details') ? $exception->details() : null,
             ],
             default => [500, 'server_error', config('app.debug') ? $exception->getMessage() : 'Something went wrong.', null],
         };

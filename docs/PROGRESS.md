@@ -3,11 +3,11 @@
 Updated continuously (spec §0.2 rule 6). A milestone is only `done` when the app boots,
 migrations run, and the whole test suite passes.
 
-**Current phase:** Phase 2 — Catalog, Media, Inventory, Search, **built; awaiting the Phase 2
-checkpoint** ([docs/phase-2-checkpoint.md](phase-2-checkpoint.md)). Phase 1 was continued on
-the owner's instruction to keep going.
-**Test suite:** 223 passing on real PostgreSQL 17, Redis and Typesense 30 (architecture,
-unit, feature, isolation, multi-process concurrency). Larastan level 8 clean, Pint clean.
+**Current phase:** Phase 4 — API Stabilization (Phase 3 built:
+[docs/phase-3-checkpoint.md](phase-3-checkpoint.md)). The owner asked for Phase 3 then Phase 4.
+**Test suite:** 269 passing (1 skipped) on real PostgreSQL 17, Redis and Typesense 30
+(architecture, unit, feature, isolation, multi-process concurrency). Larastan level 8 clean,
+Pint clean.
 
 ---
 
@@ -44,12 +44,28 @@ Plan: [docs/plans/phase-2.md](plans/phase-2.md) · Report: [docs/phase-2-checkpo
 | 2.5 | Admin: catalog and inventory screens | done |
 | 2.6 | Media: safe uploads, WebP conversions | done (local disk until MinIO/R2) |
 
-## Phases 3–8
+## Phase 3 — Commerce Core
+
+Plan: [docs/plans/phase-3.md](plans/phase-3.md) · Report: [docs/phase-3-checkpoint.md](phase-3-checkpoint.md) · ADR-0015
+
+Owner decision: **COD + manual bank/wallet transfer** at launch; email provider open.
+
+| # | Milestone | Status |
+|---|---|---|
+| 3.1 | Tax, Shipping, Customers (address book) | done |
+| 3.2 | Pricing pipeline and coupons | done |
+| 3.3 | Carts (guest token, customer, merge) | done |
+| 3.4 | Payments: methods, attempts, ledger, manual transfer review, webhook intake | done (no online gateway — owner decision) |
+| 3.5 | Orders: state machine, COD confirmation, shipments, RTO, returns, refunds, notes | done |
+| 3.6 | Checkout: quote, idempotent placement | done |
+| 3.7 | Transactional emails via outbox | done (Laravel mailer; provider is configuration) |
+| 3.8 | Admin: orders, coupons, shipping, tax, payment methods, emails | done |
+
+## Phases 4–8
 
 | Phase | Scope | Status |
 |---|---|---|
-| 2 | Catalog, Media, Inventory, Search | **built** — see below |
-| 3 | Commerce Core | not started |
+| 3 | Commerce Core | **built** — see above |
 | 4 | API Stabilization — v1 contract freeze | not started (Scramble already exports OpenAPI) |
 | 5 | Next.js Storefront | not started |
 | 6 | Operations & Growth | not started |
@@ -58,5 +74,5 @@ Plan: [docs/plans/phase-2.md](plans/phase-2.md) · Report: [docs/phase-2-checkpo
 
 ## Decision log pointers
 
-- ADRs 0001–0014: [docs/adr/](adr/README.md)
+- ADRs 0001–0015: [docs/adr/](adr/README.md)
 - Open business decisions (spec §16): tracked in the checkpoint reports

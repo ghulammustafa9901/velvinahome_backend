@@ -6,12 +6,13 @@ namespace Modules\Integrations\Support;
 
 use Illuminate\Contracts\Container\Container;
 use Modules\Integrations\Contracts\OutboxHandler;
+use Modules\Integrations\Contracts\OutboxHandlers;
 
 /**
  * event type => handler class. Modules register their handlers from their service
  * providers; an event type without a handler stays pending and is reported, never dropped.
  */
-final class OutboxHandlerRegistry
+final class OutboxHandlerRegistry implements OutboxHandlers
 {
     /** @var array<string, class-string<OutboxHandler>> */
     private array $handlers = [];

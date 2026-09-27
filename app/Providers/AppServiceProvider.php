@@ -56,6 +56,13 @@ final class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('search', fn (Request $request): Limit => Limit::perMinute(60)
             ->by($tenantKey().'|'.$request->ip()));
+
+        RateLimiter::for('cart', fn (Request $request): Limit => Limit::perMinute(90)
+            ->by($tenantKey().'|'.($request->user('customer')?->getAuthIdentifier() ?? $request->ip())));
+
+        // Placing orders is expensive and a card-testing / fake-COD target: tight per client.
+        RateLimiter::for('checkout', fn (Request $request): Limit => Limit::perMinute(20)
+            ->by($tenantKey().'|'.($request->user('customer')?->getAuthIdentifier() ?? $request->ip())));
     }
 
     /**

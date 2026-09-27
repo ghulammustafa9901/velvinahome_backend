@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Contracts;
 
+use Modules\Catalog\Data\SellableVariant;
 use Modules\Catalog\Data\VariantReference;
 use Modules\Support\ValueObjects\Money;
 
@@ -21,6 +22,15 @@ interface VariantCatalog
      * @return array<int, VariantReference> keyed by variant id
      */
     public function findMany(array $variantIds): array;
+
+    /**
+     * Current selling data for variants, keyed by variant ULID. Unknown ULIDs are absent;
+     * variants of drafts, archived or deleted products are present but not purchasable.
+     *
+     * @param  array<string>  $variantUlids
+     * @return array<string, SellableVariant>
+     */
+    public function sellable(array $variantUlids): array;
 
     /**
      * Weighted-average unit cost, maintained by Inventory on goods receipt (spec §6.5.5).

@@ -25,10 +25,16 @@ use Modules\Support\ValueObjects\Money;
  * "money never becomes a float" rule in ADR-0008 stays true in practice rather than by
  * discipline.
  *
+ * A record holding many amounts in one currency (an order and its totals) shares a single
+ * currency column instead: `'total' => MoneyCast::class.':currency'` reads `total_amount`
+ * and `currency`.
+ *
  * @implements CastsAttributes<Money|null, Money|null>
  */
 final class MoneyCast implements CastsAttributes
 {
+    public function __construct(private readonly ?string $sharedCurrencyColumn = null) {}
+
     /**
      * @param  array<string, mixed>  $attributes
      */
@@ -50,6 +56,10 @@ final class MoneyCast implements CastsAttributes
      */
     public function set(Model $model, string $key, mixed $value, array $attributes): array
     {
+        if ($value === null && $this->sharedCurrencyColumn !== null) {
+            return [$this->amountColumn($key) => null];
+        }
+
         if ($value === null) {
             return [
                 $this->amountColumn($key) => null,
@@ -79,6 +89,6 @@ final class MoneyCast implements CastsAttributes
 
     private function currencyColumn(string $key): string
     {
-        return $key.'_currency';
+        return $this->sharedCurrencyColumn ?? $key.'_currency';
     }
 }

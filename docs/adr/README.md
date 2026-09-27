@@ -21,6 +21,7 @@ accepted — it is **superseded** by a newer ADR, which keeps the reasoning hist
 | [0012](0012-tenant-scoping-of-cache-sessions-and-framework-singletons.md) | Tenant scoping of cache, sessions and framework singletons | Accepted |
 | [0013](0013-owner-identity-without-credentials-and-handoff-tokens.md) | Company owner identity without credentials; hand-off tokens | Accepted |
 | [0014](0014-search-infrastructure-typesense-30.md) | Typesense 30 specifics — synonym sets, SKU tokens, local runtime | Accepted |
+| [0015](0015-order-payment-and-checkout-mechanics.md) | Order, payment and checkout mechanics for launch (COD + manual transfer) | Accepted |
 
 ## Deferred — ADRs to write when the decision is reached
 
@@ -28,8 +29,8 @@ accepted — it is **superseded** by a newer ADR, which keeps the reasoning hist
 |---|---|---|
 | PostgreSQL hosting (self-managed on the VPS vs managed service) — weigh point-in-time recovery against per-tenant database count | owner budget decision | Phase 7 |
 | Next.js hosting (self-hosted Node vs managed platform) — weigh per-tenant cost | owner decision | Phase 5 |
-| Transactional email provider (SES / Postmark / Resend) | owner decision, spec §16.3 | Phase 3 |
-| First online payment gateway (default PayFast) | owner decision, spec §16.2 | Phase 3 |
+| Transactional email provider (SES / Postmark / Resend) — mail already goes through Laravel's mailer via the outbox (ADR-0015), so this is configuration | owner decision, spec §16.3 | before launch |
+| First online payment gateway (default PayFast) — owner chose COD + manual transfer for launch; the adapter contract and webhook intake exist (ADR-0015) | owner decision, spec §16.2 | post-launch |
 | Direct browser-to-Typesense querying with scoped search-only keys | measured need after Phase 5 | post-launch |
 | Shared stock across brands of one company (explicit sync, never a cross-database query) | a real client requirement | post-v1 |
 

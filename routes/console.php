@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Schedule;
 use Modules\Integrations\Jobs\PublishOutboxMessages;
 use Modules\Inventory\Jobs\RunInventoryMaintenance;
+use Modules\Orders\Jobs\CancelUnpaidOrdersJob;
 use Modules\Platform\Actions\DispatchToActiveTenants;
 
 /*
@@ -35,3 +36,8 @@ foreach ([
         fn () => RunInventoryMaintenance::dispatch($task),
     )))->name('tenants:inventory-'.$task)->withoutOverlapping()->onOneServer();
 }
+
+// Orders: transfer orders unpaid past the brand's payment window release their stock.
+Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
+    fn () => CancelUnpaidOrdersJob::dispatch(),
+))->everyFifteenMinutes()->name('tenants:orders-cancel-unpaid')->withoutOverlapping()->onOneServer();

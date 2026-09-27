@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\Catalog\Support;
 
 use Modules\Catalog\Contracts\VariantCatalog;
+use Modules\Catalog\Data\SellableVariant;
 use Modules\Catalog\Data\VariantReference;
+use Modules\Catalog\Models\Category;
 use Modules\Catalog\Models\ProductVariant;
 use Modules\Support\ValueObjects\Money;
 
@@ -34,6 +36,59 @@ final class EloquentVariantCatalog implements VariantCatalog
         }
 
         return $references;
+    }
+
+    public function sellable(array $variantUlids): array
+    {
+        if ($variantUlids === []) {
+            return [];
+        }
+
+        $variants = ProductVariant::withTrashed()
+            ->with(['product' => fn ($query) => $query->withTrashed()->with(['categories', 'media']), 'optionValues.option'])
+            ->whereIn('ulid', array_values(array_unique($variantUlids)))
+            ->get();
+
+        $categoryIds = $variants->flatMap(fn (ProductVariant $variant) => $variant->product->categories->pluck('id'))->unique()->values()->all();
+        $ancestors = $categoryIds === [] ? collect() : Category::query()
+            ->join('category_closure', 'category_closure.ancestor_id', '=', 'categories.id')
+            ->whereIn('category_closure.descendant_id', $categoryIds)
+            ->get(['categories.ulid', 'category_closure.descendant_id'])
+            ->groupBy('descendant_id');
+
+        $result = [];
+
+        foreach ($variants as $variant) {
+            $product = $variant->product;
+            $categoryUlids = [];
+
+            foreach ($product->categories as $category) {
+                foreach ($ancestors->get($category->id) ?? [] as $ancestor) {
+                    $categoryUlids[] = (string) $ancestor->getAttribute('ulid');
+                }
+            }
+
+            $categoryUlids = array_values(array_unique($categoryUlids));
+
+            $result[$variant->ulid] = new SellableVariant(
+                id: $variant->id,
+                ulid: $variant->ulid,
+                productUlid: $product->ulid,
+                productTitle: $product->title,
+                variantTitle: $variant->title,
+                sku: $variant->sku,
+                price: $variant->price,
+                compareAtPrice: $variant->compare_at_price,
+                optionValues: $variant->optionValues->mapWithKeys(fn ($value): array => [$value->option->name => $value->value])->all(),
+                weightGrams: $variant->weight_grams,
+                allowBackorder: $variant->allow_backorder,
+                purchasable: ! $variant->trashed() && ! $product->trashed() && $product->isPublished(),
+                categoryUlids: $categoryUlids,
+                imageUrl: $product->getFirstMediaUrl('images', 'thumb') ?: null,
+            );
+        }
+
+        return $result;
     }
 
     public function recordAverageCost(int $variantId, Money $cost): void

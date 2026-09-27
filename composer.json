@@ -17,6 +17,7 @@
         "spatie/laravel-activitylog": "^5.1",
         "spatie/laravel-data": "^4.23",
         "spatie/laravel-medialibrary": "^11.23",
+        "spatie/laravel-model-states": "^2.11",
         "spatie/laravel-permission": "^8.3",
         "stancl/tenancy": "^3.10",
         "typesense/typesense-php": "^5.0"
@@ -44,7 +45,16 @@
             "Modules\\Integrations\\": "modules/Integrations/src/",
             "Modules\\Seo\\": "modules/Seo/src/",
             "Modules\\Catalog\\": "modules/Catalog/src/",
-            "Modules\\Inventory\\": "modules/Inventory/src/"
+            "Modules\\Inventory\\": "modules/Inventory/src/",
+            "Modules\\Tax\\": "modules/Tax/src/",
+            "Modules\\Customers\\": "modules/Customers/src/",
+            "Modules\\Shipping\\": "modules/Shipping/src/",
+            "Modules\\Pricing\\": "modules/Pricing/src/",
+            "Modules\\Cart\\": "modules/Cart/src/",
+            "Modules\\Payments\\": "modules/Payments/src/",
+            "Modules\\Orders\\": "modules/Orders/src/",
+            "Modules\\Checkout\\": "modules/Checkout/src/",
+            "Modules\\Notifications\\": "modules/Notifications/src/"
         }
     },
     "autoload-dev": {

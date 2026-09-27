@@ -52,6 +52,12 @@ final class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: base_path('modules/Settings/src/Filament/Resources'), for: 'Modules\\Settings\\Filament\\Resources')
             ->discoverResources(in: base_path('modules/Catalog/src/Filament/Resources'), for: 'Modules\\Catalog\\Filament\\Resources')
             ->discoverResources(in: base_path('modules/Inventory/src/Filament/Resources'), for: 'Modules\\Inventory\\Filament\\Resources')
+            ->discoverResources(in: base_path('modules/Orders/src/Filament/Resources'), for: 'Modules\\Orders\\Filament\\Resources')
+            ->discoverResources(in: base_path('modules/Pricing/src/Filament/Resources'), for: 'Modules\\Pricing\\Filament\\Resources')
+            ->discoverResources(in: base_path('modules/Shipping/src/Filament/Resources'), for: 'Modules\\Shipping\\Filament\\Resources')
+            ->discoverResources(in: base_path('modules/Tax/src/Filament/Resources'), for: 'Modules\\Tax\\Filament\\Resources')
+            ->discoverResources(in: base_path('modules/Payments/src/Filament/Resources'), for: 'Modules\\Payments\\Filament\\Resources')
+            ->discoverResources(in: base_path('modules/Notifications/src/Filament/Resources'), for: 'Modules\\Notifications\\Filament\\Resources')
             ->discoverPages(in: base_path('modules/Settings/src/Filament/Pages'), for: 'Modules\\Settings\\Filament\\Pages')
             ->pages([Dashboard::class])
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn (): View => view('filament.brand-switcher', [
