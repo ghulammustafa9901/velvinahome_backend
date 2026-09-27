@@ -3,10 +3,11 @@
 Updated continuously (spec §0.2 rule 6). A milestone is only `done` when the app boots,
 migrations run, and the whole test suite passes.
 
-**Current phase:** Phase 1 — Platform Foundation, **built; awaiting the Phase 1 checkpoint**
-([docs/phase-1-checkpoint.md](phase-1-checkpoint.md)).
-**Test suite:** 155 passing on real PostgreSQL 17 and Redis (architecture, unit, feature,
-isolation). Larastan level 8 clean, Pint clean.
+**Current phase:** Phase 2 — Catalog, Media, Inventory, Search, **built; awaiting the Phase 2
+checkpoint** ([docs/phase-2-checkpoint.md](phase-2-checkpoint.md)). Phase 1 was continued on
+the owner's instruction to keep going.
+**Test suite:** 223 passing on real PostgreSQL 17, Redis and Typesense 30 (architecture,
+unit, feature, isolation, multi-process concurrency). Larastan level 8 clean, Pint clean.
 
 ---
 
@@ -30,11 +31,24 @@ Plan: [docs/plans/phase-1.md](plans/phase-1.md).
 | 1.7 | Settings and feature flags | done | Encrypted settings, cached per tenant; plan defaults + tenant overrides; `GET /api/v1/storefront/config`; `feature:` middleware → `403 feature_disabled` |
 | 1.8 | Tenant isolation suite | done (search pending) | 9 of 10 channels proven, including sibling brands of one company and dedicated topology. Search channel arrives with Typesense in Phase 2 |
 
-## Phases 2–8
+## Phase 2 — Catalog, Media, Inventory, Search
+
+Plan: [docs/plans/phase-2.md](plans/phase-2.md) · Report: [docs/phase-2-checkpoint.md](phase-2-checkpoint.md)
+
+| # | Milestone | Status |
+|---|---|---|
+| 2.1 | Seo + Catalog core | done |
+| 2.2 | Inventory ledger (incl. multi-process concurrency tests) | done |
+| 2.3 | Search (Typesense 30, per-tenant collections and synonym sets) | done — ADR-0014 |
+| 2.4 | Storefront API: catalog, search, redirects; error envelope | done |
+| 2.5 | Admin: catalog and inventory screens | done |
+| 2.6 | Media: safe uploads, WebP conversions | done (local disk until MinIO/R2) |
+
+## Phases 3–8
 
 | Phase | Scope | Status |
 |---|---|---|
-| 2 | Catalog, Media, Inventory, Search | not started — needs Typesense and MinIO (or Docker) on the dev machine |
+| 2 | Catalog, Media, Inventory, Search | **built** — see below |
 | 3 | Commerce Core | not started |
 | 4 | API Stabilization — v1 contract freeze | not started (Scramble already exports OpenAPI) |
 | 5 | Next.js Storefront | not started |
@@ -44,5 +58,5 @@ Plan: [docs/plans/phase-1.md](plans/phase-1.md).
 
 ## Decision log pointers
 
-- ADRs 0001–0013: [docs/adr/](adr/README.md)
+- ADRs 0001–0014: [docs/adr/](adr/README.md)
 - Open business decisions (spec §16): tracked in the checkpoint reports

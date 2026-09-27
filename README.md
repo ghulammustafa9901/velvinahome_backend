@@ -5,10 +5,11 @@ panel, platform (landlord) control panel, queue workers and tenant lifecycle too
 
 **One tenant = one brand = one website = one PostgreSQL database.**
 
-> **Current status: Phase 1 (Platform Foundation) built — awaiting the Phase 1 checkpoint.**
-> Tenancy, provisioning, identity, both admin shells, settings/flags, outbox and the tenant
-> isolation suite are in place. No commerce module exists yet (Phase 2 onward).
-> See [docs/phase-1-checkpoint.md](docs/phase-1-checkpoint.md) and [docs/PROGRESS.md](docs/PROGRESS.md).
+> **Current status: Phases 1 and 2 built — awaiting the Phase 2 checkpoint.**
+> Tenancy, identity, both admin panels, settings/flags and outbox (Phase 1); catalog,
+> inventory ledger, Typesense search, media and the storefront catalog API (Phase 2).
+> Cart, checkout, orders and payments are Phase 3.
+> See [docs/phase-2-checkpoint.md](docs/phase-2-checkpoint.md) and [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Documentation
 
@@ -41,7 +42,8 @@ services run natively from a portable toolchain instead (ADR-0009):
 # every new shell: toolchain on PATH (PHP 8.4, composer, psql, redis, git, node)
 . $env:USERPROFILE\devtools\env.ps1
 
-# after a reboot: start PostgreSQL 17 and Redis
+# after a reboot: PostgreSQL 17, Redis, Typesense (in WSL2), the dev server on :8000 and a
+# queue worker (search indexing and image conversions are queued)
 powershell -File $env:USERPROFILE\devtools\start-services.ps1
 ```
 
@@ -89,6 +91,8 @@ switcher in the top bar moves you to the other.
 | `tenants:migrate [--tenant=]` | Every tenant, one transaction each; non-zero exit on any failure |
 | `platform:user {email} {name} --role=` | Platform panel user (password shown once) |
 | `platform:seed-demo` | Local demo companies and brands |
+| `platform:seed-demo-catalog` | Sample catalog, stock and synonyms in every demo brand (not in production) |
+| `search:reindex [--tenant=]` | Rebuild brands' Typesense collections from PostgreSQL |
 
 ## Quality gates
 

@@ -86,9 +86,16 @@ jobs:
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 5s --health-timeout 3s --health-retries 10
+      typesense:
+        image: typesense/typesense:30.2
+        env:
+          TYPESENSE_API_KEY: ci-typesense-key
+          TYPESENSE_DATA_DIR: /tmp
+        ports: ["8108:8108"]
 
     # Throwaway CI-only credentials for the service containers above.
     env:
+      TYPESENSE_API_KEY: ci-typesense-key
       DB_LANDLORD_PASSWORD: ci-landlord-app
       DB_LANDLORD_MIGRATOR_PASSWORD: ci-landlord-migrator
       DB_PROVISIONER_PASSWORD: ci-provisioner

@@ -20,6 +20,7 @@ accepted — it is **superseded** by a newer ADR, which keeps the reasoning hist
 | [0011](0011-module-autoloading-through-root-psr4.md) | Module autoloading through the root composer.json | Accepted |
 | [0012](0012-tenant-scoping-of-cache-sessions-and-framework-singletons.md) | Tenant scoping of cache, sessions and framework singletons | Accepted |
 | [0013](0013-owner-identity-without-credentials-and-handoff-tokens.md) | Company owner identity without credentials; hand-off tokens | Accepted |
+| [0014](0014-search-infrastructure-typesense-30.md) | Typesense 30 specifics — synonym sets, SKU tokens, local runtime | Accepted |
 
 ## Deferred — ADRs to write when the decision is reached
 
