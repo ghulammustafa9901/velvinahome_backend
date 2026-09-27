@@ -12,8 +12,12 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * Seeds every permission and the six default roles into the current tenant. Idempotent:
- * re-running converges the roles onto the matrix in StaffRole without duplicating rows.
+ * Seeds the permissions and the six default roles. Runs at provisioning and after every
+ * `tenants:migrate`, so it converges without undoing a brand's own changes:
+ *
+ *  - a role created now gets the full default matrix;
+ *  - an existing role only gains permissions that did not exist before this run — a
+ *    permission a brand deliberately removed from its Manager role stays removed.
  */
 final class StaffRolesSeeder extends Seeder
 {
@@ -21,14 +25,31 @@ final class StaffRolesSeeder extends Seeder
     {
         $registrar->forgetCachedPermissions();
 
+        $newPermissions = [];
+
         foreach (StaffPermission::cases() as $permission) {
-            Permission::findOrCreate($permission->value, 'staff');
+            $model = Permission::findOrCreate($permission->value, 'staff');
+
+            if ($model->wasRecentlyCreated) {
+                $newPermissions[] = $permission->value;
+            }
         }
 
         foreach (StaffRole::cases() as $role) {
-            Role::findOrCreate($role->value, 'staff')->syncPermissions(
-                array_map(fn (StaffPermission $permission): string => $permission->value, $role->permissions()),
-            );
+            $defaults = array_map(fn (StaffPermission $permission): string => $permission->value, $role->permissions());
+            $model = Role::findOrCreate($role->value, 'staff');
+
+            if ($model->wasRecentlyCreated) {
+                $model->syncPermissions($defaults);
+
+                continue;
+            }
+
+            $additions = array_values(array_intersect($defaults, $newPermissions));
+
+            if ($additions !== []) {
+                $model->givePermissionTo($additions);
+            }
         }
 
         $registrar->forgetCachedPermissions();

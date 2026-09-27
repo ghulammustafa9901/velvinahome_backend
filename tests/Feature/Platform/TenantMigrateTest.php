@@ -45,6 +45,21 @@ it('applies pending migrations to every tenant and records each run', function (
         ->and(collect($runs)->pluck('status')->unique()->all())->toBe(['succeeded']);
 });
 
+it('converges module defaults after migrating without undoing a brand\'s own role changes', function (): void {
+    $brand = TestPlatform::brand(TestPlatform::BRAND_C);
+
+    $brand->run(fn () => Spatie\Permission\Models\Role::findByName('Manager', 'staff')->revokePermissionTo('customers.manage'));
+
+    try {
+        app(MigrateTenants::class)->handle([TestPlatform::BRAND_C]);
+
+        expect($brand->run(fn (): bool => Spatie\Permission\Models\Role::findByName('Manager', 'staff')->hasPermissionTo('customers.manage')))->toBeFalse()
+            ->and($brand->run(fn (): int => Modules\Inventory\Models\Location::query()->count()))->toBeGreaterThan(0);
+    } finally {
+        $brand->run(fn () => Spatie\Permission\Models\Role::findByName('Manager', 'staff')->givePermissionTo('customers.manage'));
+    }
+});
+
 it('rolls a tenant back completely when one of several pending migrations fails', function (): void {
     registerProbeMigrations(base_path('tests/Support/Migrations/Failing'));
 

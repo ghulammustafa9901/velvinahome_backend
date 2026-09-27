@@ -8,6 +8,7 @@ use Modules\Platform\Enums\TenantStatus;
 use Modules\Platform\Models\Tenant;
 use Modules\Platform\Models\TenantMigrationRun;
 use Modules\Support\Contracts\Action;
+use Throwable;
 
 /**
  * `tenants:migrate`: every tenant database, every deploy (spec §4.6, §4.7).
@@ -19,7 +20,10 @@ use Modules\Support\Contracts\Action;
  */
 final class MigrateTenants implements Action
 {
-    public function __construct(private readonly MigrateTenant $migrateTenant) {}
+    public function __construct(
+        private readonly MigrateTenant $migrateTenant,
+        private readonly SeedTenant $seedTenant,
+    ) {}
 
     /**
      * @param  list<string>|null  $onlySlugs
@@ -39,7 +43,20 @@ final class MigrateTenants implements Action
             ->orderBy('slug'));
 
         foreach ($tenants as $tenant) {
-            $runs[] = $this->migrateTenant->handle($tenant);
+            $run = $this->migrateTenant->handle($tenant);
+
+            // Converge module defaults (new permissions, a default location for a module
+            // that did not exist when the brand was provisioned). Seeders are idempotent and
+            // never undo a brand's own changes. Provisioning tenants seed as their own step.
+            if ($run->status === 'succeeded' && $tenant->status !== TenantStatus::Provisioning) {
+                try {
+                    $this->seedTenant->handle($tenant);
+                } catch (Throwable $exception) {
+                    $run->forceFill(['status' => 'failed', 'error' => 'Defaults: '.mb_substr($exception->getMessage(), 0, 3900)])->save();
+                }
+            }
+
+            $runs[] = $run;
         }
 
         return $runs;
