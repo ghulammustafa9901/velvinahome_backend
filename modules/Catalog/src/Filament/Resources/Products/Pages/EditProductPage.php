@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Modules\Catalog\Filament\Resources\Products\Pages;
 
 use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
+use Modules\Catalog\Actions\AttachProductImage;
 use Modules\Catalog\Actions\ChangeProductStatus;
 use Modules\Catalog\Actions\UpdateProductDetails;
 use Modules\Catalog\Data\ProductDetailsData;
@@ -59,6 +63,28 @@ final class EditProductPage extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('addImage')
+                ->label('Add image')
+                ->icon(Heroicon::OutlinedPhoto)
+                ->visible(fn (): bool => StaffAccess::can('products.manage'))
+                ->schema([
+                    FileUpload::make('image')->required()->disk('local')->directory('image-uploads')
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/avif'])
+                        ->maxSize(AttachProductImage::MAX_BYTES / 1024),
+                    TextInput::make('alt')->label('Alt text')->maxLength(200)
+                        ->helperText('Describe the image for shoppers using screen readers, and for search engines.'),
+                ])
+                ->action(function (array $data): void {
+                    /** @var Product $product */
+                    $product = $this->getRecord();
+                    $disk = Storage::disk('local');
+
+                    try {
+                        app(AttachProductImage::class)->handle($product, $disk->path((string) $data['image']), $data['alt'] ?? null, StaffAccess::actor());
+                    } finally {
+                        $disk->delete((string) $data['image']);
+                    }
+                }),
             $this->statusAction('publish', 'Publish', ProductStatus::Active, 'success', Heroicon::OutlinedEye, 'products.publish'),
             $this->statusAction('unpublish', 'Back to draft', ProductStatus::Draft, 'gray', Heroicon::OutlinedEyeSlash, 'products.manage'),
             $this->statusAction('archive', 'Archive', ProductStatus::Archived, 'warning', Heroicon::OutlinedArchiveBox, 'products.manage'),

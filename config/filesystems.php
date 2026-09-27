@@ -58,6 +58,8 @@ return [
         'tenant_media' => env('OBJECT_STORAGE_DRIVER', 's3') === 'local' ? [
             'driver' => 'local',
             'root' => storage_path('app/media'),
+            // Served by the tenant API host itself (dev only), see Catalog routes.
+            'url' => '/api/v1/media',
             'visibility' => 'public',
             'throw' => true,
         ] : [

@@ -99,7 +99,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: pdo_pgsql, pgsql, intl, bcmath, gd
+          extensions: pdo_pgsql, pgsql, intl, bcmath, gd, exif
           coverage: xdebug
       # pg_dump must match the server's major version for tenant:export.
       - name: PostgreSQL 17 client

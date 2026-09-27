@@ -37,7 +37,7 @@ final class CatalogQuery
             ->where('status', ProductStatus::Active->value)
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now())
-            ->with(['variants', 'brand']);
+            ->with(['variants', 'brand', 'media']);
     }
 
     /**

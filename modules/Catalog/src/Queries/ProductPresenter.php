@@ -13,6 +13,7 @@ use Modules\Catalog\Models\ProductVariant;
 use Modules\Inventory\Contracts\StockReader;
 use Modules\Seo\Contracts\Seo;
 use Modules\Support\ValueObjects\Money;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * The storefront API shape of products (api-conventions §2): ULIDs only, money as
@@ -63,6 +64,7 @@ final class ProductPresenter
                 'max' => Money::max(...$prices->all()),
             ],
             'in_stock' => $variants->contains(fn (ProductVariant $variant): bool => $variant->allow_backorder || ($available[$variant->id] ?? 0) > 0),
+            'image' => ($first = $product->getFirstMedia('images')) === null ? null : $this->image($first),
             'tags' => $product->tags,
             'published_at' => $product->published_at?->toIso8601ZuluString(),
             'created_at' => $product->created_at->toIso8601ZuluString(),
@@ -80,6 +82,7 @@ final class ProductPresenter
 
         return $this->summary($product, $available) + [
             'description' => $product->description,
+            'images' => $product->getMedia('images')->map(fn (Media $media): array => $this->image($media))->values()->all(),
             'specifications' => (object) $product->specifications,
             'options' => $product->options->map(fn (ProductOption $option): array => [
                 'name' => $option->name,
@@ -113,6 +116,30 @@ final class ProductPresenter
                 'robots' => $meta->robots ?? 'index,follow',
                 'og_image_url' => $meta->ogImageUrl,
             ],
+        ];
+    }
+
+    /**
+     * Explicit dimensions and every generated size, so the storefront can render responsive,
+     * layout-stable images (spec §7.7). A conversion not generated yet is null.
+     *
+     * @return array<string, mixed>
+     */
+    private function image(Media $media): array
+    {
+        $sizes = [];
+
+        foreach (Product::IMAGE_CONVERSIONS as $name => $width) {
+            $sizes[$name] = $media->hasGeneratedConversion($name) ? ['url' => $media->getUrl($name), 'width' => $width] : null;
+        }
+
+        return [
+            'id' => $media->uuid,
+            'alt' => (string) $media->getCustomProperty('alt', ''),
+            'url' => $media->getUrl(),
+            'width' => $media->getCustomProperty('width'),
+            'height' => $media->getCustomProperty('height'),
+            'sizes' => $sizes,
         ];
     }
 }
