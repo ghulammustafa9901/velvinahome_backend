@@ -80,6 +80,23 @@ it('indexes only published products and removes archived ones', function (): voi
     expect(searchIn(TestPlatform::BRAND_B, $this->word))->toBe([]);
 });
 
+it('applies a brand\'s synonyms to that brand only', function (): void {
+    $local = 'takia'.strtolower(Str::random(4));
+    $product = TestPlatform::brand(TestPlatform::BRAND_B)->run(
+        fn () => TestCatalog::simpleProduct(['title' => 'Velvet '.$this->word], publish: true),
+    );
+    TestPlatform::brand(TestPlatform::BRAND_C)->run(
+        fn () => TestCatalog::simpleProduct(['title' => 'Velvet '.$this->word], publish: true),
+    );
+
+    TestPlatform::brand(TestPlatform::BRAND_B)->run(
+        fn () => app(Modules\Catalog\Actions\SaveSearchSynonym::class)->handle(null, [$local, $this->word]),
+    );
+
+    expect(searchIn(TestPlatform::BRAND_B, $local))->toContain($product->ulid)
+        ->and(searchIn(TestPlatform::BRAND_C, $local))->toBe([]);
+});
+
 it('keeps in_stock in the search document in step with the ledger', function (): void {
     $brand = TestPlatform::brand(TestPlatform::BRAND_B);
     $product = $brand->run(fn () => TestCatalog::simpleProduct(['title' => 'Stocked '.$this->word], publish: true));

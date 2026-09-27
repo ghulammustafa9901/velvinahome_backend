@@ -120,6 +120,8 @@ trait ProductSearch
             // No custom token separators: a SKU such as "VH-CC-001" must stay one token, or
             // a partial SKU would match every product sharing its prefix.
             'default_sorting_field' => 'created_at',
+            // Per-tenant synonyms (Roman Urdu and local spellings), managed in the admin.
+            'synonym_sets' => [TypesenseSynonyms::setName()],
         ];
     }
 

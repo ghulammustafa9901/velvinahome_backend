@@ -11,10 +11,16 @@ use Typesense\Exceptions\ObjectNotFound;
 
 final class TypesenseSearchIndex implements SearchIndex
 {
-    public function __construct(private readonly Client $typesense) {}
+    public function __construct(
+        private readonly Client $typesense,
+        private readonly TypesenseSynonyms $synonyms,
+    ) {}
 
     public function ensureCollections(): void
     {
+        // The collection references the tenant's synonym set, so the set comes first.
+        $this->synonyms->sync();
+
         $schema = (new Product)->typesenseCollectionSchema();
 
         try {
@@ -51,5 +57,7 @@ final class TypesenseSearchIndex implements SearchIndex
         } catch (ObjectNotFound) {
             // Already gone.
         }
+
+        $this->synonyms->delete();
     }
 }
