@@ -28,6 +28,8 @@ final class IdentityServiceProvider extends ModuleServiceProvider
 
     protected function bootModule(): void
     {
+        $this->loadViewsFrom($this->modulePath().'/resources/views', 'identity');
+
         Event::listen(Attempting::class, [AuditStaffAuthentication::class, 'handleAttempting']);
         Event::listen(Failed::class, [AuditStaffAuthentication::class, 'handleFailed']);
         Event::listen(Login::class, [AuditStaffAuthentication::class, 'handleLogin']);

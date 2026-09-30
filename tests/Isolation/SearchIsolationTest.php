@@ -30,7 +30,9 @@ function searchIn(string $slug, string $query): array
 }
 
 beforeEach(function (): void {
-    $this->word = 'zephyrine'.strtolower(Str::random(4));
+    // Fully random: fixture brands keep products from earlier runs, and typo tolerance would
+    // otherwise match a similar word left behind by another run.
+    $this->word = 'zq'.strtolower(Str::random(12));
     $this->sku = 'SRCH-'.strtoupper(Str::random(8));
 });
 
@@ -71,13 +73,13 @@ it('indexes only published products and removes archived ones', function (): voi
         fn () => TestCatalog::simpleProduct(['title' => 'Draft '.$this->word]),
     );
 
-    expect(searchIn(TestPlatform::BRAND_B, $this->word))->toBe([]);
+    expect(searchIn(TestPlatform::BRAND_B, $this->word))->not->toContain($product->ulid);
 
     TestPlatform::brand(TestPlatform::BRAND_B)->run(fn () => app(ChangeProductStatus::class)->handle($product, ProductStatus::Active));
     expect(searchIn(TestPlatform::BRAND_B, $this->word))->toContain($product->ulid);
 
     TestPlatform::brand(TestPlatform::BRAND_B)->run(fn () => app(ChangeProductStatus::class)->handle($product->refresh(), ProductStatus::Archived));
-    expect(searchIn(TestPlatform::BRAND_B, $this->word))->toBe([]);
+    expect(searchIn(TestPlatform::BRAND_B, $this->word))->not->toContain($product->ulid);
 });
 
 it('applies a brand\'s synonyms to that brand only', function (): void {

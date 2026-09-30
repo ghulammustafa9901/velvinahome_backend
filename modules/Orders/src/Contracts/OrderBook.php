@@ -30,4 +30,12 @@ interface OrderBook
      * @return array<string, mixed>|null
      */
     public function describe(string $orderUlid): ?array;
+
+    /**
+     * The customer's most recent delivered (or completed) order containing this product, for
+     * "verified purchase" checks.
+     *
+     * @return string|null order ULID
+     */
+    public function deliveredOrderWithProduct(int $customerId, string $productUlid): ?string;
 }

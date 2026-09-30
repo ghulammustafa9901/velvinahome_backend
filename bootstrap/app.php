@@ -11,6 +11,7 @@ use Modules\Platform\Http\Middleware\EnsureFeatureEnabled;
 use Modules\Platform\Http\Middleware\EnsurePlatformHost;
 use Modules\Platform\Http\Middleware\InitializeTenancyByHost;
 use Modules\Platform\Http\Middleware\InitializeTenancyForPanelRequest;
+use Modules\Support\Http\ApiCachePolicy;
 use Modules\Support\Http\ApiErrorRenderer;
 use Modules\Support\Http\AssignRequestId;
 
@@ -38,6 +39,17 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(
             before: EncryptCookies::class,
             prepend: InitializeTenancyForPanelRequest::class,
+        );
+        // A flag-gated endpoint answers 403 feature_disabled before asking anyone to sign in.
+        $middleware->prependToPriorityList(
+            before: EncryptCookies::class,
+            prepend: EnsureFeatureEnabled::class,
+        );
+        // Outermost on API routes, so every response — including 401s and 429s produced by
+        // later middleware — gets the cache policy.
+        $middleware->prependToPriorityList(
+            before: InitializeTenancyByHost::class,
+            prepend: ApiCachePolicy::class,
         );
 
         $middleware->trustProxies(at: env('TRUSTED_PROXIES', '127.0.0.1'));

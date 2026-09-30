@@ -58,6 +58,8 @@ final class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: base_path('modules/Tax/src/Filament/Resources'), for: 'Modules\\Tax\\Filament\\Resources')
             ->discoverResources(in: base_path('modules/Payments/src/Filament/Resources'), for: 'Modules\\Payments\\Filament\\Resources')
             ->discoverResources(in: base_path('modules/Notifications/src/Filament/Resources'), for: 'Modules\\Notifications\\Filament\\Resources')
+            ->discoverResources(in: base_path('modules/Content/src/Filament/Resources'), for: 'Modules\\Content\\Filament\\Resources')
+            ->discoverResources(in: base_path('modules/Reviews/src/Filament/Resources'), for: 'Modules\\Reviews\\Filament\\Resources')
             ->discoverPages(in: base_path('modules/Settings/src/Filament/Pages'), for: 'Modules\\Settings\\Filament\\Pages')
             ->pages([Dashboard::class])
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn (): View => view('filament.brand-switcher', [

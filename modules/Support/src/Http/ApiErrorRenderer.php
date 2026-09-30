@@ -57,8 +57,9 @@ final class ApiErrorRenderer
         ], $status);
 
         if ($exception instanceof HttpExceptionInterface) {
+            // Rate-limit headers arrive as integers (Retry-After, X-RateLimit-*).
             foreach ($exception->getHeaders() as $name => $value) {
-                $response->headers->set($name, $value);
+                $response->headers->set($name, is_array($value) ? array_map('strval', $value) : (string) $value);
             }
         }
 

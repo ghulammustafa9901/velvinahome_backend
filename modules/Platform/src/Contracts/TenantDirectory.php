@@ -25,4 +25,11 @@ interface TenantDirectory
      * @return T
      */
     public function runIn(string $tenantId, callable $callback): mixed;
+
+    /**
+     * The current brand's storefront origin (e.g. "https://velvinahome.com"), for links in
+     * emails. Always from the landlord's domain records — never from request input, so a
+     * link in an email can never be pointed at another site.
+     */
+    public function storefrontUrl(): ?string;
 }

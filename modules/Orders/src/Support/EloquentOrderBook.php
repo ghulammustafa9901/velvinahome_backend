@@ -85,6 +85,18 @@ final class EloquentOrderBook implements OrderBook
         return $order === null ? null : $this->presenter->present($order);
     }
 
+    public function deliveredOrderWithProduct(int $customerId, string $productUlid): ?string
+    {
+        $ulid = Order::query()
+            ->where('customer_id', $customerId)
+            ->whereIn('status', ['delivered', 'completed'])
+            ->whereHas('items', fn ($query) => $query->where('product_ulid', $productUlid))
+            ->orderByDesc('delivered_at')
+            ->value('ulid');
+
+        return is_string($ulid) ? $ulid : null;
+    }
+
     private function addItem(Order $order, NewOrderLine $line): void
     {
         $item = new OrderItem;

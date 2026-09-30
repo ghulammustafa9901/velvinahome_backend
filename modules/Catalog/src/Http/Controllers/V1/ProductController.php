@@ -16,6 +16,8 @@ use Modules\Seo\Contracts\Seo;
  */
 final class ProductController
 {
+    private const CACHE = 'public, max-age=0, s-maxage=60, stale-while-revalidate=300';
+
     public function __construct(
         private readonly CatalogQuery $catalog,
         private readonly ProductPresenter $presenter,
@@ -31,18 +33,18 @@ final class ProductController
             ->cursorPaginate($perPage)
             ->withQueryString();
 
-        return $this->cacheable(response()->json([
+        return response()->json([
             'data' => $this->presenter->summaries($page->items()),
             'meta' => ['per_page' => $perPage, 'has_more' => $page->hasMorePages()],
             'links' => ['next' => $page->nextPageUrl(), 'prev' => $page->previousPageUrl()],
-        ]));
+        ])->header('Cache-Control', self::CACHE);
     }
 
     public function show(string $ulid): JsonResponse
     {
         $product = $this->catalog->live()->where('ulid', $ulid)->firstOrFail();
 
-        return $this->cacheable(response()->json(['data' => $this->presenter->detail($product)]));
+        return response()->json(['data' => $this->presenter->detail($product)])->header('Cache-Control', self::CACHE);
     }
 
     public function bySlug(string $slug, Seo $seo): JsonResponse
@@ -50,24 +52,22 @@ final class ProductController
         $product = $this->catalog->live()->where('slug', $slug)->first();
 
         if ($product !== null) {
-            return $this->cacheable(response()->json(['data' => $this->presenter->detail($product)]));
+            return response()->json(['data' => $this->presenter->detail($product)])->header('Cache-Control', self::CACHE);
         }
 
         $redirect = $seo->resolve('/products/'.$slug);
         abort_if($redirect === null || ! str_starts_with($redirect->toPath, '/products/'), 404);
 
         $newSlug = substr($redirect->toPath, strlen('/products/'));
+        $location = route('api.v1.products.by-slug', ['slug' => $newSlug], false);
+        $body = ['redirect' => ['to_path' => $redirect->toPath, 'status_code' => $redirect->statusCode]];
 
-        // The storefront answers the browser with the same 301; clients that follow the
+        // The storefront answers the browser with the same status; clients that follow the
         // Location land on the product under its current slug.
-        return response()->json([
-            'redirect' => ['to_path' => $redirect->toPath, 'status_code' => $redirect->statusCode],
-        ], $redirect->statusCode)->header('Location', route('api.v1.products.by-slug', ['slug' => $newSlug], false));
-    }
+        if ($redirect->statusCode === 302) {
+            return response()->json($body, 302)->header('Location', $location);
+        }
 
-    private function cacheable(JsonResponse $response): JsonResponse
-    {
-        return $response->setPublic()->setMaxAge(0)->setSharedMaxAge(60)
-            ->header('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+        return response()->json($body, 301)->header('Location', $location);
     }
 }

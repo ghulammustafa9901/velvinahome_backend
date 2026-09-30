@@ -7,6 +7,7 @@ namespace Modules\Settings\Http\Controllers\V1;
 use Illuminate\Http\JsonResponse;
 use Modules\Platform\Contracts\FeatureFlags;
 use Modules\Settings\Contracts\TenantSettings;
+use Modules\Support\ValueObjects\StringMap;
 
 /**
  * GET /api/v1/storefront/config — what the Next.js storefront needs before rendering any page
@@ -29,7 +30,7 @@ final class StorefrontConfigController
                     ],
                     'theme' => [
                         'id' => $settings->string('theme.id', 'default'),
-                        'tokens' => (object) ($settings->get('theme.tokens') ?? []),
+                        'tokens' => StringMap::from((array) ($settings->get('theme.tokens') ?? [])),
                     ],
                     'tax' => [
                         'mode' => $settings->string('tax.mode', 'inclusive'),

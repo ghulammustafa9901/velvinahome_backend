@@ -55,7 +55,7 @@ final class OrderController
             ->withQueryString();
 
         return response()->json([
-            'data' => array_map(fn (Order $order): array => $this->presenter->summary($order), $page->items()),
+            'data' => $this->presenter->summaries($page->items()),
             'meta' => ['per_page' => $perPage, 'has_more' => $page->hasMorePages()],
             'links' => ['next' => $page->nextPageUrl(), 'prev' => $page->previousPageUrl()],
         ])->header('Cache-Control', 'no-store');

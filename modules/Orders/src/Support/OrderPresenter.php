@@ -10,6 +10,8 @@ use Modules\Orders\Models\OrderStateTransition;
 use Modules\Orders\Models\Shipment;
 use Modules\Orders\States\OrderState;
 use Modules\Payments\Contracts\Payments;
+use Modules\Support\ValueObjects\Money;
+use Modules\Support\ValueObjects\StringMap;
 
 /**
  * The customer's view of an order. Never includes staff notes, reasons written by staff,
@@ -20,7 +22,9 @@ final class OrderPresenter
     public function __construct(private readonly Payments $payments) {}
 
     /**
-     * @return array<string, mixed>
+     * @return array{id: string, number: string, status: string, status_label: string, placed_at: string, email: string, phone: string, currency: string, lines: list<array{id: string, variant_id: string, product_id: string, title: string, variant_title: string|null, sku: string, options: StringMap, image_url: string|null, quantity: int, quantity_shipped: int, quantity_returned: int, unit_price: Money, subtotal: Money, discount: Money, tax: Money, total: Money}>, totals: array{subtotal: Money, discount: Money, shipping: Money, tax: Money, tax_inclusive: bool, total: Money}, coupon_code: string|null, shipping_address: array{first_name: string, last_name: string, phone: string, line1: string, line2: string|null, city: string, province: string|null, postal_code: string|null, country_code: string}|null, shipping_method: array{code: string, name: string|null}|null, payment: array{method: string, status: string, paid: Money|null, refunded: Money|null, instructions: string|null, can_upload_proof: bool}, shipments: list<array{id: string, status: string, courier: string|null, tracking_number: string|null, shipped_at: string, delivered_at: string|null}>, timeline: list<array{status: string, label: string, at: string}>, customer_note: string|null}
+     *
+     * @scramble-return array{id: string, number: string, status: string, status_label: string, placed_at: string, email: string, phone: string, currency: string, lines: list<array{id: string, variant_id: string, product_id: string, title: string, variant_title: string|null, sku: string, options: \Modules\Support\ValueObjects\StringMap, image_url: string|null, quantity: int, quantity_shipped: int, quantity_returned: int, unit_price: \Modules\Support\ValueObjects\Money, subtotal: \Modules\Support\ValueObjects\Money, discount: \Modules\Support\ValueObjects\Money, tax: \Modules\Support\ValueObjects\Money, total: \Modules\Support\ValueObjects\Money}>, totals: array{subtotal: \Modules\Support\ValueObjects\Money, discount: \Modules\Support\ValueObjects\Money, shipping: \Modules\Support\ValueObjects\Money, tax: \Modules\Support\ValueObjects\Money, tax_inclusive: bool, total: \Modules\Support\ValueObjects\Money}, coupon_code: string|null, shipping_address: array{first_name: string, last_name: string, phone: string, line1: string, line2: string|null, city: string, province: string|null, postal_code: string|null, country_code: string}|null, shipping_method: array{code: string, name: string|null}|null, payment: array{method: string, status: string, paid: \Modules\Support\ValueObjects\Money|null, refunded: \Modules\Support\ValueObjects\Money|null, instructions: string|null, can_upload_proof: bool}, shipments: list<array{id: string, status: string, courier: string|null, tracking_number: string|null, shipped_at: string, delivered_at: string|null}>, timeline: list<array{status: string, label: string, at: string}>, customer_note: string|null}
      */
     public function present(Order $order): array
     {
@@ -36,14 +40,14 @@ final class OrderPresenter
             'email' => $order->email,
             'phone' => $order->phone,
             'currency' => $order->currency,
-            'lines' => $order->items->map(fn (OrderItem $item): array => [
+            'lines' => array_values($order->items->map(fn (OrderItem $item): array => [
                 'id' => $item->ulid,
                 'variant_id' => $item->variant_ulid,
                 'product_id' => $item->product_ulid,
                 'title' => $item->title,
                 'variant_title' => $item->variant_title,
                 'sku' => $item->sku,
-                'options' => (object) $item->options,
+                'options' => StringMap::from($item->options),
                 'image_url' => $item->image_url,
                 'quantity' => $item->quantity,
                 'quantity_shipped' => $item->quantity_fulfilled,
@@ -53,7 +57,7 @@ final class OrderPresenter
                 'discount' => $item->discount,
                 'tax' => $item->tax,
                 'total' => $item->total,
-            ])->values()->all(),
+            ])->all()),
             'totals' => [
                 'subtotal' => $order->subtotal,
                 'discount' => $order->discount,
@@ -71,33 +75,45 @@ final class OrderPresenter
             'payment' => [
                 'method' => $order->payment_method_code,
                 'status' => $order->payment_status,
-                'paid' => $payment['paid'] ?? null,
-                'refunded' => $payment['refunded'] ?? null,
+                'paid' => self::money($payment, 'paid'),
+                'refunded' => self::money($payment, 'refunded'),
                 // Bank/wallet details for a transfer the customer still has to make.
                 'instructions' => $order->payment_status === 'unpaid' && $order->payment_method_code === 'manual_transfer' ? ($payment['instructions'] ?? null) : null,
-                'can_upload_proof' => $order->payment_method_code === 'manual_transfer'
+                'can_upload_proof' => (bool) ($order->payment_method_code === 'manual_transfer'
                     && in_array($order->payment_status, ['unpaid', 'awaiting_verification'], true)
-                    && $order->status->cancellable(),
+                    && $order->status->cancellable()),
             ],
-            'shipments' => $order->shipments->map(fn (Shipment $shipment): array => [
+            'shipments' => array_values($order->shipments->map(fn (Shipment $shipment): array => [
                 'id' => $shipment->ulid,
                 'status' => $shipment->status,
                 'courier' => $shipment->courier,
                 'tracking_number' => $shipment->tracking_number,
                 'shipped_at' => $shipment->shipped_at->toIso8601String(),
                 'delivered_at' => $shipment->delivered_at?->toIso8601String(),
-            ])->values()->all(),
-            'timeline' => $order->transitions->map(fn (OrderStateTransition $transition): array => [
+            ])->all()),
+            'timeline' => array_values($order->transitions->map(fn (OrderStateTransition $transition): array => [
                 'status' => $transition->to_status,
                 'label' => OrderState::labelFor($transition->to_status, $order),
                 'at' => $transition->created_at->toIso8601String(),
-            ])->values()->all(),
+            ])->all()),
             'customer_note' => $order->customer_note,
         ];
     }
 
     /**
-     * @return array<string, mixed>
+     * @param  array<string, mixed>|null  $payment
+     */
+    private static function money(?array $payment, string $key): ?Money
+    {
+        $value = $payment[$key] ?? null;
+
+        return $value instanceof Money ? $value : null;
+    }
+
+    /**
+     * @return array{id: string, number: string, status: string, status_label: string, payment_status: string, placed_at: string, item_count: int, total: Money}
+     *
+     * @scramble-return array{id: string, number: string, status: string, status_label: string, payment_status: string, placed_at: string, item_count: int, total: \Modules\Support\ValueObjects\Money}
      */
     public function summary(Order $order): array
     {
@@ -111,5 +127,22 @@ final class OrderPresenter
             'item_count' => (int) $order->getAttribute('item_count'),
             'total' => $order->total,
         ];
+    }
+
+    /**
+     * @param  iterable<Order>  $orders
+     * @return list<array{id: string, number: string, status: string, status_label: string, payment_status: string, placed_at: string, item_count: int, total: Money}>
+     *
+     * @scramble-return list<array{id: string, number: string, status: string, status_label: string, payment_status: string, placed_at: string, item_count: int, total: \Modules\Support\ValueObjects\Money}>
+     */
+    public function summaries(iterable $orders): array
+    {
+        $summaries = [];
+
+        foreach ($orders as $order) {
+            $summaries[] = $this->summary($order);
+        }
+
+        return $summaries;
     }
 }

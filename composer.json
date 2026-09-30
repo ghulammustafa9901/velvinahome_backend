@@ -29,6 +29,7 @@
         "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
+        "opis/json-schema": "^2.4",
         "pestphp/pest": "^4.0",
         "pestphp/pest-plugin-laravel": "^4.0",
         "pestphp/pest-plugin-type-coverage": "^4.0"
@@ -54,7 +55,9 @@
             "Modules\\Payments\\": "modules/Payments/src/",
             "Modules\\Orders\\": "modules/Orders/src/",
             "Modules\\Checkout\\": "modules/Checkout/src/",
-            "Modules\\Notifications\\": "modules/Notifications/src/"
+            "Modules\\Notifications\\": "modules/Notifications/src/",
+            "Modules\\Content\\": "modules/Content/src/",
+            "Modules\\Reviews\\": "modules/Reviews/src/"
         }
     },
     "autoload-dev": {

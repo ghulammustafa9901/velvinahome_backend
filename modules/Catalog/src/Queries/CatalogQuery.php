@@ -18,7 +18,7 @@ use Modules\Catalog\Models\Product;
  */
 final class CatalogQuery
 {
-    public const FILTERS = ['category', 'brand'];
+    public const FILTERS = ['category', 'brand', 'ids'];
 
     /** @var array<string, array{string, string}> sort key => [column, direction] */
     public const SORTS = [
@@ -71,6 +71,12 @@ final class CatalogQuery
         if (isset($filters['brand'])) {
             $slugs = array_filter(explode(',', (string) $filters['brand']));
             $query->whereIn('brand_id', Brand::query()->whereIn('slug', $slugs)->pluck('id'));
+        }
+
+        if (isset($filters['ids'])) {
+            // Product cards for a known set (wishlist, recently viewed): at most one page.
+            $ids = array_slice(array_values(array_filter(explode(',', (string) $filters['ids']), fn (string $id): bool => preg_match('/^[0-9A-HJKMNP-TV-Z]{26}$/', $id) === 1)), 0, 100);
+            $query->whereIn('ulid', $ids === [] ? [''] : $ids);
         }
 
         [$column, $direction] = self::SORTS[$sort];

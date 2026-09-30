@@ -79,6 +79,8 @@ final class ProductSearchQuery
 
     /**
      * @return list<array{id: string, title: string, slug: string}>
+     *
+     * @scramble-return list<array{id: string, title: string, slug: string}>
      */
     public function suggest(string $q, int $limit): array
     {
@@ -141,31 +143,45 @@ final class ProductSearchQuery
     }
 
     /**
+     * Always the same four facets, so clients can rely on the shape.
+     *
      * @param  list<array<string, mixed>>  $facetCounts
-     * @return array<string, mixed>
+     * @return array{brand: list<array{value: string, count: int}>, category: list<array{value: string, count: int}>, in_stock: list<array{value: string, count: int}>, price: array{min: int|null, max: int|null}}
      */
     private function facets(array $facetCounts): array
     {
-        $facets = [];
+        $byField = [];
 
         foreach ($facetCounts as $facet) {
-            $name = (string) $facet['field_name'];
-
-            if ($name === 'price_min') {
-                $facets['price'] = [
-                    'min' => isset($facet['stats']['min']) ? (int) $facet['stats']['min'] : null,
-                    'max' => isset($facet['stats']['max']) ? (int) $facet['stats']['max'] : null,
-                ];
-
-                continue;
-            }
-
-            $facets[$name === 'category_ids' ? 'category' : $name] = array_map(
-                fn (array $count): array => ['value' => (string) $count['value'], 'count' => (int) $count['count']],
-                $facet['counts'] ?? [],
-            );
+            $byField[(string) $facet['field_name']] = $facet;
         }
 
-        return $facets;
+        $min = $byField['price_min']['stats']['min'] ?? null;
+        $max = $byField['price_min']['stats']['max'] ?? null;
+
+        return [
+            'brand' => $this->counts($byField['brand'] ?? []),
+            'category' => $this->counts($byField['category_ids'] ?? []),
+            'in_stock' => $this->counts($byField['in_stock'] ?? []),
+            'price' => [
+                'min' => is_numeric($min) ? (int) $min : null,
+                'max' => is_numeric($max) ? (int) $max : null,
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $facet
+     * @return list<array{value: string, count: int}>
+     */
+    private function counts(array $facet): array
+    {
+        $counts = [];
+
+        foreach ((array) ($facet['counts'] ?? []) as $count) {
+            $counts[] = ['value' => (string) $count['value'], 'count' => (int) $count['count']];
+        }
+
+        return $counts;
     }
 }

@@ -29,6 +29,15 @@ final class CheckoutController
             'cart_id' => ['required', 'string', 'size:26'],
             'email' => ['nullable', 'email:rfc', 'max:255'],
             'shipping_address' => ['nullable', 'array'],
+            'shipping_address.first_name' => ['required_with:shipping_address', 'string', 'max:100'],
+            'shipping_address.last_name' => ['required_with:shipping_address', 'string', 'max:100'],
+            'shipping_address.phone' => ['required_with:shipping_address', 'string', 'max:20'],
+            'shipping_address.line1' => ['required_with:shipping_address', 'string', 'max:255'],
+            'shipping_address.line2' => ['nullable', 'string', 'max:255'],
+            'shipping_address.city' => ['required_with:shipping_address', 'string', 'max:100'],
+            'shipping_address.province' => ['nullable', 'string', 'max:100'],
+            'shipping_address.postal_code' => ['nullable', 'string', 'max:20'],
+            'shipping_address.country_code' => ['nullable', 'string', 'size:2'],
             'shipping_method' => ['nullable', 'string', 'max:32'],
         ]);
 
@@ -53,13 +62,61 @@ final class CheckoutController
             $methods = array_values(array_filter($methods, fn (array $method): bool => $method['code'] !== 'cod'));
         }
 
-        return response()->json(['data' => ['cart_id' => $cart->ulid, 'currency' => $cart->currency] + $priced->toApi() + [
-            'payment_methods' => array_map(fn (array $method): array => [
-                'code' => $method['code'],
-                'label' => $method['label'],
-                'description' => $method['description'],
-            ], $methods),
-        ]])->header('Cache-Control', 'no-store');
+        $body = $priced->toApi();
+        $paymentMethods = [];
+
+        foreach ($methods as $method) {
+            $paymentMethods[] = ['code' => $method['code'], 'label' => $method['label'], 'description' => $method['description']];
+        }
+
+        return response()->json(['data' => [
+            'cart_id' => $cart->ulid,
+            'currency' => $cart->currency,
+            'lines' => $body['lines'],
+            'totals' => $body['totals'],
+            'coupon' => $body['coupon'],
+            'shipping_options' => $body['shipping_options'],
+            'selected_shipping' => $body['selected_shipping'],
+            'problems' => $body['problems'],
+            'payment_methods' => $paymentMethods,
+        ]]);
+    }
+
+    /**
+     * Delivery options for a cart and destination, priced for this cart (weight, value,
+     * free-shipping coupons) before the customer has typed a full address.
+     */
+    public function shippingMethods(Request $request, string $cart, Carts $carts, CartPricer $pricer): JsonResponse
+    {
+        $data = $request->validate([
+            'country_code' => ['nullable', 'string', 'size:2'],
+            'province' => ['nullable', 'string', 'max:100'],
+            'city' => ['required', 'string', 'max:100'],
+        ]);
+
+        $customerId = self::customerId($request);
+        $found = $carts->accessible($cart, $customerId, $request->header(self::CART_TOKEN_HEADER));
+
+        // Only the destination matters for zone matching; the rest of the address comes later.
+        $destination = new AddressData(
+            firstName: '',
+            lastName: '',
+            phone: '',
+            line1: '',
+            city: (string) $data['city'],
+            province: $data['province'] ?? null,
+            countryCode: strtoupper((string) ($data['country_code'] ?? 'PK')),
+        );
+
+        $priced = $pricer->price(new PricingRequest(
+            lines: $found->lines,
+            currency: $found->currency,
+            couponCode: $found->couponCode,
+            customerId: $customerId,
+            shippingAddress: $destination,
+        ));
+
+        return response()->json(['data' => $priced->toApi()['shipping_options']]);
     }
 
     public function place(Request $request, PlaceOrder $place): JsonResponse
@@ -74,7 +131,25 @@ final class CheckoutController
             'cart_id' => ['required', 'string', 'size:26'],
             'email' => [self::customerId($request) === null ? 'required' : 'nullable', 'email:rfc', 'max:255'],
             'shipping_address' => ['required', 'array'],
+            'shipping_address.first_name' => ['required_with:shipping_address', 'string', 'max:100'],
+            'shipping_address.last_name' => ['required_with:shipping_address', 'string', 'max:100'],
+            'shipping_address.phone' => ['required_with:shipping_address', 'string', 'max:20'],
+            'shipping_address.line1' => ['required_with:shipping_address', 'string', 'max:255'],
+            'shipping_address.line2' => ['nullable', 'string', 'max:255'],
+            'shipping_address.city' => ['required_with:shipping_address', 'string', 'max:100'],
+            'shipping_address.province' => ['nullable', 'string', 'max:100'],
+            'shipping_address.postal_code' => ['nullable', 'string', 'max:20'],
+            'shipping_address.country_code' => ['nullable', 'string', 'size:2'],
             'billing_address' => ['nullable', 'array'],
+            'billing_address.first_name' => ['required_with:billing_address', 'string', 'max:100'],
+            'billing_address.last_name' => ['required_with:billing_address', 'string', 'max:100'],
+            'billing_address.phone' => ['required_with:billing_address', 'string', 'max:20'],
+            'billing_address.line1' => ['required_with:billing_address', 'string', 'max:255'],
+            'billing_address.line2' => ['nullable', 'string', 'max:255'],
+            'billing_address.city' => ['required_with:billing_address', 'string', 'max:100'],
+            'billing_address.province' => ['nullable', 'string', 'max:100'],
+            'billing_address.postal_code' => ['nullable', 'string', 'max:20'],
+            'billing_address.country_code' => ['nullable', 'string', 'size:2'],
             'shipping_method' => ['required', 'string', 'max:32'],
             'payment_method' => ['required', 'string', 'max:32'],
             'note' => ['nullable', 'string', 'max:1000'],
@@ -102,13 +177,19 @@ final class CheckoutController
             ipAddress: $request->ip(),
         ));
 
-        return response()->json(['data' => [
+        $data = [
             'order_id' => $result['order_id'],
             'number' => $result['number'],
+            // Guest order secret for GET /orders/{id} (X-Order-Token); shown again on replays.
             'access_token' => $result['access_token'],
-        ]], $result['replayed'] ? 200 : 201)
-            ->header('Cache-Control', 'no-store')
-            ->header('Idempotent-Replayed', $result['replayed'] ? 'true' : 'false');
+        ];
+
+        // 200 + Idempotent-Replayed: true when this key already placed the order.
+        if ($result['replayed']) {
+            return response()->json(['data' => $data], 200)->header('Idempotent-Replayed', 'true');
+        }
+
+        return response()->json(['data' => $data], 201)->header('Idempotent-Replayed', 'false');
     }
 
     /**

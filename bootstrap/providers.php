@@ -8,6 +8,7 @@ use App\Providers\Filament\PlatformPanelProvider;
 use Modules\Cart\Providers\CartServiceProvider;
 use Modules\Catalog\Providers\CatalogServiceProvider;
 use Modules\Checkout\Providers\CheckoutServiceProvider;
+use Modules\Content\Providers\ContentServiceProvider;
 use Modules\Customers\Providers\CustomersServiceProvider;
 use Modules\Identity\Providers\IdentityServiceProvider;
 use Modules\Integrations\Providers\IntegrationsServiceProvider;
@@ -17,6 +18,7 @@ use Modules\Orders\Providers\OrdersServiceProvider;
 use Modules\Payments\Providers\PaymentsServiceProvider;
 use Modules\Platform\Providers\PlatformServiceProvider;
 use Modules\Pricing\Providers\PricingServiceProvider;
+use Modules\Reviews\Providers\ReviewsServiceProvider;
 use Modules\Seo\Providers\SeoServiceProvider;
 use Modules\Settings\Providers\SettingsServiceProvider;
 use Modules\Shipping\Providers\ShippingServiceProvider;
@@ -47,6 +49,8 @@ return [
     OrdersServiceProvider::class,
     CheckoutServiceProvider::class,
     NotificationsServiceProvider::class,
+    ContentServiceProvider::class,
+    ReviewsServiceProvider::class,
     AppServiceProvider::class,
     PlatformPanelProvider::class,
     AdminPanelProvider::class,

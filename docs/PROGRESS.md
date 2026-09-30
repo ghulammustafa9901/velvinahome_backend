@@ -3,9 +3,9 @@
 Updated continuously (spec §0.2 rule 6). A milestone is only `done` when the app boots,
 migrations run, and the whole test suite passes.
 
-**Current phase:** Phase 4 — API Stabilization (Phase 3 built:
-[docs/phase-3-checkpoint.md](phase-3-checkpoint.md)). The owner asked for Phase 3 then Phase 4.
-**Test suite:** 269 passing (1 skipped) on real PostgreSQL 17, Redis and Typesense 30
+**Current phase:** Phase 4 built — **API v1 frozen** ([docs/phase-4-checkpoint.md](phase-4-checkpoint.md)).
+Next: Phase 5, the Next.js storefront. The owner asked for Phase 3 then Phase 4.
+**Test suite:** 296 passing (1 skipped) on real PostgreSQL 17, Redis and Typesense 30
 (architecture, unit, feature, isolation, multi-process concurrency). Larastan level 8 clean,
 Pint clean.
 
@@ -61,12 +61,32 @@ Owner decision: **COD + manual bank/wallet transfer** at launch; email provider 
 | 3.7 | Transactional emails via outbox | done (Laravel mailer; provider is configuration) |
 | 3.8 | Admin: orders, coupons, shipping, tax, payment methods, emails | done |
 
-## Phases 4–8
+## Phase 4 — API Stabilization
+
+Plan: [docs/plans/phase-4.md](plans/phase-4.md) · Report: [docs/phase-4-checkpoint.md](phase-4-checkpoint.md) · ADR-0016 ·
+Contract: [docs/api/openapi-v1.json](api/openapi-v1.json)
+
+**Storefront API v1 is frozen** — additive changes only; enforced by `api:contract --check` in CI.
+
+| # | Milestone | Status |
+|---|---|---|
+| 4.1 | Conventions by infrastructure (cache policy, ETags, rate limits, Retry-After) | done |
+| 4.2 | Customer account (profile, password change, recovery) | done |
+| 4.3 | Checkout shipping methods; payments endpoint deferred (additive) | done |
+| 4.4 | Content: pages, menus, sitemap data | done |
+| 4.5 | Reviews and wishlist (flag-gated) | done |
+| 4.6 | OpenAPI finalized | done |
+| 4.7 | Contract tests + drift guard | done |
+| 4.8 | Generated TypeScript client (platform-web) | done |
+| 4.9 | Query budgets for hot endpoints | done |
+| 4.10 | v1 freeze | done |
+
+## Phases 5–8
 
 | Phase | Scope | Status |
 |---|---|---|
 | 3 | Commerce Core | **built** — see above |
-| 4 | API Stabilization — v1 contract freeze | not started (Scramble already exports OpenAPI) |
+| 4 | API Stabilization — v1 contract freeze | **built, v1 frozen** — see above |
 | 5 | Next.js Storefront | not started |
 | 6 | Operations & Growth | not started |
 | 7 | Hardening | not started |
@@ -74,5 +94,5 @@ Owner decision: **COD + manual bank/wallet transfer** at launch; email provider 
 
 ## Decision log pointers
 
-- ADRs 0001–0015: [docs/adr/](adr/README.md)
+- ADRs 0001–0016: [docs/adr/](adr/README.md)
 - Open business decisions (spec §16): tracked in the checkpoint reports

@@ -139,27 +139,48 @@ jobs:
         run: vendor/bin/pest --coverage
 
   openapi:
-    name: OpenAPI generation
+    name: API v1 contract
     needs: detect
     if: needs.detect.outputs.scaffolded == 'true'
     runs-on: ubuntu-latest
+
+    # Scramble looks up model columns. An empty landlord database (no tenant tables) gives the
+    # same, deterministic document as a development machine. Throwaway CI-only credentials.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: platform_landlord
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DB_LANDLORD_USERNAME: postgres
+      DB_LANDLORD_PASSWORD: postgres
+      DB_LANDLORD_DATABASE: platform_landlord
+
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_pgsql, pgsql
           coverage: none
       - run: composer install --no-interaction --prefer-dist --no-progress
       - run: cp .env.example .env && php artisan key:generate
-      # The OpenAPI document is generated from code and is the single source of truth for
-      # the contract (spec §6.1). It is published as an artifact so platform-web can
-      # regenerate its TypeScript client from exactly this build.
-      - name: Generate OpenAPI document
-        run: php artisan scramble:export --path=openapi.json
+      # The OpenAPI document is generated from code (spec §6.1). API v1 is frozen: the
+      # generated document must equal the committed contract (docs/api/openapi-v1.json), so
+      # every contract change is a reviewed diff, and non-additive changes are named and fail.
+      - name: API v1 contract unchanged (or changed additively and committed)
+        run: php artisan api:contract --check
+      # platform-web generates its TypeScript client from this exact document.
       - uses: actions/upload-artifact@v4
         with:
           name: openapi
-          path: openapi.json
+          path: docs/api/openapi-v1.json
 
   security:
     name: Dependency audit

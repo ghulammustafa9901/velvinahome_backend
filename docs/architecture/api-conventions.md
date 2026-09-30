@@ -121,20 +121,27 @@ than being silently ignored — silent ignoring hides client bugs.
 An `Idempotency-Key` header is **required** on:
 
 - `POST /api/v1/checkout/orders` (order placement)
-- `POST /api/v1/checkout/payments` (payment initiation)
-- refunds (admin path, same Action)
+- `POST /api/v1/checkout/payments` (payment initiation) — **not in v1**: it exists only for
+  online gateways, which the owner deferred (ADR-0015); it will be an additive endpoint
+- refunds (admin path, same Action; the admin form carries one key per opened form)
 
-Semantics: the key is stored with the resulting resource (unique column on `orders` /
-`payments`). A repeat with the same key and the same request body returns the **original
-response**. A repeat with the same key and a different body returns
-`409 idempotency_key_reused`. Keys are scoped per tenant and retained 24 hours minimum.
+Semantics (as built): the key is stored with the order (unique column) together with a
+fingerprint of the request. A repeat with the same key and the same body returns the
+**original response** with `200` and `Idempotent-Replayed: true` (the first answer is `201`,
+`Idempotent-Replayed: false`). A repeat with the same key and a different body returns
+`409 idempotency_key_reused`. Keys are per tenant and kept with the order (not expired).
 
 Inbound webhooks are deduplicated separately, by `(provider, provider_event_id)`.
 
 ## 7. Caching
 
+- **Private by default, enforced by middleware** (`ApiCachePolicy`, outermost on every
+  `/api/v1` route): a response is `Cache-Control: no-store, private` unless its controller
+  explicitly marked it `public` — so carts, checkout, orders, account data and every error
+  (including 401/429 produced by middleware) can never land in a shared cache.
 - Public catalog and content endpoints are cache-friendly: `Cache-Control` with a short
-  `s-maxage` plus `stale-while-revalidate`, and `ETag` support.
+  `s-maxage` plus `stale-while-revalidate`, and a weak `ETag`; a matching `If-None-Match`
+  gets `304`.
 - Server-side caching is Redis with **tag-based invalidation**, tags scoped per tenant
   (`t:{tenant}:product:{ulid}`, `t:{tenant}:category:{ulid}`).
 - Cart, checkout and account endpoints are `Cache-Control: no-store`, always.
@@ -145,14 +152,17 @@ Inbound webhooks are deduplicated separately, by `(provider, provider_event_id)`
 
 Every limiter key includes the tenant id. Defaults, tunable per tenant:
 
-| Route group | Limit |
+| Route group | Limit (as built) |
 |---|---|
 | Public catalog / content (GET) | 120 req/min per IP |
 | Search | 60 req/min per IP |
-| Cart mutations | 60 req/min per session |
-| Checkout / payment initiation | 10 req/min per session |
-| Customer login / registration / password reset | 5 req/min per IP **and** per account, with lockout |
+| Cart, quote, shipping methods | 60 req/min per session (customer, else guest cart token, else IP) |
+| Order placement, receipt upload, review submission | 10 req/min per session **and** 30 req/min per IP |
+| Customer login / registration / password reset / password change | 5 req/min per IP **and** per account (email, else session), plus the account lockout |
+| Account and other authenticated reads | 120 req/min per customer |
 | Webhooks (inbound) | not limited by IP; protected by signature verification and dedup |
+
+A flag-gated endpoint answers `403 feature_disabled` before authentication is checked.
 
 `429` responses carry `Retry-After`. Cloudflare WAF sits in front of all of it.
 
@@ -170,46 +180,66 @@ Every limiter key includes the tenant id. Defaults, tunable per tenant:
 
 ## 10. OpenAPI and the generated client
 
-- The OpenAPI document is **generated from code** (Scramble) and is the single source of truth
-  for the contract.
-- `packages/api-client` in `platform-web` is **generated from that document in CI and never
-  hand-written**. A hand edit is a CI failure.
-- **Contract tests** assert that every endpoint's real response validates against the
-  published schema, so the document cannot drift from the code.
+- The OpenAPI document is **generated from code** (Scramble) and committed as
+  **`docs/api/openapi-v1.json` — the v1 contract** ([ADR-0016](../adr/0016-api-contract-tooling-and-v1-freeze.md)).
+- `php artisan api:contract --check` (CI) fails when the code's document differs from the
+  committed one, names every change that would break a v1 client, and refuses lists with
+  undescribed items. `--write` updates the snapshot after review.
+- Shapes code inference cannot see are declared where the data is built: array-shape
+  `@return` + `@scramble-return` on presenters, `Money` / `StringMap` / `JsonObject` schema
+  components, the `Error` envelope for every 4xx, and the recursive `CategoryNode`.
+- `packages/api-client` in `platform-web` is **generated from that document** (openapi-typescript)
+  and never hand-written; its CI regenerates it and fails on any difference, and type-level
+  tests check what the storefront relies on.
+- **Contract tests** (`tests/Feature/Api/ContractTest.php`) validate real responses of every
+  endpoint — success and error — against the committed document, **strictly**: an object may
+  not carry fields the document does not declare.
 - API v1 is **frozen at the end of Phase 4**; after that, additive changes only.
 
-## 11. Endpoint surface for v1 (planned)
+## 11. Endpoint surface of v1 (frozen)
+
+The authoritative list is the contract, `docs/api/openapi-v1.json`. As frozen at the end of
+Phase 4:
 
 ```text
-GET    /api/v1/storefront/config            theme, tokens, feature flags, nav, locale, currency
-GET    /api/v1/products                     listing: filters, facets, sorting, cursor paging
+GET    /api/v1/storefront/config            theme, tokens, feature flags, locale, currency
+GET    /api/v1/products                     filter[category|brand|ids], sort, cursor paging
 GET    /api/v1/products/{ulid}
-GET    /api/v1/products/by-slug/{slug}
-GET    /api/v1/categories                   tree
-GET    /api/v1/categories/{slug}
+GET    /api/v1/products/by-slug/{slug}      301/302 to the current slug after a change
+GET    /api/v1/categories                   tree (CategoryNode)
+GET    /api/v1/categories/{slug}            breadcrumbs, children
 GET    /api/v1/collections/{slug}
-GET    /api/v1/search                       Typesense-backed; facets + typo tolerance
-GET    /api/v1/search/suggest               as-you-type prefix search
-GET    /api/v1/pages/{slug}                 page-builder sections as JSON
+GET    /api/v1/search                       Typesense; facets brand/category/in_stock/price
+GET    /api/v1/search/suggest
+GET    /api/v1/redirects/resolve?path=      old URL → new (WooCommerce migration)
+GET    /api/v1/pages/{slug}                 page-builder sections; "home" is the home page
 GET    /api/v1/menus/{key}
-GET    /api/v1/sitemap/{chunk}              chunked sitemap data
-POST   /api/v1/carts                        create (guest or customer)
+GET    /api/v1/sitemap | /sitemap/{chunk}   chunk list, then paths with lastmod
+GET    /api/v1/payment-methods
+POST   /api/v1/carts                        guest (returns token once) or customer
 GET    /api/v1/carts/{ulid}
 POST   /api/v1/carts/{ulid}/items
-PATCH  /api/v1/carts/{ulid}/items/{ulid}
-DELETE /api/v1/carts/{ulid}/items/{ulid}
-POST   /api/v1/carts/{ulid}/coupon
-POST   /api/v1/carts/{ulid}/merge           on login
-GET    /api/v1/checkout/{cartUlid}/shipping-methods
-POST   /api/v1/checkout/quote               recompute totals server-side
+PATCH  /api/v1/carts/{ulid}/items/{item}
+DELETE /api/v1/carts/{ulid}/items/{item}
+POST   /api/v1/carts/{ulid}/coupon | DELETE /api/v1/carts/{ulid}/coupon
+POST   /api/v1/carts/{ulid}/merge           on sign-in
+GET    /api/v1/checkout/{cart}/shipping-methods?city=&province=&country_code=
+POST   /api/v1/checkout/quote
 POST   /api/v1/checkout/orders              Idempotency-Key required
-POST   /api/v1/checkout/payments            Idempotency-Key required
-POST   /api/v1/webhooks/{provider}          signature-verified, stored raw, queued
-POST   /api/v1/auth/login | register | logout | forgot-password | reset-password
-GET    /api/v1/account/profile | orders | orders/{ulid} | addresses
-GET    /api/v1/products/{ulid}/reviews      flag-gated
-POST   /api/v1/wishlist/items               flag-gated
+GET    /api/v1/orders/{ulid}                X-Order-Token (guest) or owner
+POST   /api/v1/orders/{ulid}/payment-proof  manual transfer receipt
+POST   /api/v1/webhooks/{provider}          404 until a gateway adapter exists
+POST   /api/v1/auth/register | login | logout | forgot-password | reset-password
+GET    /api/v1/me                           kept for existing clients; = /account/profile
+GET    /api/v1/account/profile | PATCH /api/v1/account/profile
+PUT    /api/v1/account/password
+GET    /api/v1/account/orders | /account/orders/{ulid}
+GET|POST|PUT|DELETE /api/v1/account/addresses[/{ulid}]
+GET|POST /api/v1/products/{ulid}/reviews    flag `reviews`
+GET|POST|DELETE /api/v1/wishlist/items[/{ulid}]  flag `wishlist`
 ```
+
+Deferred, additive when needed: `POST /checkout/payments` (online gateways).
 
 Feature-flagged endpoints return `403 feature_disabled` when the tenant has the flag off —
 they are never silently absent, so the client gets a diagnosable answer.

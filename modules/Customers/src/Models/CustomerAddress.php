@@ -35,12 +35,26 @@ final class CustomerAddress extends Model
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{id: string, label: string|null, first_name: string, last_name: string, phone: string, line1: string, line2: string|null, city: string, province: string|null, postal_code: string|null, country_code: string, is_default_shipping: bool, is_default_billing: bool}
      */
     public function toApi(): array
     {
-        return ['id' => $this->ulid, 'label' => $this->label]
-            + $this->toData()->toColumns()
-            + ['is_default_shipping' => $this->is_default_shipping, 'is_default_billing' => $this->is_default_billing];
+        $address = $this->toData();
+
+        return [
+            'id' => $this->ulid,
+            'label' => $this->label,
+            'first_name' => $address->firstName,
+            'last_name' => $address->lastName,
+            'phone' => $address->phone,
+            'line1' => $address->line1,
+            'line2' => $address->line2,
+            'city' => $address->city,
+            'province' => $address->province,
+            'postal_code' => $address->postalCode,
+            'country_code' => strtoupper($address->countryCode),
+            'is_default_shipping' => $this->is_default_shipping,
+            'is_default_billing' => $this->is_default_billing,
+        ];
     }
 }

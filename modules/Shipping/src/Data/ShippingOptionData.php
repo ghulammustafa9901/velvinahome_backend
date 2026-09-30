@@ -18,7 +18,7 @@ final readonly class ShippingOptionData
     ) {}
 
     /**
-     * @return array<string, mixed>
+     * @return array{code: string, name: string, price: Money, cod_allowed: bool, min_days: int|null, max_days: int|null}
      */
     public function toApi(): array
     {

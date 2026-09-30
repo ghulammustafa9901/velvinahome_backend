@@ -105,19 +105,31 @@ final class CartController
     {
         $cart->loadMissing('items');
         $priced = $this->pricer->price(new PricingRequest($cart->lines(), $cart->currency, $cart->coupon_code, $cart->customer_id));
-        $available = $this->stock->available(array_map(fn (PricedLine $line): int => $line->variant->id, $priced->lines));
-        $itemUlids = $cart->items->pluck('ulid', 'variant_ulid');
+        $stock = $this->stock->available(array_map(fn (PricedLine $line): int => $line->variant->id, $priced->lines));
 
-        $body = $priced->toApi();
-        $body['lines'] = array_map(fn (PricedLine $line, array $api): array => ['id' => $itemUlids[$line->variant->ulid] ?? null] + $api + [
-            'available_quantity' => $line->variant->allowBackorder ? null : ($available[$line->variant->id] ?? 0),
-        ], $priced->lines, $body['lines']);
+        /** @var array<string, string> $lineIds */
+        $lineIds = $cart->items->pluck('ulid', 'variant_ulid')->all();
+        $available = [];
+
+        foreach ($priced->lines as $line) {
+            $available[$line->variant->ulid] = $line->variant->allowBackorder ? null : ($stock[$line->variant->id] ?? 0);
+        }
+
+        $body = $priced->toApi($lineIds, $available);
 
         return response()->json(['data' => [
             'id' => $cart->ulid,
             'currency' => $cart->currency,
             'item_count' => array_sum($cart->lines()),
-        ] + $body + array_filter(['token' => $token])], $status)->header('Cache-Control', 'no-store');
+            // The guest cart secret: present only in the response that created the cart.
+            'token' => $token,
+            'lines' => $body['lines'],
+            'totals' => $body['totals'],
+            'coupon' => $body['coupon'],
+            'shipping_options' => $body['shipping_options'],
+            'selected_shipping' => $body['selected_shipping'],
+            'problems' => $body['problems'],
+        ]], $status);
     }
 
     /**

@@ -42,7 +42,7 @@ it('creates a guest cart whose token is shown once and required afterwards', fun
         ->assertJsonPath('data.lines.0.unit_price.amount', 80_000)
         ->assertJsonPath('data.lines.0.available_quantity', 3)
         ->assertJsonPath('data.totals.subtotal.amount', 160_000)
-        ->assertJsonMissingPath('data.token');
+        ->assertJsonPath('data.token', null);
 
     // Default headers persist between requests in a test; start clean.
     $this->flushHeaders()->getJson($this->api.'/carts/'.$cart)->assertNotFound();
@@ -76,7 +76,7 @@ it('keeps a customer cart private to that customer', function (): void {
     $owner = customerToken($this);
     $intruder = customerToken($this);
 
-    $cart = (string) $this->withToken($owner)->postJson($this->api.'/carts')->assertCreated()->assertJsonMissingPath('data.token')->json('data.id');
+    $cart = (string) $this->withToken($owner)->postJson($this->api.'/carts')->assertCreated()->assertJsonPath('data.token', null)->json('data.id');
     $this->withToken($owner)->postJson($this->api.'/carts/'.$cart.'/items', ['variant_id' => $variant->ulid, 'quantity' => 1])->assertOk();
     app('auth')->forgetGuards();
 

@@ -36,12 +36,8 @@ final class CategoryController
             'name' => $category->name,
             'slug' => $category->slug,
             'description' => $category->description,
-            'breadcrumbs' => $category->ancestors()->get()->map(fn (Category $ancestor): array => [
-                'id' => $ancestor->ulid, 'name' => $ancestor->name, 'slug' => $ancestor->slug,
-            ])->all(),
-            'children' => $category->children()->where('is_visible', true)->get()->map(fn (Category $child): array => [
-                'id' => $child->ulid, 'name' => $child->name, 'slug' => $child->slug,
-            ])->all(),
+            'breadcrumbs' => self::references($category->ancestors()->get()),
+            'children' => self::references($category->children()->where('is_visible', true)->get()),
         ]])->header('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
     }
 
@@ -64,6 +60,21 @@ final class CategoryController
             'description' => $collection->description,
             'products' => $presenter->summaries($products),
         ]])->header('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+    }
+
+    /**
+     * @param  iterable<Category>  $categories
+     * @return list<array{id: string, name: string, slug: string}>
+     */
+    private static function references(iterable $categories): array
+    {
+        $references = [];
+
+        foreach ($categories as $category) {
+            $references[] = ['id' => $category->ulid, 'name' => $category->name, 'slug' => $category->slug];
+        }
+
+        return $references;
     }
 
     /**

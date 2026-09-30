@@ -94,6 +94,9 @@ it('gives the same answer for a wrong password and an unknown account, and audit
 
 it('locks an account after repeated failures, even with the right password', function (): void {
     registerCustomer($this);
+    // This test is about the account lockout; the route limiter (5 auth requests a minute,
+    // which registration also counts against) is covered in ApiConventionsTest.
+    app('cache')->store()->flush();
 
     foreach (range(1, (int) config('platform.staff.max_login_attempts')) as $attempt) {
         $this->postJson($this->api.'/auth/login', ['email' => $this->email, 'password' => 'Wrong-password-99'])

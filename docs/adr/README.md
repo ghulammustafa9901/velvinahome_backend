@@ -22,6 +22,7 @@ accepted — it is **superseded** by a newer ADR, which keeps the reasoning hist
 | [0013](0013-owner-identity-without-credentials-and-handoff-tokens.md) | Company owner identity without credentials; hand-off tokens | Accepted |
 | [0014](0014-search-infrastructure-typesense-30.md) | Typesense 30 specifics — synonym sets, SKU tokens, local runtime | Accepted |
 | [0015](0015-order-payment-and-checkout-mechanics.md) | Order, payment and checkout mechanics for launch (COD + manual transfer) | Accepted |
+| [0016](0016-api-contract-tooling-and-v1-freeze.md) | API contract tooling and the v1 freeze | Accepted |
 
 ## Deferred — ADRs to write when the decision is reached
 

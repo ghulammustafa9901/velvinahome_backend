@@ -27,7 +27,7 @@ final class OrderAddress extends Model
     protected $guarded = ['id'];
 
     /**
-     * @return array<string, string|null>
+     * @return array{first_name: string, last_name: string, phone: string, line1: string, line2: string|null, city: string, province: string|null, postal_code: string|null, country_code: string}
      */
     public function toApi(): array
     {

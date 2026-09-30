@@ -13,6 +13,7 @@ use Modules\Catalog\Models\ProductVariant;
 use Modules\Inventory\Contracts\StockReader;
 use Modules\Seo\Contracts\Seo;
 use Modules\Support\ValueObjects\Money;
+use Modules\Support\ValueObjects\StringMap;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
@@ -29,7 +30,9 @@ final class ProductPresenter
 
     /**
      * @param  iterable<Product>  $products
-     * @return list<array<string, mixed>>
+     * @return list<array{id: string, type: string, title: string, slug: string, short_description: string|null, brand: array{id: string, name: string, slug: string}|null, price: Money|null, compare_at_price: Money|null, price_range: array{min: Money, max: Money}|null, in_stock: bool, image: array{id: string, alt: string, url: string, width: int|null, height: int|null, sizes: array{thumb: array{url: string, width: int}|null, card: array{url: string, width: int}|null, large: array{url: string, width: int}|null}}|null, tags: list<string>, published_at: string|null, created_at: string}>
+     *
+     * @scramble-return list<array{id: string, type: string, title: string, slug: string, short_description: string|null, brand: array{id: string, name: string, slug: string}|null, price: \Modules\Support\ValueObjects\Money|null, compare_at_price: \Modules\Support\ValueObjects\Money|null, price_range: array{min: \Modules\Support\ValueObjects\Money, max: \Modules\Support\ValueObjects\Money}|null, in_stock: bool, image: array{id: string, alt: string, url: string, width: int|null, height: int|null, sizes: array{thumb: array{url: string, width: int}|null, card: array{url: string, width: int}|null, large: array{url: string, width: int}|null}}|null, tags: list<string>, published_at: string|null, created_at: string}>
      */
     public function summaries(iterable $products): array
     {
@@ -41,7 +44,7 @@ final class ProductPresenter
 
     /**
      * @param  array<int, int>  $available
-     * @return array<string, mixed>
+     * @return array{id: string, type: string, title: string, slug: string, short_description: string|null, brand: array{id: string, name: string, slug: string}|null, price: Money|null, compare_at_price: Money|null, price_range: array{min: Money, max: Money}|null, in_stock: bool, image: array{id: string, alt: string, url: string, width: int|null, height: int|null, sizes: array{thumb: array{url: string, width: int}|null, card: array{url: string, width: int}|null, large: array{url: string, width: int}|null}}|null, tags: list<string>, published_at: string|null, created_at: string}
      */
     public function summary(Product $product, array $available): array
     {
@@ -72,7 +75,7 @@ final class ProductPresenter
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{id: string, type: string, title: string, slug: string, short_description: string|null, brand: array{id: string, name: string, slug: string}|null, price: Money|null, compare_at_price: Money|null, price_range: array{min: Money, max: Money}|null, in_stock: bool, image: array{id: string, alt: string, url: string, width: int|null, height: int|null, sizes: array{thumb: array{url: string, width: int}|null, card: array{url: string, width: int}|null, large: array{url: string, width: int}|null}}|null, tags: list<string>, published_at: string|null, created_at: string, description: string|null, images: list<array{id: string, alt: string, url: string, width: int|null, height: int|null, sizes: array{thumb: array{url: string, width: int}|null, card: array{url: string, width: int}|null, large: array{url: string, width: int}|null}}>, specifications: StringMap, options: list<array{name: string, values: list<string>}>, variants: list<array{id: string, sku: string, title: string|null, price: Money, compare_at_price: Money|null, options: StringMap, is_default: bool, in_stock: bool, low_stock: bool, weight_grams: int|null}>, categories: list<array{id: string, name: string, slug: string, is_primary: bool}>, seo: array{title: string, description: string|null, canonical_url: string|null, robots: string, og_image_url: string|null}}
      */
     public function detail(Product $product): array
     {
@@ -82,33 +85,33 @@ final class ProductPresenter
 
         return $this->summary($product, $available) + [
             'description' => $product->description,
-            'images' => $product->getMedia('images')->map(fn (Media $media): array => $this->image($media))->values()->all(),
-            'specifications' => (object) $product->specifications,
-            'options' => $product->options->map(fn (ProductOption $option): array => [
+            'images' => array_values($product->getMedia('images')->map(fn (Media $media): array => $this->image($media))->all()),
+            'specifications' => StringMap::from($product->specifications),
+            'options' => array_values($product->options->map(fn (ProductOption $option): array => [
                 'name' => $option->name,
-                'values' => $option->values->map(fn (ProductOptionValue $value): string => $value->value)->all(),
-            ])->all(),
-            'variants' => $product->variants->map(fn (ProductVariant $variant): array => [
+                'values' => array_values($option->values->map(fn (ProductOptionValue $value): string => $value->value)->all()),
+            ])->all()),
+            'variants' => array_values($product->variants->map(fn (ProductVariant $variant): array => [
                 'id' => $variant->ulid,
                 'sku' => $variant->sku,
                 'title' => $variant->title,
                 'price' => $variant->price,
                 'compare_at_price' => $variant->compare_at_price,
-                'options' => (object) $variant->optionValues->mapWithKeys(
+                'options' => StringMap::from($variant->optionValues->mapWithKeys(
                     fn (ProductOptionValue $value): array => [$value->option->name => $value->value],
-                )->all(),
+                )->all()),
                 'is_default' => $variant->is_default,
                 'in_stock' => $variant->allow_backorder || ($available[$variant->id] ?? 0) > 0,
                 // Low stock is shown as a hint, never as an exact inventory count.
                 'low_stock' => ! $variant->allow_backorder && ($available[$variant->id] ?? 0) > 0 && ($available[$variant->id] ?? 0) <= 3,
                 'weight_grams' => $variant->weight_grams,
-            ])->all(),
-            'categories' => $product->categories->map(fn (Category $category): array => [
+            ])->all()),
+            'categories' => array_values($product->categories->map(fn (Category $category): array => [
                 'id' => $category->ulid,
                 'name' => $category->name,
                 'slug' => $category->slug,
                 'is_primary' => (bool) $category->getRelationValue('pivot')?->getAttribute('is_primary'),
-            ])->all(),
+            ])->all()),
             'seo' => [
                 'title' => $meta->title ?? $product->title,
                 'description' => $meta->description ?? $product->short_description,
@@ -123,23 +126,21 @@ final class ProductPresenter
      * Explicit dimensions and every generated size, so the storefront can render responsive,
      * layout-stable images (spec §7.7). A conversion not generated yet is null.
      *
-     * @return array<string, mixed>
+     * @return array{id: string, alt: string, url: string, width: int|null, height: int|null, sizes: array{thumb: array{url: string, width: int}|null, card: array{url: string, width: int}|null, large: array{url: string, width: int}|null}}
      */
     private function image(Media $media): array
     {
-        $sizes = [];
-
-        foreach (Product::IMAGE_CONVERSIONS as $name => $width) {
-            $sizes[$name] = $media->hasGeneratedConversion($name) ? ['url' => $media->getUrl($name), 'width' => $width] : null;
-        }
+        $size = fn (string $name): ?array => $media->hasGeneratedConversion($name) ? ['url' => $media->getUrl($name), 'width' => Product::IMAGE_CONVERSIONS[$name]] : null;
+        $width = $media->getCustomProperty('width');
+        $height = $media->getCustomProperty('height');
 
         return [
             'id' => $media->uuid,
             'alt' => (string) $media->getCustomProperty('alt', ''),
             'url' => $media->getUrl(),
-            'width' => $media->getCustomProperty('width'),
-            'height' => $media->getCustomProperty('height'),
-            'sizes' => $sizes,
+            'width' => is_numeric($width) ? (int) $width : null,
+            'height' => is_numeric($height) ? (int) $height : null,
+            'sizes' => ['thumb' => $size('thumb'), 'card' => $size('card'), 'large' => $size('large')],
         ];
     }
 }

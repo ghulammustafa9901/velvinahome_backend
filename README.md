@@ -5,12 +5,13 @@ panel, platform (landlord) control panel, queue workers and tenant lifecycle too
 
 **One tenant = one brand = one website = one PostgreSQL database.**
 
-> **Current status: Phases 1–3 built; Phase 4 (API stabilisation) next.**
+> **Current status: Phases 1–4 built; Storefront API v1 frozen. Phase 5 (Next.js storefront) next.**
 > Tenancy, identity, both admin panels, settings/flags and outbox (Phase 1); catalog,
 > inventory ledger, Typesense search, media and the storefront catalog API (Phase 2);
 > carts, pricing and coupons, shipping, tax, checkout, orders, COD + manual-transfer payments
-> and order emails (Phase 3).
-> See [docs/phase-3-checkpoint.md](docs/phase-3-checkpoint.md) and [docs/PROGRESS.md](docs/PROGRESS.md).
+> and order emails (Phase 3); content pages and menus, reviews, wishlist, account recovery,
+> the committed OpenAPI contract with contract tests and a generated TypeScript client (Phase 4).
+> See [docs/phase-4-checkpoint.md](docs/phase-4-checkpoint.md) and [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Documentation
 
@@ -19,6 +20,8 @@ panel, platform (landlord) control panel, queue workers and tenant lifecycle too
 | [docs/phase-1-checkpoint.md](docs/phase-1-checkpoint.md) | What Phase 1 delivered, deviations, open questions |
 | [docs/phase-2-checkpoint.md](docs/phase-2-checkpoint.md) | What Phase 2 delivered |
 | [docs/phase-3-checkpoint.md](docs/phase-3-checkpoint.md) | What Phase 3 delivered, deferred items |
+| [docs/phase-4-checkpoint.md](docs/phase-4-checkpoint.md) | What Phase 4 delivered; the v1 freeze |
+| [docs/api/openapi-v1.json](docs/api/openapi-v1.json) | **The Storefront API v1 contract** (`php artisan api:contract --check`) |
 | [docs/architecture/overview.md](docs/architecture/overview.md) | Components, request lifecycle, layering |
 | [docs/architecture/tenancy.md](docs/architecture/tenancy.md) | Tenant resolution, isolation of every concern, lifecycle, migrations |
 | [docs/architecture/modules.md](docs/architecture/modules.md) | Module map and the internal layout every module follows |
