@@ -14,6 +14,7 @@ use Modules\Platform\Http\Middleware\InitializeTenancyForPanelRequest;
 use Modules\Support\Http\ApiCachePolicy;
 use Modules\Support\Http\ApiErrorRenderer;
 use Modules\Support\Http\AssignRequestId;
+use Modules\Support\Http\TrustStorefrontService;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -50,6 +51,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(
             before: InitializeTenancyByHost::class,
             prepend: ApiCachePolicy::class,
+        );
+        // Before any rate limiter reads the client IP.
+        $middleware->prependToPriorityList(
+            before: InitializeTenancyByHost::class,
+            prepend: TrustStorefrontService::class,
         );
 
         $middleware->trustProxies(at: env('TRUSTED_PROXIES', '127.0.0.1'));

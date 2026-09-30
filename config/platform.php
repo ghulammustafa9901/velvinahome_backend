@@ -82,6 +82,13 @@ return [
         'max_age_seconds' => (int) env('SERVICE_AUTH_MAX_AGE_SECONDS', 60),
     ],
 
+    // Backend-triggered ISR purges (spec §6.13). The URL defaults to <storefront>/api/revalidate;
+    // set it for local development, where the storefront runs on its own port.
+    'storefront' => [
+        'revalidate_secret' => env('STOREFRONT_REVALIDATE_SECRET'),
+        'revalidate_url' => env('STOREFRONT_REVALIDATE_URL'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Release metadata

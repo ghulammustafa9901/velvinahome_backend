@@ -22,6 +22,7 @@ use Modules\Platform\Enums\PlatformRole;
 use Modules\Platform\Http\Middleware\InitializeTenancyForPanelRequest;
 use Modules\Platform\Http\Middleware\ScopeSessionToTenant;
 use Modules\Platform\Models\PlatformUser;
+use Modules\Support\Http\TrustStorefrontService;
 
 final class AppServiceProvider extends ServiceProvider
 {
@@ -61,10 +62,12 @@ final class AppServiceProvider extends ServiceProvider
             Limit::perMinute(5)->by($tenantKey().'|account|'.(mb_strtolower(trim($request->string('email')->toString())) ?: self::clientKey($request))),
         ]);
 
-        RateLimiter::for('catalog', fn (Request $request): Limit => Limit::perMinute(120)
+        // The brand's own storefront rendering pages (signed, ISR) is not limited per server IP;
+        // shoppers still are, by their own IP.
+        RateLimiter::for('catalog', fn (Request $request): Limit => self::rendering($request) ? Limit::none() : Limit::perMinute(120)
             ->by($tenantKey().'|'.$request->ip()));
 
-        RateLimiter::for('search', fn (Request $request): Limit => Limit::perMinute(60)
+        RateLimiter::for('search', fn (Request $request): Limit => self::rendering($request) ? Limit::none() : Limit::perMinute(60)
             ->by($tenantKey().'|'.$request->ip()));
 
         RateLimiter::for('cart', fn (Request $request): Limit => Limit::perMinute(60)
@@ -76,6 +79,11 @@ final class AppServiceProvider extends ServiceProvider
             Limit::perMinute(10)->by($tenantKey().'|'.self::clientKey($request)),
             Limit::perMinute(30)->by($tenantKey().'|checkout-ip|'.$request->ip()),
         ]);
+    }
+
+    private static function rendering(Request $request): bool
+    {
+        return $request->attributes->get(TrustStorefrontService::RENDER_ATTRIBUTE) === true;
     }
 
     /**

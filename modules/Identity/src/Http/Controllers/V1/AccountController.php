@@ -28,6 +28,13 @@ final class AccountController
 
     public function updateProfile(Request $request, UpdateCustomerProfile $update): CustomerResource
     {
+        $request->validate([
+            'first_name' => ['nullable', 'string', 'max:100'],
+            'last_name' => ['nullable', 'string', 'max:100'],
+            'phone' => ['nullable', 'string', 'regex:/^\+?[0-9 ()-]{7,20}$/'],
+            'accepts_marketing' => ['nullable', 'boolean'],
+        ]);
+
         return CustomerResource::make($update->handle(self::customer($request), CustomerProfileData::validateAndCreate($request)));
     }
 

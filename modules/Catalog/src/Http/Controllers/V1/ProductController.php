@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Catalog\Http\Controllers\V1;
 
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Catalog\Queries\CatalogQuery;
@@ -23,6 +24,12 @@ final class ProductController
         private readonly ProductPresenter $presenter,
     ) {}
 
+    #[QueryParameter('filter[category]', description: 'Category slug; includes its subcategories.', type: 'string')]
+    #[QueryParameter('filter[brand]', description: 'Brand slug(s), comma-separated.', type: 'string')]
+    #[QueryParameter('filter[ids]', description: 'Product ids, comma-separated (at most 100), e.g. for a wishlist.', type: 'string')]
+    #[QueryParameter('sort', description: '-published_at (default), published_at, title, -title.', type: 'string')]
+    #[QueryParameter('per_page', description: '1–100, default 24.', type: 'integer')]
+    #[QueryParameter('cursor', description: 'Opaque cursor from links.next.', type: 'string')]
     public function index(Request $request): JsonResponse
     {
         $perPage = min(100, max(1, (int) $request->integer('per_page', 24)));

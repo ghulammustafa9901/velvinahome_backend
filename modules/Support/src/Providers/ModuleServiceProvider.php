@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Modules\Support\Http\ApiCachePolicy;
+use Modules\Support\Http\TrustStorefrontService;
 use Modules\Support\Modules\ModuleRegistry;
 use ReflectionClass;
 use RuntimeException;
@@ -155,7 +156,7 @@ abstract class ModuleServiceProvider extends ServiceProvider
             return;
         }
 
-        Route::middleware(['tenant:api', 'api', ApiCachePolicy::class])
+        Route::middleware(['tenant:api', 'api', ApiCachePolicy::class, TrustStorefrontService::class])
             ->prefix('api/v1')
             ->name('api.v1.')
             ->group($routes);

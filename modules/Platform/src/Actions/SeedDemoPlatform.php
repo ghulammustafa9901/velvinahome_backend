@@ -22,7 +22,7 @@ final class SeedDemoPlatform implements Action
      */
     private const BRANDS = [
         ['company' => 'demo-solo', 'slug' => 'alpha', 'name' => 'Alpha Store', 'theme' => 'default'],
-        ['company' => 'demo-group', 'slug' => 'bravo', 'name' => 'Bravo Living', 'theme' => 'default'],
+        ['company' => 'demo-group', 'slug' => 'bravo', 'name' => 'Velvina Home', 'theme' => 'velvina-home'],
         ['company' => 'demo-group', 'slug' => 'charlie', 'name' => 'Charlie Active', 'theme' => 'default'],
     ];
 

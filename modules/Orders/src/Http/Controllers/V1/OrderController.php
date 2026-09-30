@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Orders\Http\Controllers\V1;
 
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -39,6 +40,8 @@ final class OrderController
         return $this->respond($submit->handle($this->accessible($request, $ulid), $receipt, $data['reference'] ?? null));
     }
 
+    #[QueryParameter('per_page', description: '1–50, default 20.', type: 'integer')]
+    #[QueryParameter('cursor', type: 'string')]
     public function index(Request $request): JsonResponse
     {
         $customer = $request->user('customer');

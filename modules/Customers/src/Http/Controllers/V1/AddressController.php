@@ -27,6 +27,21 @@ final class AddressController
 
     public function store(Request $request, SaveAddress $save): JsonResponse
     {
+        $request->validate([
+            'label' => ['nullable', 'string', 'max:50'],
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
+            'phone' => ['required', 'string', 'regex:/^\+?[0-9 ()-]{7,20}$/'],
+            'line1' => ['required', 'string', 'max:255'],
+            'line2' => ['nullable', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:100'],
+            'province' => ['nullable', 'string', 'max:100'],
+            'postal_code' => ['nullable', 'string', 'max:20'],
+            'country_code' => ['nullable', 'string', 'size:2'],
+            'is_default_shipping' => ['nullable', 'boolean'],
+            'is_default_billing' => ['nullable', 'boolean'],
+        ]);
+
         $address = $save->handle(
             self::customerId($request),
             null,
@@ -41,6 +56,21 @@ final class AddressController
 
     public function update(Request $request, string $ulid, SaveAddress $save): JsonResponse
     {
+        $request->validate([
+            'label' => ['nullable', 'string', 'max:50'],
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
+            'phone' => ['required', 'string', 'regex:/^\+?[0-9 ()-]{7,20}$/'],
+            'line1' => ['required', 'string', 'max:255'],
+            'line2' => ['nullable', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:100'],
+            'province' => ['nullable', 'string', 'max:100'],
+            'postal_code' => ['nullable', 'string', 'max:20'],
+            'country_code' => ['nullable', 'string', 'size:2'],
+            'is_default_shipping' => ['nullable', 'boolean'],
+            'is_default_billing' => ['nullable', 'boolean'],
+        ]);
+
         $address = $save->handle(
             self::customerId($request),
             $ulid,

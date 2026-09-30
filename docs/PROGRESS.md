@@ -3,11 +3,12 @@
 Updated continuously (spec §0.2 rule 6). A milestone is only `done` when the app boots,
 migrations run, and the whole test suite passes.
 
-**Current phase:** Phase 4 built — **API v1 frozen** ([docs/phase-4-checkpoint.md](phase-4-checkpoint.md)).
-Next: Phase 5, the Next.js storefront. The owner asked for Phase 3 then Phase 4.
-**Test suite:** 296 passing (1 skipped) on real PostgreSQL 17, Redis and Typesense 30
+**Current phase:** Phase 5 built — **Next.js storefront** ([docs/phase-5-checkpoint.md](phase-5-checkpoint.md)).
+Next: Phase 6, Operations & Growth.
+**Test suite:** 300 passing (1 skipped) on real PostgreSQL 17, Redis and Typesense 30
 (architecture, unit, feature, isolation, multi-process concurrency). Larastan level 8 clean,
-Pint clean.
+Pint clean. platform-web: ESLint, strict typecheck, Vitest, `next build`, 22 Playwright E2E
+tests on the production build.
 
 ---
 
@@ -81,18 +82,35 @@ Contract: [docs/api/openapi-v1.json](api/openapi-v1.json)
 | 4.9 | Query budgets for hot endpoints | done |
 | 4.10 | v1 freeze | done |
 
-## Phases 5–8
+## Phase 5 — Next.js Storefront
+
+Plan: [docs/plans/phase-5.md](plans/phase-5.md) · Report: [docs/phase-5-checkpoint.md](phase-5-checkpoint.md) · ADR-0017
+
+| # | Milestone | Status |
+|---|---|---|
+| 5.1 | Monorepo packages: ui, theme-engine, commerce-core, sections; default theme | done |
+| 5.2 | Tenant resolution by host, storefront config, unknown host 404 | done |
+| 5.3 | Pages: home, listing, category, collection, PDP, search, content pages | done |
+| 5.4 | Cart, one-page checkout (COD + manual transfer), order confirmation, receipt upload | done |
+| 5.5 | Account: sign in/up, recovery, orders, addresses, profile, wishlist, reviews | done |
+| 5.6 | BFF: sealed cookies, server actions, signed service calls | done |
+| 5.7 | SEO layer: metadata, JSON-LD, sitemap, robots, noindex rules | done |
+| 5.8 | ISR + backend revalidation through the outbox | done |
+| 5.9 | First tenant theme: velvina-home (demo brand bravo) | done |
+| 5.10 | Playwright E2E, lab CWV budget, accessibility pass | done — CI jobs gated on a runner with the API stack |
+
+## Phases 6–8
 
 | Phase | Scope | Status |
 |---|---|---|
 | 3 | Commerce Core | **built** — see above |
 | 4 | API Stabilization — v1 contract freeze | **built, v1 frozen** — see above |
-| 5 | Next.js Storefront | not started |
+| 5 | Next.js Storefront | **built** — see above |
 | 6 | Operations & Growth | not started |
 | 7 | Hardening | not started |
 | 8 | Launch & Onboarding | not started |
 
 ## Decision log pointers
 
-- ADRs 0001–0016: [docs/adr/](adr/README.md)
+- ADRs 0001–0017: [docs/adr/](adr/README.md)
 - Open business decisions (spec §16): tracked in the checkpoint reports

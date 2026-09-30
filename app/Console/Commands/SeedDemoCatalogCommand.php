@@ -16,6 +16,7 @@ use Modules\Catalog\Models\Product;
 use Modules\Inventory\Actions\ReceiveStock;
 use Modules\Inventory\Data\StockDocumentData;
 use Modules\Inventory\Models\Location;
+use Modules\Inventory\Models\StockLevel;
 use Modules\Platform\Contracts\TenantDirectory;
 
 /**
@@ -25,7 +26,7 @@ use Modules\Platform\Contracts\TenantDirectory;
  */
 final class SeedDemoCatalogCommand extends Command
 {
-    protected $signature = 'platform:seed-demo-catalog';
+    protected $signature = 'platform:seed-demo-catalog {--restock : Top demo stock back up to its opening level (for repeatable storefront E2E runs)}';
 
     protected $description = 'Add a sample catalog with stock to every active demo brand (local only)';
 
@@ -49,11 +50,55 @@ final class SeedDemoCatalogCommand extends Command
         }
 
         foreach ($tenants->activeTenantIds() as $tenantId) {
+            if ($this->option('restock')) {
+                $count = $tenants->runIn($tenantId, fn (): int => $this->restockBrand());
+                $this->components->twoColumnDetail($tenantId, "{$count} variants restocked");
+
+                continue;
+            }
+
             $count = $tenants->runIn($tenantId, fn (): int => $this->seedBrand());
             $this->components->twoColumnDetail($tenantId, "{$count} products added");
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Receive (through the ledger, like any delivery) whatever each demo variant has sold since
+     * the opening stock, so orders placed by test runs never exhaust the demo catalog.
+     */
+    private function restockBrand(): int
+    {
+        $location = Location::query()->where('is_default', true)->firstOrFail();
+        $lines = [];
+
+        foreach (self::PRODUCTS as $item) {
+            $product = Product::query()->where('title', $item['title'])->first();
+
+            if ($product === null || $item['stock'] === 0) {
+                continue;
+            }
+
+            foreach ($product->variants()->get() as $variant) {
+                $level = StockLevel::query()->where('variant_id', $variant->id)->where('location_id', $location->id)->first();
+                $missing = $item['stock'] - ($level?->available() ?? 0);
+
+                if ($missing > 0) {
+                    $lines[] = ['variantUlid' => $variant->ulid, 'quantity' => $missing, 'unitCostAmount' => intdiv($item['price'] * 45, 100)];
+                }
+            }
+        }
+
+        if ($lines !== []) {
+            app(ReceiveStock::class)->handle(StockDocumentData::from([
+                'locationUlid' => $location->ulid,
+                'supplierReference' => 'DEMO-RESTOCK',
+                'lines' => $lines,
+            ]));
+        }
+
+        return count($lines);
     }
 
     private function seedBrand(): int

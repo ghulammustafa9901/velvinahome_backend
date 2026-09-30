@@ -24,6 +24,16 @@ final class CustomerAuthController
 {
     public function register(Request $request, RegisterCustomer $register): JsonResponse
     {
+        // The same rules CustomerRegistrationData enforces, stated here for the API contract.
+        $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+            'password' => ['required', 'string'],
+            'first_name' => ['nullable', 'string', 'max:100'],
+            'last_name' => ['nullable', 'string', 'max:100'],
+            'phone' => ['nullable', 'string', 'max:32'],
+            'accepts_marketing' => ['nullable', 'boolean'],
+        ]);
+
         $customer = $register->handle(CustomerRegistrationData::validateAndCreate($request));
 
         return CustomerResource::make($customer)->response()->setStatusCode(201);
@@ -31,6 +41,12 @@ final class CustomerAuthController
 
     public function login(Request $request, AuthenticateCustomer $authenticate): JsonResponse
     {
+        $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+            'device_name' => ['nullable', 'string', 'max:100'],
+        ]);
+
         $result = $authenticate->handle(
             CustomerLoginData::validateAndCreate($request),
             new RequestContextData($request->ip(), $request->userAgent()),

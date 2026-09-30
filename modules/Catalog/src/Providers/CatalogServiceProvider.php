@@ -15,6 +15,7 @@ use Modules\Catalog\Support\EloquentProductDirectory;
 use Modules\Catalog\Support\EloquentVariantCatalog;
 use Modules\Catalog\Support\EloquentVariantLookup;
 use Modules\Catalog\Support\ProductSitemapSource;
+use Modules\Catalog\Support\StorefrontRevalidation;
 use Modules\Catalog\Support\TypesenseSearchIndex;
 use Modules\Inventory\Events\StockChanged;
 use Modules\Seo\Contracts\SitemapSources;
@@ -42,6 +43,8 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $sitemap = $this->app->make(SitemapSources::class);
         $sitemap->register(ProductSitemapSource::class);
         $sitemap->register(CategorySitemapSource::class);
+
+        StorefrontRevalidation::register();
     }
 
     protected function listeners(): array

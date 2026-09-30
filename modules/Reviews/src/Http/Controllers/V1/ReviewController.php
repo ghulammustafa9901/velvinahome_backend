@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Reviews\Http\Controllers\V1;
 
+use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Reviews\Actions\SubmitReview;
@@ -15,6 +16,8 @@ final class ReviewController
     /**
      * Approved reviews of a product, newest first, with the rating summary.
      */
+    #[QueryParameter('per_page', description: '1–50, default 10.', type: 'integer')]
+    #[QueryParameter('cursor', type: 'string')]
     public function index(Request $request, string $product, RatingSummary $summary): JsonResponse
     {
         $perPage = min(50, max(1, (int) $request->integer('per_page', 10)));

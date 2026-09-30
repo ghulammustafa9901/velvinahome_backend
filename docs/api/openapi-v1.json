@@ -325,19 +325,87 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
+                                    "city": {
+                                        "maxLength": 100,
+                                        "type": "string"
+                                    },
+                                    "country_code": {
+                                        "maxLength": 2,
+                                        "minLength": 2,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "first_name": {
+                                        "maxLength": 100,
+                                        "type": "string"
+                                    },
                                     "is_default_billing": {
-                                        "default": false,
-                                        "type": "boolean"
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
                                     },
                                     "is_default_shipping": {
-                                        "default": false,
-                                        "type": "boolean"
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "label": {
+                                        "maxLength": 50,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "last_name": {
+                                        "maxLength": 100,
+                                        "type": "string"
+                                    },
+                                    "line1": {
+                                        "maxLength": 255,
+                                        "type": "string"
+                                    },
+                                    "line2": {
+                                        "maxLength": 255,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "phone": {
+                                        "pattern": "^\\+?[0-9 ()-]{7,20}$",
+                                        "type": "string"
+                                    },
+                                    "postal_code": {
+                                        "maxLength": 20,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "province": {
+                                        "maxLength": 100,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
                                     }
                                 },
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "phone",
+                                    "line1",
+                                    "city"
+                                ],
                                 "type": "object"
                             }
                         }
-                    }
+                    },
+                    "required": true
                 },
                 "responses": {
                     "201": {
@@ -551,19 +619,87 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
+                                    "city": {
+                                        "maxLength": 100,
+                                        "type": "string"
+                                    },
+                                    "country_code": {
+                                        "maxLength": 2,
+                                        "minLength": 2,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "first_name": {
+                                        "maxLength": 100,
+                                        "type": "string"
+                                    },
                                     "is_default_billing": {
-                                        "default": false,
-                                        "type": "boolean"
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
                                     },
                                     "is_default_shipping": {
-                                        "default": false,
-                                        "type": "boolean"
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "label": {
+                                        "maxLength": 50,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "last_name": {
+                                        "maxLength": 100,
+                                        "type": "string"
+                                    },
+                                    "line1": {
+                                        "maxLength": 255,
+                                        "type": "string"
+                                    },
+                                    "line2": {
+                                        "maxLength": 255,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "phone": {
+                                        "pattern": "^\\+?[0-9 ()-]{7,20}$",
+                                        "type": "string"
+                                    },
+                                    "postal_code": {
+                                        "maxLength": 20,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "province": {
+                                        "maxLength": 100,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
                                     }
                                 },
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "phone",
+                                    "line1",
+                                    "city"
+                                ],
                                 "type": "object"
                             }
                         }
-                    }
+                    },
+                    "required": true
                 },
                 "responses": {
                     "200": {
@@ -706,6 +842,23 @@
         "/v1/account/orders": {
             "get": {
                 "operationId": "account_orders_index",
+                "parameters": [
+                    {
+                        "description": "1–50, default 20.",
+                        "in": "query",
+                        "name": "per_page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "cursor",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "content": {
@@ -1419,6 +1572,44 @@
             },
             "patch": {
                 "operationId": "account_profile_update",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "accepts_marketing": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "first_name": {
+                                        "maxLength": 100,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "last_name": {
+                                        "maxLength": 100,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "phone": {
+                                        "pattern": "^\\+?[0-9 ()-]{7,20}$",
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "content": {
@@ -1559,6 +1750,36 @@
         "/v1/auth/login": {
             "post": {
                 "operationId": "auth_login",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "device_name": {
+                                        "maxLength": 100,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "email": {
+                                        "format": "email",
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
                 "responses": {
                     "200": {
                         "content": {
@@ -1672,6 +1893,57 @@
         "/v1/auth/register": {
             "post": {
                 "operationId": "auth_register",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "accepts_marketing": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    "email": {
+                                        "format": "email",
+                                        "maxLength": 255,
+                                        "type": "string"
+                                    },
+                                    "first_name": {
+                                        "maxLength": 100,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "last_name": {
+                                        "maxLength": 100,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "maxLength": 32,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
                 "responses": {
                     "201": {
                         "content": {
@@ -7376,6 +7648,56 @@
         "/v1/products": {
             "get": {
                 "operationId": "products_index",
+                "parameters": [
+                    {
+                        "description": "Category slug; includes its subcategories.",
+                        "in": "query",
+                        "name": "filter[category]",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Brand slug(s), comma-separated.",
+                        "in": "query",
+                        "name": "filter[brand]",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Product ids, comma-separated (at most 100), e.g. for a wishlist.",
+                        "in": "query",
+                        "name": "filter[ids]",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "-published_at (default), published_at, title, -title.",
+                        "in": "query",
+                        "name": "sort",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "1–100, default 24.",
+                        "in": "query",
+                        "name": "per_page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Opaque cursor from links.next.",
+                        "in": "query",
+                        "name": "cursor",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "content": {
@@ -8299,6 +8621,21 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "description": "1–50, default 10.",
+                        "in": "query",
+                        "name": "per_page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "cursor",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
@@ -9198,6 +9535,16 @@
         "/v1/redirects/resolve": {
             "get": {
                 "operationId": "redirects_resolve",
+                "parameters": [
+                    {
+                        "description": "Storefront path, e.g. /product/old-slug.",
+                        "in": "query",
+                        "name": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "content": {
@@ -9263,12 +9610,87 @@
                         },
                         "description": "rate_limited — see Retry-After."
                     }
-                }
+                },
+                "tags": [
+                    "Redirect"
+                ]
             }
         },
         "/v1/search": {
             "get": {
                 "operationId": "search",
+                "parameters": [
+                    {
+                        "description": "Search text; typo-tolerant on words, exact on SKUs.",
+                        "in": "query",
+                        "name": "q",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Category id(s) from the category facet, comma-separated.",
+                        "in": "query",
+                        "name": "filter[category]",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Brand name(s) from the brand facet, comma-separated.",
+                        "in": "query",
+                        "name": "filter[brand]",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "filter[in_stock]",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "description": "Minimum price, minor units.",
+                        "in": "query",
+                        "name": "filter[price][gte]",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Maximum price, minor units.",
+                        "in": "query",
+                        "name": "filter[price][lte]",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "relevance (default), price, -price, newest, best_selling.",
+                        "in": "query",
+                        "name": "sort",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "1–100, default 24.",
+                        "in": "query",
+                        "name": "per_page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "content": {
@@ -9638,6 +10060,23 @@
         "/v1/search/suggest": {
             "get": {
                 "operationId": "search_suggest",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "1–10, default 8.",
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "content": {
