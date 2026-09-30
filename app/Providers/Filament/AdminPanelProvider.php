@@ -61,6 +61,8 @@ final class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: base_path('modules/Content/src/Filament/Resources'), for: 'Modules\\Content\\Filament\\Resources')
             ->discoverResources(in: base_path('modules/Reviews/src/Filament/Resources'), for: 'Modules\\Reviews\\Filament\\Resources')
             ->discoverPages(in: base_path('modules/Settings/src/Filament/Pages'), for: 'Modules\\Settings\\Filament\\Pages')
+            ->discoverPages(in: base_path('modules/Reporting/src/Filament/Pages'), for: 'Modules\\Reporting\\Filament\\Pages')
+            ->discoverWidgets(in: base_path('modules/Reporting/src/Filament/Widgets'), for: 'Modules\\Reporting\\Filament\\Widgets')
             ->pages([Dashboard::class])
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn (): View => view('filament.brand-switcher', [
                 'current' => (string) tenant()?->getAttribute('name'),

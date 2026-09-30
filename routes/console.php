@@ -7,6 +7,7 @@ use Modules\Integrations\Jobs\PublishOutboxMessages;
 use Modules\Inventory\Jobs\RunInventoryMaintenance;
 use Modules\Orders\Jobs\CancelUnpaidOrdersJob;
 use Modules\Platform\Actions\DispatchToActiveTenants;
+use Modules\Reporting\Jobs\RefreshReportsJob;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,7 +17,7 @@ use Modules\Platform\Actions\DispatchToActiveTenants;
 | One landlord-level schedule. Tenant work is fanned out per active tenant by
 | DispatchToActiveTenants, so each job carries its tenant and runs in that tenant's context.
 | Later phases add: reservation expiry, payment reconciliation, inventory reconciliation and
-| snapshots, report aggregation, low-stock digest, sitemap regeneration, backups.
+| snapshots, low-stock digest, sitemap regeneration, backups.
 |
 */
 
@@ -41,3 +42,8 @@ foreach ([
 Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
     fn () => CancelUnpaidOrdersJob::dispatch(),
 ))->everyFifteenMinutes()->name('tenants:orders-cancel-unpaid')->withoutOverlapping()->onOneServer();
+
+// Reporting: rebuild the days whose orders or refunds changed (a few minutes behind at most).
+Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
+    fn () => RefreshReportsJob::dispatch(),
+))->everyFiveMinutes()->name('tenants:reports-refresh')->withoutOverlapping()->onOneServer();

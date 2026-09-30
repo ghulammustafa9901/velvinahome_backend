@@ -57,7 +57,8 @@
             "Modules\\Checkout\\": "modules/Checkout/src/",
             "Modules\\Notifications\\": "modules/Notifications/src/",
             "Modules\\Content\\": "modules/Content/src/",
-            "Modules\\Reviews\\": "modules/Reviews/src/"
+            "Modules\\Reviews\\": "modules/Reviews/src/",
+            "Modules\\Reporting\\": "modules/Reporting/src/"
         }
     },
     "autoload-dev": {

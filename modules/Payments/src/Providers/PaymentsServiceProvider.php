@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\Payments\Providers;
 
 use Modules\Payments\Contracts\Payments;
+use Modules\Payments\Contracts\RefundLedger;
 use Modules\Payments\Seeders\DefaultPaymentMethodsSeeder;
+use Modules\Payments\Support\DatabaseRefundLedger;
 use Modules\Payments\Support\GatewayRegistry;
 use Modules\Payments\Support\LedgerPayments;
 use Modules\Support\Providers\ModuleServiceProvider;
@@ -20,6 +22,7 @@ final class PaymentsServiceProvider extends ModuleServiceProvider
     protected function registerModule(): void
     {
         $this->app->bind(Payments::class, LedgerPayments::class);
+        $this->app->bind(RefundLedger::class, DatabaseRefundLedger::class);
         $this->app->singleton(GatewayRegistry::class);
     }
 

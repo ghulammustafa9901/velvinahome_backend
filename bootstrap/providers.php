@@ -18,6 +18,7 @@ use Modules\Orders\Providers\OrdersServiceProvider;
 use Modules\Payments\Providers\PaymentsServiceProvider;
 use Modules\Platform\Providers\PlatformServiceProvider;
 use Modules\Pricing\Providers\PricingServiceProvider;
+use Modules\Reporting\Providers\ReportingServiceProvider;
 use Modules\Reviews\Providers\ReviewsServiceProvider;
 use Modules\Seo\Providers\SeoServiceProvider;
 use Modules\Settings\Providers\SettingsServiceProvider;
@@ -51,6 +52,7 @@ return [
     NotificationsServiceProvider::class,
     ContentServiceProvider::class,
     ReviewsServiceProvider::class,
+    ReportingServiceProvider::class,
     AppServiceProvider::class,
     PlatformPanelProvider::class,
     AdminPanelProvider::class,
