@@ -1,0 +1,100 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Modules\Catalog\Models\ProductVariant;
+use Modules\Imports\Actions\StartCsvImport;
+use Modules\Imports\Models\ImportRun;
+use Modules\Inventory\Contracts\StockReader;
+use Tests\Support\TestPlatform;
+
+/*
+| Spreadsheet imports: products with variants, and stock counts. Bad rows are reported and
+| skipped; a dry run writes nothing; the uploaded file is removed afterwards.
+*/
+
+beforeEach(function (): void {
+    $this->brand = TestPlatform::brand(TestPlatform::BRAND_B);
+    tenancy()->initialize($this->brand);
+    $this->owner = TestPlatform::staff($this->brand, role: 'Owner');
+    $this->sku = strtoupper(Str::random(8));
+});
+
+function csvRun(object $test, string $source, string $csv, bool $dryRun): ImportRun
+{
+    $path = 'imports/'.Str::random(12).'.csv';
+    Storage::disk(StartCsvImport::DISK)->put($path, $csv);
+
+    return app(StartCsvImport::class)->handle($source, $path, $dryRun, $test->owner)->refresh();
+}
+
+it('imports products with variants and stock from a CSV, reporting the bad ones', function (): void {
+    $s = $this->sku;
+    $csv = "\u{FEFF}handle,title,description,status,option1_name,option1_value,sku,price,compare_at_price,weight_grams,stock\n"
+        ."kurta-{$s},Cotton Kurta,Breathable cotton,active,Size,S,{$s}-S,2500,2999.99,400,4\n"
+        ."kurta-{$s},Cotton Kurta,,active,Size,M,{$s}-M,2600.5,,400,\n"
+        ."mug-{$s},Mug,,draft,,,{$s}-MUG,abc,,,\n";
+
+    $dry = csvRun($this, ImportRun::SOURCE_CSV_PRODUCTS, $csv, true);
+    expect($dry->status)->toBe('completed')
+        ->and($dry->counts['products'])->toEqual(['would_create' => 1, 'failed' => 1])
+        ->and(ProductVariant::query()->where('sku', "{$s}-S")->exists())->toBeFalse();
+
+    $run = csvRun($this, ImportRun::SOURCE_CSV_PRODUCTS, $csv, false);
+    $small = ProductVariant::query()->where('sku', "{$s}-S")->firstOrFail();
+    $medium = ProductVariant::query()->where('sku', "{$s}-M")->firstOrFail();
+
+    expect($run->counts['products'])->toEqual(['created' => 1, 'failed' => 1])
+        ->and($run->issues[0]['message'])->toContain('price must be a number')
+        ->and($small->product_id)->toBe($medium->product_id)
+        ->and($small->price->amount)->toBe(250_000)
+        ->and($small->compare_at_price?->amount)->toBe(299_999)
+        ->and($medium->price->amount)->toBe(260_050)
+        ->and(app(StockReader::class)->available([$small->id])[$small->id])->toBe(4)
+        ->and(Storage::disk(StartCsvImport::DISK)->files('imports'))->not->toContain($run->file_path);
+});
+
+it('sets counted stock by SKU and reports unknown SKUs', function (): void {
+    $s = $this->sku;
+    csvRun($this, ImportRun::SOURCE_CSV_PRODUCTS, "handle,title,sku,price\ntee-{$s},Tee,{$s}-TEE,999\n", false);
+    $variant = ProductVariant::query()->where('sku', "{$s}-TEE")->firstOrFail();
+
+    $run = csvRun($this, ImportRun::SOURCE_CSV_STOCK, "sku,quantity\n{$s}-TEE,12\nNOPE-{$s},3\n{$s}-TEE,-1\n", false);
+
+    expect($run->status)->toBe('completed')
+        ->and($run->counts['stock'])->toMatchArray(['counted' => 1, 'failed' => 2])
+        ->and(app(StockReader::class)->available([$variant->id])[$variant->id])->toBe(12);
+});
+
+it('rejects a file with missing columns and files outside the upload folder', function (): void {
+    $run = csvRun($this, ImportRun::SOURCE_CSV_STOCK, "code,qty\nA,1\n", false);
+
+    expect($run->status)->toBe('failed')->and($run->error)->toContain('Missing columns: sku, quantity');
+
+    expect(fn () => app(StartCsvImport::class)->handle(ImportRun::SOURCE_CSV_STOCK, '../secrets.csv', false, $this->owner))
+        ->toThrow(ValidationException::class);
+});
+
+it('shows the imports screen to an owner', function (): void {
+    tenancy()->end();
+
+    $this->actingAs($this->owner, 'staff')->get('http://'.TestPlatform::adminHost(TestPlatform::BRAND_B).'/import-runs')
+        ->assertOk()->assertSee('Import from WooCommerce');
+});
+
+it('shows imported order history to staff who can see orders', function (): void {
+    tenancy()->end();
+
+    $this->actingAs(TestPlatform::staff($this->brand, role: 'Accountant'), 'staff')
+        ->get('http://'.TestPlatform::adminHost(TestPlatform::BRAND_B).'/imported-orders')->assertOk();
+});
+
+it('keeps imports from staff who cannot change the catalog or stock', function (): void {
+    tenancy()->end();
+
+    $this->actingAs(TestPlatform::staff($this->brand, role: 'Accountant'), 'staff')
+        ->get('http://'.TestPlatform::adminHost(TestPlatform::BRAND_B).'/import-runs')->assertForbidden();
+});

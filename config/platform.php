@@ -91,6 +91,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Imports (WooCommerce, CSV)
+    |--------------------------------------------------------------------------
+    |
+    | Outbound requests to a store URL typed by staff may only reach public addresses (SSRF
+    | guard). Local development and tests talk to stores on private or fake hosts.
+    |
+    */
+
+    'imports' => [
+        'allow_private_hosts' => (bool) env('IMPORTS_ALLOW_PRIVATE_HOSTS', in_array(env('APP_ENV'), ['local', 'testing'], true)),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Release metadata
     |--------------------------------------------------------------------------
     */

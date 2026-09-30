@@ -58,7 +58,8 @@
             "Modules\\Notifications\\": "modules/Notifications/src/",
             "Modules\\Content\\": "modules/Content/src/",
             "Modules\\Reviews\\": "modules/Reviews/src/",
-            "Modules\\Reporting\\": "modules/Reporting/src/"
+            "Modules\\Reporting\\": "modules/Reporting/src/",
+            "Modules\\Imports\\": "modules/Imports/src/"
         }
     },
     "autoload-dev": {

@@ -11,6 +11,7 @@ use Modules\Checkout\Providers\CheckoutServiceProvider;
 use Modules\Content\Providers\ContentServiceProvider;
 use Modules\Customers\Providers\CustomersServiceProvider;
 use Modules\Identity\Providers\IdentityServiceProvider;
+use Modules\Imports\Providers\ImportsServiceProvider;
 use Modules\Integrations\Providers\IntegrationsServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Notifications\Providers\NotificationsServiceProvider;
@@ -53,6 +54,7 @@ return [
     ContentServiceProvider::class,
     ReviewsServiceProvider::class,
     ReportingServiceProvider::class,
+    ImportsServiceProvider::class,
     AppServiceProvider::class,
     PlatformPanelProvider::class,
     AdminPanelProvider::class,

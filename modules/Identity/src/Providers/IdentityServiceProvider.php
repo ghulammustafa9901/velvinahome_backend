@@ -8,9 +8,11 @@ use Illuminate\Auth\Events\Attempting;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
+use Modules\Identity\Contracts\CustomerImport;
 use Modules\Identity\Contracts\StaffDirectory;
 use Modules\Identity\Listeners\AuditStaffAuthentication;
 use Modules\Identity\Seeders\StaffRolesSeeder;
+use Modules\Identity\Support\ActionCustomerImport;
 use Modules\Identity\Support\EloquentStaffDirectory;
 use Modules\Support\Providers\ModuleServiceProvider;
 
@@ -24,6 +26,7 @@ final class IdentityServiceProvider extends ModuleServiceProvider
     protected function registerModule(): void
     {
         $this->app->bind(StaffDirectory::class, EloquentStaffDirectory::class);
+        $this->app->bind(CustomerImport::class, ActionCustomerImport::class);
     }
 
     protected function bootModule(): void
