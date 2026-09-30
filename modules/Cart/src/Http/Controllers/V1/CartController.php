@@ -126,6 +126,7 @@ final class CartController
             'lines' => $body['lines'],
             'totals' => $body['totals'],
             'coupon' => $body['coupon'],
+            'promotions' => $body['promotions'],
             'shipping_options' => $body['shipping_options'],
             'selected_shipping' => $body['selected_shipping'],
             'problems' => $body['problems'],

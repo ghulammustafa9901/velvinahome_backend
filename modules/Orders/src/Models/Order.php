@@ -35,6 +35,7 @@ use Spatie\ModelStates\HasStates;
  * @property Money $total
  * @property bool $tax_inclusive
  * @property string|null $coupon_code
+ * @property list<array{name: string, amount: int}> $promotions
  * @property string|null $customer_note
  * @property string|null $cod_confirmation
  * @property int $cod_attempts
@@ -73,6 +74,7 @@ final class Order extends Model
             'tax' => MoneyCast::class.':currency',
             'total' => MoneyCast::class.':currency',
             'tax_inclusive' => 'boolean',
+            'promotions' => 'array',
             'cod_attempts' => 'integer',
             'placed_at' => 'datetime',
             'confirmed_at' => 'datetime',

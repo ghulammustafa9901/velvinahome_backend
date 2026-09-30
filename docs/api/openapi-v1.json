@@ -2082,6 +2082,16 @@
                                                         "code": {
                                                             "type": "string"
                                                         },
+                                                        "discount": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "$ref": "#/components/schemas/Money"
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
                                                         "error": {
                                                             "type": [
                                                                 "string",
@@ -2092,7 +2102,8 @@
                                                     "required": [
                                                         "code",
                                                         "applied",
-                                                        "error"
+                                                        "error",
+                                                        "discount"
                                                     ],
                                                     "type": [
                                                         "object",
@@ -2217,6 +2228,24 @@
                                                         "required": [
                                                             "code",
                                                             "variant_id"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "promotions": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "discount": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name",
+                                                            "discount"
                                                         ],
                                                         "type": "object"
                                                     },
@@ -2346,6 +2375,7 @@
                                                 "lines",
                                                 "totals",
                                                 "coupon",
+                                                "promotions",
                                                 "shipping_options",
                                                 "selected_shipping",
                                                 "problems"
@@ -2425,6 +2455,16 @@
                                                         "code": {
                                                             "type": "string"
                                                         },
+                                                        "discount": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "$ref": "#/components/schemas/Money"
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
                                                         "error": {
                                                             "type": [
                                                                 "string",
@@ -2435,7 +2475,8 @@
                                                     "required": [
                                                         "code",
                                                         "applied",
-                                                        "error"
+                                                        "error",
+                                                        "discount"
                                                     ],
                                                     "type": [
                                                         "object",
@@ -2560,6 +2601,24 @@
                                                         "required": [
                                                             "code",
                                                             "variant_id"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "promotions": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "discount": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name",
+                                                            "discount"
                                                         ],
                                                         "type": "object"
                                                     },
@@ -2689,6 +2748,7 @@
                                                 "lines",
                                                 "totals",
                                                 "coupon",
+                                                "promotions",
                                                 "shipping_options",
                                                 "selected_shipping",
                                                 "problems"
@@ -2778,6 +2838,16 @@
                                                         "code": {
                                                             "type": "string"
                                                         },
+                                                        "discount": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "$ref": "#/components/schemas/Money"
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
                                                         "error": {
                                                             "type": [
                                                                 "string",
@@ -2788,7 +2858,8 @@
                                                     "required": [
                                                         "code",
                                                         "applied",
-                                                        "error"
+                                                        "error",
+                                                        "discount"
                                                     ],
                                                     "type": [
                                                         "object",
@@ -2918,6 +2989,24 @@
                                                     },
                                                     "type": "array"
                                                 },
+                                                "promotions": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "discount": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name",
+                                                            "discount"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
                                                 "selected_shipping": {
                                                     "properties": {
                                                         "cod_allowed": {
@@ -3042,6 +3131,7 @@
                                                 "lines",
                                                 "totals",
                                                 "coupon",
+                                                "promotions",
                                                 "shipping_options",
                                                 "selected_shipping",
                                                 "problems"
@@ -3155,6 +3245,16 @@
                                                         "code": {
                                                             "type": "string"
                                                         },
+                                                        "discount": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "$ref": "#/components/schemas/Money"
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
                                                         "error": {
                                                             "type": [
                                                                 "string",
@@ -3165,7 +3265,8 @@
                                                     "required": [
                                                         "code",
                                                         "applied",
-                                                        "error"
+                                                        "error",
+                                                        "discount"
                                                     ],
                                                     "type": [
                                                         "object",
@@ -3295,6 +3396,24 @@
                                                     },
                                                     "type": "array"
                                                 },
+                                                "promotions": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "discount": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name",
+                                                            "discount"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
                                                 "selected_shipping": {
                                                     "properties": {
                                                         "cod_allowed": {
@@ -3419,6 +3538,7 @@
                                                 "lines",
                                                 "totals",
                                                 "coupon",
+                                                "promotions",
                                                 "shipping_options",
                                                 "selected_shipping",
                                                 "problems"
@@ -3534,6 +3654,16 @@
                                                         "code": {
                                                             "type": "string"
                                                         },
+                                                        "discount": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "$ref": "#/components/schemas/Money"
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
                                                         "error": {
                                                             "type": [
                                                                 "string",
@@ -3544,7 +3674,8 @@
                                                     "required": [
                                                         "code",
                                                         "applied",
-                                                        "error"
+                                                        "error",
+                                                        "discount"
                                                     ],
                                                     "type": [
                                                         "object",
@@ -3674,6 +3805,24 @@
                                                     },
                                                     "type": "array"
                                                 },
+                                                "promotions": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "discount": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name",
+                                                            "discount"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
                                                 "selected_shipping": {
                                                     "properties": {
                                                         "cod_allowed": {
@@ -3798,6 +3947,7 @@
                                                 "lines",
                                                 "totals",
                                                 "coupon",
+                                                "promotions",
                                                 "shipping_options",
                                                 "selected_shipping",
                                                 "problems"
@@ -3905,6 +4055,16 @@
                                                         "code": {
                                                             "type": "string"
                                                         },
+                                                        "discount": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "$ref": "#/components/schemas/Money"
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
                                                         "error": {
                                                             "type": [
                                                                 "string",
@@ -3915,7 +4075,8 @@
                                                     "required": [
                                                         "code",
                                                         "applied",
-                                                        "error"
+                                                        "error",
+                                                        "discount"
                                                     ],
                                                     "type": [
                                                         "object",
@@ -4045,6 +4206,24 @@
                                                     },
                                                     "type": "array"
                                                 },
+                                                "promotions": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "discount": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name",
+                                                            "discount"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
                                                 "selected_shipping": {
                                                     "properties": {
                                                         "cod_allowed": {
@@ -4169,6 +4348,7 @@
                                                 "lines",
                                                 "totals",
                                                 "coupon",
+                                                "promotions",
                                                 "shipping_options",
                                                 "selected_shipping",
                                                 "problems"
@@ -4284,6 +4464,16 @@
                                                         "code": {
                                                             "type": "string"
                                                         },
+                                                        "discount": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "$ref": "#/components/schemas/Money"
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
                                                         "error": {
                                                             "type": [
                                                                 "string",
@@ -4294,7 +4484,8 @@
                                                     "required": [
                                                         "code",
                                                         "applied",
-                                                        "error"
+                                                        "error",
+                                                        "discount"
                                                     ],
                                                     "type": [
                                                         "object",
@@ -4424,6 +4615,24 @@
                                                     },
                                                     "type": "array"
                                                 },
+                                                "promotions": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "discount": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name",
+                                                            "discount"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
                                                 "selected_shipping": {
                                                     "properties": {
                                                         "cod_allowed": {
@@ -4548,6 +4757,7 @@
                                                 "lines",
                                                 "totals",
                                                 "coupon",
+                                                "promotions",
                                                 "shipping_options",
                                                 "selected_shipping",
                                                 "problems"
@@ -4647,6 +4857,16 @@
                                                         "code": {
                                                             "type": "string"
                                                         },
+                                                        "discount": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "$ref": "#/components/schemas/Money"
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
                                                         "error": {
                                                             "type": [
                                                                 "string",
@@ -4657,7 +4877,8 @@
                                                     "required": [
                                                         "code",
                                                         "applied",
-                                                        "error"
+                                                        "error",
+                                                        "discount"
                                                     ],
                                                     "type": [
                                                         "object",
@@ -4787,6 +5008,24 @@
                                                     },
                                                     "type": "array"
                                                 },
+                                                "promotions": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "discount": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name",
+                                                            "discount"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
                                                 "selected_shipping": {
                                                     "properties": {
                                                         "cod_allowed": {
@@ -4911,6 +5150,7 @@
                                                 "lines",
                                                 "totals",
                                                 "coupon",
+                                                "promotions",
                                                 "shipping_options",
                                                 "selected_shipping",
                                                 "problems"
@@ -5574,6 +5814,16 @@
                                                         "code": {
                                                             "type": "string"
                                                         },
+                                                        "discount": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "$ref": "#/components/schemas/Money"
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
                                                         "error": {
                                                             "type": [
                                                                 "string",
@@ -5584,7 +5834,8 @@
                                                     "required": [
                                                         "code",
                                                         "applied",
-                                                        "error"
+                                                        "error",
+                                                        "discount"
                                                     ],
                                                     "type": [
                                                         "object",
@@ -5730,6 +5981,24 @@
                                                     },
                                                     "type": "array"
                                                 },
+                                                "promotions": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "discount": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name",
+                                                            "discount"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
                                                 "selected_shipping": {
                                                     "properties": {
                                                         "cod_allowed": {
@@ -5848,6 +6117,7 @@
                                                 "lines",
                                                 "totals",
                                                 "coupon",
+                                                "promotions",
                                                 "shipping_options",
                                                 "selected_shipping",
                                                 "problems",

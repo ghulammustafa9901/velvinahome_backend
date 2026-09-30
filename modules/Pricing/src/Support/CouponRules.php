@@ -74,13 +74,6 @@ final class CouponRules
      */
     public static function appliesTo(Coupon $coupon, string $productUlid, array $categoryUlids): bool
     {
-        $products = $coupon->conditions['product_ulids'] ?? [];
-        $categories = $coupon->conditions['category_ulids'] ?? [];
-
-        if ($products === [] && $categories === []) {
-            return true;
-        }
-
-        return in_array($productUlid, $products, true) || array_intersect($categories, $categoryUlids) !== [];
+        return Eligibility::matches($coupon->conditions, $productUlid, $categoryUlids);
     }
 }

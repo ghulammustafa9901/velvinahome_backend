@@ -18,10 +18,13 @@ use Modules\Support\ValueObjects\Money;
 use Modules\Tax\Contracts\TaxCalculator;
 
 /**
- * lines → coupon → shipping → tax → totals (spec §6.4), in integer minor units.
+ * lines → automatic promotions → coupon → shipping → tax → totals (spec §6.4), in integer
+ * minor units.
  *
  * - Lines are re-read from the catalog; unknown or unpublished variants are dropped and
  *   reported as problems, never priced from client input.
+ * - Automatic promotions come first (PromotionEngine); a coupon then applies to what the
+ *   promotions left, so a coupon's percentage is never taken on money already discounted.
  * - An order-level coupon discount is allocated across the eligible lines by value with
  *   Money::allocate, so line totals always add up to the order total.
  * - Tax is computed per line on the discounted amount, in the store's mode; shipping is not
@@ -34,6 +37,7 @@ final class PricingPipeline implements CartPricer
         private readonly ShippingRates $shipping,
         private readonly TaxCalculator $tax,
         private readonly TenantSettings $settings,
+        private readonly PromotionEngine $promotions,
     ) {}
 
     public function price(PricingRequest $request): PricedCart
@@ -60,8 +64,10 @@ final class PricingPipeline implements CartPricer
         $zero = Money::zero($currency);
         $subtotal = Money::sum(array_map(fn (array $line): Money => $line['subtotal'], $lines), $currency);
 
-        // Coupon.
-        [$discounts, $couponError, $freeShipping] = $this->applyCoupon($request, $lines, $zero);
+        // Automatic promotions, then the coupon on what is left.
+        [$promoted, $promotions] = $this->promotions->apply($lines, $zero);
+        [$couponed, $couponError, $freeShipping] = $this->applyCoupon($request, $lines, $promoted, $zero);
+        $discounts = array_map(fn (Money $promo, Money $coupon): Money => $promo->plus($coupon), $promoted, $couponed);
         $discount = Money::sum($discounts, $currency);
 
         // Shipping.
@@ -122,14 +128,17 @@ final class PricingPipeline implements CartPricer
             shippingOptions: $options,
             selectedShipping: $selected,
             problems: $problems,
+            promotions: $promotions,
+            couponDiscount: Money::sum($couponed, $currency),
         );
     }
 
     /**
      * @param  list<array{variant: SellableVariant, quantity: int, subtotal: Money}>  $lines
+     * @param  list<Money>  $promoted  each line's automatic-promotion discount
      * @return array{0: list<Money>, 1: string|null, 2: bool} per-line discounts, error, free shipping
      */
-    private function applyCoupon(PricingRequest $request, array $lines, Money $zero): array
+    private function applyCoupon(PricingRequest $request, array $lines, array $promoted, Money $zero): array
     {
         $none = array_fill(0, count($lines), $zero);
 
@@ -147,9 +156,11 @@ final class PricingPipeline implements CartPricer
             fn (array $line): bool => CouponRules::appliesTo($coupon, $line['variant']->productUlid, $line['variant']->categoryUlids),
             $lines,
         );
+        // What the customer still pays per line after promotions.
+        $net = array_map(fn (array $line, Money $promo): Money => $line['subtotal']->minus($promo), $lines, $promoted);
         $eligibleSubtotal = Money::sum(array_values(array_map(
-            fn (array $line, bool $ok): Money => $ok ? $line['subtotal'] : $zero,
-            $lines,
+            fn (Money $amount, bool $ok): Money => $ok ? $amount : $zero,
+            $net,
             $eligible,
         )), $zero->currency);
 
@@ -167,7 +178,7 @@ final class PricingPipeline implements CartPricer
             ? $eligibleSubtotal->percentage($coupon->value)
             : Money::min(Money::of($coupon->value, $zero->currency), $eligibleSubtotal);
 
-        $weights = array_map(fn (array $line, bool $ok): int => $ok ? $line['subtotal']->amount : 0, $lines, $eligible);
+        $weights = array_map(fn (Money $amount, bool $ok): int => $ok ? $amount->amount : 0, $net, $eligible);
 
         return [$total->isZero() ? $none : $total->allocate(...$weights), null, false];
     }

@@ -20,6 +20,7 @@ final readonly class NewOrder
     /**
      * @param  list<NewOrderLine>  $lines
      * @param  self::STATUS_*  $initialStatus
+     * @param  list<array{name: string, amount: int}>  $promotions  automatic promotions applied, minor units
      */
     public function __construct(
         public string $ulid,
@@ -46,5 +47,6 @@ final readonly class NewOrder
         public string $requestHash,
         public string $accessTokenHash,
         public ?string $ipAddress,
+        public array $promotions = [],
     ) {}
 }

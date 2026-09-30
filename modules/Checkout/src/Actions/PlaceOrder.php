@@ -184,6 +184,7 @@ final class PlaceOrder implements Action
             requestHash: $fingerprint,
             accessTokenHash: OrderAccessToken::hash(OrderAccessToken::for($orderUlid)),
             ipAddress: $input->ipAddress,
+            promotions: array_map(fn (array $promotion): array => ['name' => $promotion['name'], 'amount' => $promotion['amount']->amount], $priced->promotions),
         ));
 
         $this->payments->open($orderUlid, $input->paymentMethodCode, $priced->total, $input->idempotencyKey);

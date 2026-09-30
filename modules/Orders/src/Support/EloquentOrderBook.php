@@ -46,6 +46,7 @@ final class EloquentOrderBook implements OrderBook
             'total' => $data->total,
             'tax_inclusive' => $data->taxInclusive,
             'coupon_code' => $data->couponCode,
+            'promotions' => $data->promotions,
             'customer_note' => $data->customerNote,
             'access_token_hash' => $data->accessTokenHash,
             'idempotency_key' => $data->idempotencyKey,

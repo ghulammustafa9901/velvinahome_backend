@@ -6,6 +6,7 @@ namespace Modules\Catalog\Providers;
 
 use Modules\Catalog\Console\SearchReindexCommand;
 use Modules\Catalog\Contracts\CatalogImport;
+use Modules\Catalog\Contracts\CategoryDirectory;
 use Modules\Catalog\Contracts\ProductDirectory;
 use Modules\Catalog\Contracts\SearchIndex;
 use Modules\Catalog\Contracts\VariantCatalog;
@@ -13,6 +14,7 @@ use Modules\Catalog\Contracts\VariantLookup;
 use Modules\Catalog\Listeners\RefreshSearchAfterStockChange;
 use Modules\Catalog\Support\ActionCatalogImport;
 use Modules\Catalog\Support\CategorySitemapSource;
+use Modules\Catalog\Support\EloquentCategoryDirectory;
 use Modules\Catalog\Support\EloquentProductDirectory;
 use Modules\Catalog\Support\EloquentVariantCatalog;
 use Modules\Catalog\Support\EloquentVariantLookup;
@@ -38,6 +40,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->bind(VariantLookup::class, EloquentVariantLookup::class);
         $this->app->bind(ProductDirectory::class, EloquentProductDirectory::class);
         $this->app->bind(CatalogImport::class, ActionCatalogImport::class);
+        $this->app->bind(CategoryDirectory::class, EloquentCategoryDirectory::class);
         $this->app->singleton(Client::class, fn (): Client => new Client((array) config('scout.typesense.client-settings')));
     }
 
