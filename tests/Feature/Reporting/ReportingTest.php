@@ -141,9 +141,11 @@ it('rebuilds only the days that changed, and catches later changes', function ()
 it('counts an order on the brand-local day it was placed', function (): void {
     $order = reportOrder(TestCommerce::stockedVariant(80_000, 5), 1);
 
-    // 21:30 UTC on 1 March is already 2 March in Karachi (UTC+5). A unique past year keeps
-    // this day to this test in the shared fixture brand.
-    $year = 1990 + random_int(0, 30);
+    // 21:30 UTC on 1 March is already 2 March in Karachi (UTC+5). A past year with no orders
+    // around those days keeps them to this test in the shared fixture brand.
+    do {
+        $year = random_int(1901, 1999);
+    } while (Order::query()->whereBetween('placed_at', ["{$year}-02-28", "{$year}-03-04"])->exists());
     $order->forceFill(['placed_at' => Carbon::parse("{$year}-03-01 21:30:00", 'UTC')])->save();
 
     app(RefreshReports::class)->handle();

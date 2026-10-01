@@ -13,5 +13,6 @@ Route::middleware('throttle:cart')->prefix('carts')->name('carts.')->group(funct
     Route::delete('{ulid}/items/{item}', [CartController::class, 'removeItem'])->name('items.destroy');
     Route::post('{ulid}/coupon', [CartController::class, 'applyCoupon'])->name('coupon.store');
     Route::delete('{ulid}/coupon', [CartController::class, 'removeCoupon'])->name('coupon.destroy');
+    Route::post('{ulid}/recover', [CartController::class, 'recover'])->name('recover');
     Route::post('{ulid}/merge', [CartController::class, 'merge'])->middleware('auth:customer')->name('merge');
 });

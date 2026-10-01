@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Schedule;
+use Modules\Cart\Jobs\SendCartRemindersJob;
 use Modules\Integrations\Jobs\PublishOutboxMessages;
 use Modules\Inventory\Jobs\RunInventoryMaintenance;
 use Modules\Orders\Jobs\CancelUnpaidOrdersJob;
@@ -47,3 +48,8 @@ Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
 Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
     fn () => RefreshReportsJob::dispatch(),
 ))->everyFiveMinutes()->name('tenants:reports-refresh')->withoutOverlapping()->onOneServer();
+
+// Abandoned-cart reminders (brands with the abandoned_cart feature).
+Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
+    fn () => SendCartRemindersJob::dispatch(),
+))->everyFifteenMinutes()->name('tenants:cart-reminders')->withoutOverlapping()->onOneServer();

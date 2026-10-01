@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Modules\Cart\Contracts\Carts;
 use Modules\Checkout\Actions\PlaceOrder;
+use Modules\Checkout\Actions\RememberCheckoutEmail;
 use Modules\Checkout\Data\PlaceOrderInput;
 use Modules\Customers\Data\AddressData;
 use Modules\Payments\Contracts\Payments;
@@ -23,7 +24,7 @@ final class CheckoutController
 {
     private const CART_TOKEN_HEADER = 'X-Cart-Token';
 
-    public function quote(Request $request, Carts $carts, CartPricer $pricer, Payments $payments): JsonResponse
+    public function quote(Request $request, Carts $carts, CartPricer $pricer, Payments $payments, RememberCheckoutEmail $remember): JsonResponse
     {
         $data = $request->validate([
             'cart_id' => ['required', 'string', 'size:26'],
@@ -44,6 +45,7 @@ final class CheckoutController
         $customerId = self::customerId($request);
         $cart = $carts->accessible((string) $data['cart_id'], $customerId, $request->header(self::CART_TOKEN_HEADER));
         $address = isset($data['shipping_address']) ? self::address($data['shipping_address'], 'shipping_address') : null;
+        $remember->handle($cart->ulid, $customerId, $data['email'] ?? null);
 
         $priced = $pricer->price(new PricingRequest(
             lines: $cart->lines,

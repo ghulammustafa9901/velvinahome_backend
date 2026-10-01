@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Modules\Cart\Actions\ApplyCartCoupon;
 use Modules\Cart\Actions\CreateCart;
 use Modules\Cart\Actions\MergeGuestCart;
+use Modules\Cart\Actions\RecoverCart;
 use Modules\Cart\Actions\SetCartItem;
 use Modules\Cart\Models\Cart;
 use Modules\Cart\Models\CartItem;
@@ -37,6 +38,18 @@ final class CartController
         $result = $create->handle(self::customerId($request));
 
         return $this->respond($result['cart'], 201, $result['token']);
+    }
+
+    /**
+     * Reopen a guest cart from an abandoned-cart reminder. Answers like cart creation: the
+     * response carries a fresh cart token for this browser (the old one stops working).
+     */
+    public function recover(Request $request, string $ulid, RecoverCart $recover): JsonResponse
+    {
+        $data = $request->validate(['token' => ['required', 'string', 'size:64']]);
+        $result = $recover->handle($ulid, (string) $data['token']);
+
+        return $this->respond($result['cart'], 200, $result['token']);
     }
 
     public function show(Request $request, string $ulid): JsonResponse

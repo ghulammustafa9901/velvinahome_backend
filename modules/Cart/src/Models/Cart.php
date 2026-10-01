@@ -19,6 +19,10 @@ use Modules\Support\Concerns\HasUlid;
  * @property string $status
  * @property string|null $order_ulid
  * @property Carbon $expires_at
+ * @property string|null $email
+ * @property Carbon|null $reminded_at
+ * @property Carbon|null $recovered_at
+ * @property Carbon $updated_at
  */
 final class Cart extends Model
 {
@@ -30,7 +34,7 @@ final class Cart extends Model
 
     protected function casts(): array
     {
-        return ['expires_at' => 'datetime'];
+        return ['expires_at' => 'datetime', 'reminded_at' => 'datetime', 'recovered_at' => 'datetime'];
     }
 
     /**

@@ -5219,6 +5219,410 @@
                 ]
             }
         },
+        "/v1/carts/{ulid}/recover": {
+            "post": {
+                "operationId": "carts_recover",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "ulid",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Secret returned once when a guest cart is created. Not needed for a signed-in customer's own cart.",
+                        "in": "header",
+                        "name": "X-Cart-Token",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "token": {
+                                        "maxLength": 64,
+                                        "minLength": 64,
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "token"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "coupon": {
+                                                    "properties": {
+                                                        "applied": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "code": {
+                                                            "type": "string"
+                                                        },
+                                                        "discount": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "$ref": "#/components/schemas/Money"
+                                                                },
+                                                                {
+                                                                    "type": "null"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "error": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "code",
+                                                        "applied",
+                                                        "error",
+                                                        "discount"
+                                                    ],
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "currency": {
+                                                    "type": "string"
+                                                },
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "item_count": {
+                                                    "type": "number"
+                                                },
+                                                "lines": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "available_quantity": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "compare_at_price": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "$ref": "#/components/schemas/Money"
+                                                                    },
+                                                                    {
+                                                                        "type": "null"
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "discount": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "id": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "image_url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "options": {
+                                                                "additionalProperties": {
+                                                                    "type": "string"
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "product_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "quantity": {
+                                                                "type": "integer"
+                                                            },
+                                                            "sku": {
+                                                                "type": "string"
+                                                            },
+                                                            "subtotal": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "tax": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "title": {
+                                                                "type": "string"
+                                                            },
+                                                            "total": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "unit_price": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "variant_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "variant_title": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "variant_id",
+                                                            "product_id",
+                                                            "title",
+                                                            "variant_title",
+                                                            "sku",
+                                                            "options",
+                                                            "image_url",
+                                                            "quantity",
+                                                            "unit_price",
+                                                            "compare_at_price",
+                                                            "subtotal",
+                                                            "discount",
+                                                            "tax",
+                                                            "total",
+                                                            "available_quantity"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "problems": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "code": {
+                                                                "type": "string"
+                                                            },
+                                                            "variant_id": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "code",
+                                                            "variant_id"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "promotions": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "discount": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "name",
+                                                            "discount"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "selected_shipping": {
+                                                    "properties": {
+                                                        "cod_allowed": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "code": {
+                                                            "type": "string"
+                                                        },
+                                                        "max_days": {
+                                                            "type": [
+                                                                "integer",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "min_days": {
+                                                            "type": [
+                                                                "integer",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
+                                                        "price": {
+                                                            "$ref": "#/components/schemas/Money"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "code",
+                                                        "name",
+                                                        "price",
+                                                        "cod_allowed",
+                                                        "min_days",
+                                                        "max_days"
+                                                    ],
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "shipping_options": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "cod_allowed": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "code": {
+                                                                "type": "string"
+                                                            },
+                                                            "max_days": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "min_days": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "price": {
+                                                                "$ref": "#/components/schemas/Money"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "code",
+                                                            "name",
+                                                            "price",
+                                                            "cod_allowed",
+                                                            "min_days",
+                                                            "max_days"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "token": {
+                                                    "description": "The guest cart secret: present only in the response that created the cart.",
+                                                    "type": "string"
+                                                },
+                                                "totals": {
+                                                    "properties": {
+                                                        "discount": {
+                                                            "$ref": "#/components/schemas/Money"
+                                                        },
+                                                        "shipping": {
+                                                            "$ref": "#/components/schemas/Money"
+                                                        },
+                                                        "subtotal": {
+                                                            "$ref": "#/components/schemas/Money"
+                                                        },
+                                                        "tax": {
+                                                            "$ref": "#/components/schemas/Money"
+                                                        },
+                                                        "tax_inclusive": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "total": {
+                                                            "$ref": "#/components/schemas/Money"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "subtotal",
+                                                        "discount",
+                                                        "shipping",
+                                                        "tax",
+                                                        "tax_inclusive",
+                                                        "total"
+                                                    ],
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "currency",
+                                                "item_count",
+                                                "token",
+                                                "lines",
+                                                "totals",
+                                                "coupon",
+                                                "promotions",
+                                                "shipping_options",
+                                                "selected_shipping",
+                                                "problems"
+                                            ],
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": "Not found (also for anything the caller may not see)."
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": "validation_failed — `details` maps fields to messages."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": "rate_limited — see Retry-After."
+                    }
+                },
+                "summary": "Reopen a guest cart from an abandoned-cart reminder. Answers like cart creation: the\nresponse carries a fresh cart token for this browser (the old one stops working)",
+                "tags": [
+                    "Cart"
+                ]
+            }
+        },
         "/v1/categories": {
             "get": {
                 "operationId": "categories_index",
@@ -6627,6 +7031,66 @@
                 },
                 "tags": [
                     "Category"
+                ]
+            }
+        },
+        "/v1/email-preferences/unsubscribe": {
+            "post": {
+                "operationId": "email_preferences_unsubscribe",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "email": {
+                                        "format": "email",
+                                        "maxLength": 255,
+                                        "type": "string"
+                                    },
+                                    "signature": {
+                                        "maxLength": 64,
+                                        "minLength": 64,
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "signature"
+                                ],
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": "validation_failed — `details` maps fields to messages."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        },
+                        "description": "rate_limited — see Retry-After."
+                    }
+                },
+                "summary": "Stop reminder emails to an address, from the signed link in a reminder. Order emails\nare not affected",
+                "tags": [
+                    "EmailPreference"
                 ]
             }
         },

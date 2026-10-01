@@ -20,6 +20,7 @@ final class DefaultNotificationTemplatesSeeder extends Seeder
         'order.cancelled' => ['Order {{ order_number }} cancelled', 'Hi {{ customer_name }}, your order {{ order_number }} has been cancelled.', true],
         'order.refunded' => ['Refund for order {{ order_number }}', 'Hi {{ customer_name }}, we have refunded {{ refund_amount }} for your order {{ order_number }}.', true],
         'order.returned' => ['Return received for order {{ order_number }}', 'Hi {{ customer_name }}, we have received the return for your order {{ order_number }}.', false],
+        'cart.abandoned' => ['You left something in your cart', 'Hi, your cart at {{ store_name }} is saved. Pick up where you left off — items sell out.', true],
     ];
 
     public function run(): void

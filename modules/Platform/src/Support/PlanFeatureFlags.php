@@ -24,6 +24,7 @@ final class PlanFeatureFlags implements FeatureFlags
      */
     public const DEFAULTS = [
         'wishlist' => false,
+        'abandoned_cart' => false,
         'reviews' => false,
         'blog' => false,
         'multi_location_inventory' => false,
@@ -77,7 +78,9 @@ final class PlanFeatureFlags implements FeatureFlags
     {
         $flags = self::DEFAULTS;
 
-        foreach ($tenant->loadMissing('plan')->plan->default_features ?? [] as $key => $enabled) {
+        // A fresh read, not the relation possibly cached on a long-lived tenant instance: a plan
+        // change must show once the flags are forgotten.
+        foreach ($tenant->plan()->first()->default_features ?? [] as $key => $enabled) {
             $flags[(string) $key] = (bool) $enabled;
         }
 

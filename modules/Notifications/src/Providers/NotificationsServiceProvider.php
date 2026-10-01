@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Notifications\Providers;
 
 use Modules\Integrations\Contracts\OutboxHandlers;
+use Modules\Notifications\Handlers\CartAbandonedEmail;
 use Modules\Notifications\Handlers\OrderCancelledEmail;
 use Modules\Notifications\Handlers\OrderConfirmedEmail;
 use Modules\Notifications\Handlers\OrderDeliveredEmail;
@@ -25,6 +26,7 @@ final class NotificationsServiceProvider extends ModuleServiceProvider
         'order.cancelled' => OrderCancelledEmail::class,
         'order.refunded' => OrderRefundedEmail::class,
         'order.returned' => OrderReturnedEmail::class,
+        'cart.abandoned' => CartAbandonedEmail::class,
     ];
 
     protected function moduleName(): string
