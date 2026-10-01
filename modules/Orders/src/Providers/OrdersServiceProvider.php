@@ -10,8 +10,10 @@ use Modules\Orders\Listeners\CancelOrderOnFailedPayment;
 use Modules\Orders\Listeners\ConfirmPaidOrder;
 use Modules\Orders\Support\DatabaseSalesLedger;
 use Modules\Orders\Support\EloquentOrderBook;
+use Modules\Orders\Support\TestOrderCheck;
 use Modules\Payments\Events\PaymentConfirmed;
 use Modules\Payments\Events\PaymentFailed;
+use Modules\Platform\Contracts\OnboardingChecks;
 use Modules\Support\Providers\ModuleServiceProvider;
 
 final class OrdersServiceProvider extends ModuleServiceProvider
@@ -38,5 +40,10 @@ final class OrdersServiceProvider extends ModuleServiceProvider
     protected function appendOnlyTables(): array
     {
         return ['order_state_transitions'];
+    }
+
+    protected function bootModule(): void
+    {
+        $this->app->make(OnboardingChecks::class)->register(TestOrderCheck::class);
     }
 }

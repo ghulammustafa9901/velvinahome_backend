@@ -13,6 +13,7 @@ use Modules\Catalog\Contracts\VariantCatalog;
 use Modules\Catalog\Contracts\VariantLookup;
 use Modules\Catalog\Listeners\RefreshSearchAfterStockChange;
 use Modules\Catalog\Support\ActionCatalogImport;
+use Modules\Catalog\Support\CatalogLaunchCheck;
 use Modules\Catalog\Support\CategorySitemapSource;
 use Modules\Catalog\Support\EloquentCategoryDirectory;
 use Modules\Catalog\Support\EloquentProductDirectory;
@@ -22,6 +23,7 @@ use Modules\Catalog\Support\ProductSitemapSource;
 use Modules\Catalog\Support\StorefrontRevalidation;
 use Modules\Catalog\Support\TypesenseSearchIndex;
 use Modules\Inventory\Events\StockChanged;
+use Modules\Platform\Contracts\OnboardingChecks;
 use Modules\Seo\Contracts\SitemapSources;
 use Modules\Support\Providers\ModuleServiceProvider;
 use Typesense\Client;
@@ -46,6 +48,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
 
     protected function bootModule(): void
     {
+        $this->app->make(OnboardingChecks::class)->register(CatalogLaunchCheck::class);
         $sitemap = $this->app->make(SitemapSources::class);
         $sitemap->register(ProductSitemapSource::class);
         $sitemap->register(CategorySitemapSource::class);

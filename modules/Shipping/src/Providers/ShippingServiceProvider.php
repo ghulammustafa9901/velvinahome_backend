@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Shipping\Providers;
 
+use Modules\Platform\Contracts\OnboardingChecks;
 use Modules\Shipping\Contracts\Couriers;
 use Modules\Shipping\Contracts\ShippingRates;
 use Modules\Shipping\Seeders\DefaultShippingSeeder;
 use Modules\Shipping\Support\CourierAdapters;
 use Modules\Shipping\Support\DatabaseCouriers;
+use Modules\Shipping\Support\ShippingLaunchCheck;
 use Modules\Shipping\Support\ZoneShippingRates;
 use Modules\Support\Providers\ModuleServiceProvider;
 
@@ -29,5 +31,10 @@ final class ShippingServiceProvider extends ModuleServiceProvider
     protected function tenantSeeders(): array
     {
         return [DefaultShippingSeeder::class];
+    }
+
+    protected function bootModule(): void
+    {
+        $this->app->make(OnboardingChecks::class)->register(ShippingLaunchCheck::class);
     }
 }

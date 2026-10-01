@@ -16,6 +16,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 use Modules\Platform\Actions\ChangeTenantStatus;
 use Modules\Platform\Actions\StartImpersonation;
 use Modules\Platform\Enums\TenantStatus;
@@ -25,6 +26,7 @@ use Modules\Platform\Models\Company;
 use Modules\Platform\Models\Plan;
 use Modules\Platform\Models\PlatformUser;
 use Modules\Platform\Models\Tenant;
+use Modules\Platform\Support\LaunchChecklist;
 
 /**
  * Brands (tenants): company, status, domains, schema version, health, last backup — and the
@@ -91,6 +93,14 @@ final class TenantResource extends Resource
                 )->all()),
             ])
             ->recordActions([
+                Action::make('checklist')
+                    ->label('Launch checklist')
+                    ->icon(Heroicon::OutlinedClipboardDocumentCheck)
+                    ->color('gray')
+                    ->modalHeading(fn (Tenant $record): string => 'Launch checklist: '.$record->name)
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->modalContent(fn (Tenant $record): HtmlString => self::checklist($record)),
                 Action::make('supportAccess')
                     ->label('Support access')
                     ->icon(Heroicon::OutlinedLifebuoy)
@@ -139,6 +149,23 @@ final class TenantResource extends Resource
             'index' => ListTenantsPage::route('/'),
             'create' => CreateTenantPage::route('/create'),
         ];
+    }
+
+    /**
+     * Computed from the brand's real state on every opening (docs/tenant-onboarding.md).
+     */
+    private static function checklist(Tenant $tenant): HtmlString
+    {
+        $items = app(LaunchChecklist::class)->for($tenant);
+        $done = count(array_filter($items, fn (array $item): bool => $item['done']));
+
+        $html = '<p class="text-sm text-gray-500">'.$done.' of '.count($items).' done</p><ul class="mt-3 space-y-2 text-sm">';
+        foreach ($items as $item) {
+            $html .= '<li><span aria-hidden="true">'.($item['done'] ? '✅' : '⬜').'</span> <span class="font-medium">'.e($item['label']).'</span>'
+                .($item['done'] ? '<span class="sr-only"> (done)</span>' : '<br><span class="text-gray-500">'.e($item['hint']).'</span>').'</li>';
+        }
+
+        return new HtmlString($html.'</ul>');
     }
 
     private static function actor(): ?PlatformUser

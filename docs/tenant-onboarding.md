@@ -4,6 +4,19 @@ Written in Phase 8 (spec §13), drafted here so `tenant:create` prints the right
 checklist from Phase 1 onward. Every step is either automated by `tenant:create` or an
 explicit human action.
 
+**Live checklist (Phase 6):** platform panel → Brands → *Launch checklist* shows, for one
+brand, what is actually done — computed from its data every time: hostnames, plan, theme,
+store email sender, products on sale, delivery method, payment method, published home page
+and a test order. Modules contribute items through `OnboardingChecks`; a check that cannot
+run shows as not done.
+
+**Migration tools (Phase 6):** brand admin → Settings → *Imports*: WooCommerce (read-only REST
+API keys; run a **dry run** first and read its report), products CSV and stock CSV. Old
+product and category URLs get 301s automatically; re-running updates instead of duplicating.
+Imported customers have no password (they claim the account with *forgot password*) and no
+marketing consent. Afterwards, `php artisan reports:refresh --tenant=<id>` and
+`reports:verify` confirm the reports match the orders.
+
 ## 1. Commercial and account setup
 - [ ] Company record exists (`company:create`) — the contracting/billing party
 - [ ] Brand agreed: name, slug, domains (storefront, admin, API)

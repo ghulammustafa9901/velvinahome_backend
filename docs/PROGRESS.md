@@ -3,9 +3,9 @@
 Updated continuously (spec §0.2 rule 6). A milestone is only `done` when the app boots,
 migrations run, and the whole test suite passes.
 
-**Current phase:** Phase 5 built — **Next.js storefront** ([docs/phase-5-checkpoint.md](phase-5-checkpoint.md)).
-Next: Phase 6, Operations & Growth.
-**Test suite:** 300 passing (1 skipped) on real PostgreSQL 17, Redis and Typesense 30
+**Current phase:** Phase 6 built — **Operations & Growth + migration tools** ([docs/phase-6-checkpoint.md](phase-6-checkpoint.md)).
+Next: Phase 7, Hardening & Production Readiness.
+**Test suite:** 360 passing (1 skipped) on real PostgreSQL 17, Redis and Typesense 30
 (architecture, unit, feature, isolation, multi-process concurrency). Larastan level 8 clean,
 Pint clean. platform-web: ESLint, strict typecheck, Vitest, `next build`, 22 Playwright E2E
 tests on the production build.
@@ -99,18 +99,36 @@ Plan: [docs/plans/phase-5.md](plans/phase-5.md) · Report: [docs/phase-5-checkpo
 | 5.9 | First tenant theme: velvina-home (demo brand bravo) | done |
 | 5.10 | Playwright E2E, lab CWV budget, accessibility pass | done — CI jobs gated on a runner with the API stack |
 
-## Phases 6–8
+## Phase 6 — Operations & Growth Modules + Migration Tools
+
+Plan: [docs/plans/phase-6.md](plans/phase-6.md) · Report: [docs/phase-6-checkpoint.md](phase-6-checkpoint.md) · ADR-0018
+
+Owner decisions: payment adapters deferred; no courier account yet (framework + manual courier).
+
+| # | Milestone | Status |
+|---|---|---|
+| 6.1 | Reporting (aggregates, dashboard, verifier) | done |
+| 6.2 | WooCommerce importer with redirects | done — first live run in Phase 8 |
+| 6.3 | CSV importers (products, stock) | done |
+| 6.4 | Blog and custom content types | done |
+| 6.5 | Automatic promotions | done |
+| 6.6 | Abandoned-cart reminders | done |
+| 6.7 | Courier framework | done (manual courier; API adapter waits for an account) |
+| 6.8 | Onboarding checklist | done |
+| — | JazzCash/Easypaisa adapters | deferred (owner) |
+
+## Phases 7–8
 
 | Phase | Scope | Status |
 |---|---|---|
 | 3 | Commerce Core | **built** — see above |
 | 4 | API Stabilization — v1 contract freeze | **built, v1 frozen** — see above |
 | 5 | Next.js Storefront | **built** — see above |
-| 6 | Operations & Growth | not started |
+| 6 | Operations & Growth | **built** — see above |
 | 7 | Hardening | not started |
 | 8 | Launch & Onboarding | not started |
 
 ## Decision log pointers
 
-- ADRs 0001–0017: [docs/adr/](adr/README.md)
+- ADRs 0001–0018: [docs/adr/](adr/README.md)
 - Open business decisions (spec §16): tracked in the checkpoint reports

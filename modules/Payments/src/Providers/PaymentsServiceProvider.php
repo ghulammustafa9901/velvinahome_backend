@@ -10,6 +10,8 @@ use Modules\Payments\Seeders\DefaultPaymentMethodsSeeder;
 use Modules\Payments\Support\DatabaseRefundLedger;
 use Modules\Payments\Support\GatewayRegistry;
 use Modules\Payments\Support\LedgerPayments;
+use Modules\Payments\Support\PaymentsLaunchCheck;
+use Modules\Platform\Contracts\OnboardingChecks;
 use Modules\Support\Providers\ModuleServiceProvider;
 
 final class PaymentsServiceProvider extends ModuleServiceProvider
@@ -34,5 +36,10 @@ final class PaymentsServiceProvider extends ModuleServiceProvider
     protected function tenantSeeders(): array
     {
         return [DefaultPaymentMethodsSeeder::class];
+    }
+
+    protected function bootModule(): void
+    {
+        $this->app->make(OnboardingChecks::class)->register(PaymentsLaunchCheck::class);
     }
 }

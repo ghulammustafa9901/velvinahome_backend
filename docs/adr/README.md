@@ -24,6 +24,7 @@ accepted — it is **superseded** by a newer ADR, which keeps the reasoning hist
 | [0015](0015-order-payment-and-checkout-mechanics.md) | Order, payment and checkout mechanics for launch (COD + manual transfer) | Accepted |
 | [0016](0016-api-contract-tooling-and-v1-freeze.md) | API contract tooling and the v1 freeze | Accepted |
 | [0017](0017-storefront-bff-sessions-service-auth-and-revalidation.md) | Storefront BFF sessions, service authentication and ISR revalidation | Accepted |
+| [0018](0018-phase-6-reporting-imports-promotions-reminders.md) | Reporting, imports, promotions and reminders (Phase 6 mechanics) | Accepted |
 
 ## Deferred — ADRs to write when the decision is reached
 
