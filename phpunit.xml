@@ -61,6 +61,8 @@
         <!-- The array store supports tags, which tenant cache scoping relies on. -->
         <env name="CACHE_STORE" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="POSTHOG_PROJECT_KEY" value=""/>
+        <env name="HEALTH_CHECK_TOKEN" value="test-health-token-0123456789abcdef"/>
 
         <!-- Argon2id stays on (it is what production uses) with minimal cost for speed. -->
         <env name="HASH_DRIVER" value="argon2id"/>

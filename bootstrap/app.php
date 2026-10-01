@@ -15,6 +15,7 @@ use Modules\Support\Http\ApiCachePolicy;
 use Modules\Support\Http\ApiErrorRenderer;
 use Modules\Support\Http\AssignRequestId;
 use Modules\Support\Http\TrustStorefrontService;
+use Modules\Support\Monitoring\PostHogErrors;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -67,6 +68,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Storefront API errors use one envelope everywhere (api-conventions §3).
         $exceptions->render(fn (Throwable $exception, Request $request) => (new ApiErrorRenderer)($exception, $request));
+
+        // Unhandled errors also go to PostHog error tracking (scrubbed; ADR-0019).
+        $exceptions->report(function (Throwable $exception): void {
+            app(PostHogErrors::class)->report($exception);
+        });
 
         // Expected domain outcomes are not incidents.
         $exceptions->dontReport([

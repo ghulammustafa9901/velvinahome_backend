@@ -111,4 +111,25 @@ return [
 
     'release' => env('APP_RELEASE', 'dev'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Monitoring (spec §9; PostHog chosen by the owner, ADR-0019)
+    |--------------------------------------------------------------------------
+    |
+    | The project key is set per environment, never committed. Empty = reporting off.
+    |
+    */
+
+    'monitoring' => [
+        'posthog' => [
+            'key' => env('POSTHOG_PROJECT_KEY', ''),
+            'host' => env('POSTHOG_HOST', 'https://eu.i.posthog.com'),
+        ],
+        // Alert when queued work piles up or fails (health endpoint, failed-job alerts).
+        'queue_backlog_alert' => (int) env('MONITORING_QUEUE_BACKLOG_ALERT', 1000),
+        'alert_email' => env('MONITORING_ALERT_EMAIL'),
+        // Unlocks the per-component detail of /health (uptime monitors send it).
+        'health_token' => env('HEALTH_CHECK_TOKEN', ''),
+    ],
+
 ];

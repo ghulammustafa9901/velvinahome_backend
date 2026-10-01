@@ -14,3 +14,9 @@ declare(strict_types=1);
 | Anything else is a 404 by design: an unknown host never falls back to a tenant.
 |
 */
+
+use Illuminate\Support\Facades\Route;
+use Modules\Platform\Http\Controllers\HealthController;
+
+// Deep health check for uptime monitoring, on the platform host only (spec §9).
+Route::get('health', HealthController::class)->middleware('platform.host')->name('health');
