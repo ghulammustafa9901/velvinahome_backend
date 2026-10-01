@@ -7,9 +7,10 @@ use Modules\Identity\Http\Controllers\V1\AccountController;
 use Modules\Identity\Http\Controllers\V1\CustomerAuthController;
 
 Route::prefix('auth')->name('auth.')->middleware('throttle:auth')->group(function (): void {
-    Route::post('register', [CustomerAuthController::class, 'register'])->name('register');
-    Route::post('login', [CustomerAuthController::class, 'login'])->name('login');
-    Route::post('forgot-password', [AccountController::class, 'forgotPassword'])->name('forgot-password');
+    // Turnstile where a bot gains something: new accounts, password guessing, reset spam.
+    Route::post('register', [CustomerAuthController::class, 'register'])->middleware('human')->name('register');
+    Route::post('login', [CustomerAuthController::class, 'login'])->middleware('human')->name('login');
+    Route::post('forgot-password', [AccountController::class, 'forgotPassword'])->middleware('human')->name('forgot-password');
     Route::post('reset-password', [AccountController::class, 'resetPassword'])->name('reset-password');
 });
 

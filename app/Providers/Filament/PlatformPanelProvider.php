@@ -21,6 +21,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Modules\Platform\Http\Middleware\EnsurePlatformHost;
 use Modules\Platform\Http\Middleware\ScopeSessionToTenant;
+use Modules\Support\Http\EnforceSessionAge;
 
 /**
  * The platform (landlord) control panel, for the Platform Owner's team only (spec §4.9).
@@ -60,6 +61,7 @@ final class PlatformPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                EnforceSessionAge::class.':platform',
             ])
             ->databaseNotifications(false);
     }

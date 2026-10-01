@@ -61,6 +61,18 @@ return [
         'lockout_seconds' => (int) env('STAFF_LOCKOUT_SECONDS', 900),
     ],
 
+    // Cloudflare Turnstile on customer sign-in, registration, reset requests and order placement
+    // (spec §8). Empty = off. The matching site key is the storefront's NEXT_PUBLIC_TURNSTILE_SITE_KEY.
+    'turnstile' => [
+        'secret_key' => env('TURNSTILE_SECRET_KEY', ''),
+    ],
+
+    // Admin and platform panel sessions: signed out after this many hours however active
+    // (ASVS 3.3.2). Idle sign-out is SESSION_LIFETIME (minutes, 30 by default).
+    'panels' => [
+        'max_session_hours' => (float) env('PANEL_MAX_SESSION_HOURS', 12),
+    ],
+
     'passwords' => [
         // Have I Been Pwned k-anonymity check. Disabled only in the test suite.
         'check_breached' => (bool) env('PASSWORD_BREACH_CHECK', true),

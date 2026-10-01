@@ -25,6 +25,7 @@ use Modules\Identity\Contracts\StaffDirectory;
 use Modules\Platform\Contracts\OwnerBrands;
 use Modules\Platform\Http\Middleware\EnforceImpersonationExpiry;
 use Modules\Platform\Http\Middleware\ScopeSessionToTenant;
+use Modules\Support\Http\EnforceSessionAge;
 
 /**
  * The tenant admin panel, served on each brand's admin host (spec §6.12).
@@ -87,6 +88,7 @@ final class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                EnforceSessionAge::class.':staff',
             ])
             ->databaseNotifications(false);
     }

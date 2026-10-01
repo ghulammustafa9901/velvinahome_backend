@@ -16,6 +16,7 @@ use Modules\Support\Http\ApiErrorRenderer;
 use Modules\Support\Http\AssignRequestId;
 use Modules\Support\Http\SecurityHeaders;
 use Modules\Support\Http\TrustStorefrontService;
+use Modules\Support\Http\VerifyHumanChallenge;
 use Modules\Support\Monitoring\PostHogErrors;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => InitializeTenancyByHost::class,
             'platform.host' => EnsurePlatformHost::class,
             'feature' => EnsureFeatureEnabled::class,
+            'human' => VerifyHumanChallenge::class,
         ]);
 
         $middleware->prepend(AssignRequestId::class);
