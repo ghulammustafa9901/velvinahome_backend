@@ -61,10 +61,11 @@ it('deletes the database and roles once confirmed and backed up, keeping the lan
 });
 
 it('exports the tenant database with pg_dump', function (): void {
-    $binary = (new ExecutableFinder)->find('pg_dump');
+    $configured = (string) config('platform.provisioning.pg_dump_binary');
+    $binary = is_file($configured) ? $configured : (new ExecutableFinder)->find('pg_dump');
 
     if ($binary === null) {
-        $this->markTestSkipped('pg_dump is not on PATH.');
+        $this->markTestSkipped('pg_dump is neither configured (PG_DUMP_BINARY) nor on PATH.');
     }
 
     config(['platform.provisioning.pg_dump_binary' => $binary]);

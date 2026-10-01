@@ -42,6 +42,11 @@ SELECT format(
 WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'platform_provisioner')
 \gexec
 
+-- Dropping a tenant database (tenant:delete, restore drills) uses DROP DATABASE ... WITH
+-- (FORCE), which must end every session on it — including ones that have not finished logging
+-- in yet and so have no role. pg_signal_backend allows that for non-superuser sessions only.
+GRANT pg_signal_backend TO platform_provisioner;
+
 -- Landlord migration role: owns the landlord schema. Used only by deploys.
 SELECT format(
     'CREATE ROLE landlord_migrator LOGIN PASSWORD %L NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS',

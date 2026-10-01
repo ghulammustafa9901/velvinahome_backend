@@ -7,7 +7,7 @@ exists, and is **tested** rather than assumed — a runbook nobody has followed 
 |---|---|---|
 | `deploy.md` — zero-downtime deploy including `tenants:migrate` | Phase 7 | not written |
 | `rollback.md` — one-click rollback, including a failed tenant migration | Phase 7 | not written |
-| `restore-tenant.md` — restore one tenant without affecting others (**drill required**) | Phase 7 | not written |
+| [`restore-tenant.md`](restore-tenant.md) — restore one tenant without affecting others (**drill required**) | Phase 7 M7.4 | written; drill passed locally (automated weekly via `tenants:backup --drill`) |
 | `rotate-secrets.md` — APP_KEY, DB roles, gateway credentials, BFF session secret | Phase 7 | not written |
 | [`provision-tenant.md`](provision-tenant.md) — run `tenant:create` and complete the go-live checklist | Phase 1 (draft), finalised Phase 8 | draft |
 | [`verify-isolation.md`](verify-isolation.md) — run the isolation suite against staging | Phase 1 M1.8 | written; run locally, not yet against staging |

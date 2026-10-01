@@ -70,16 +70,51 @@ final class PostgresProvisioner
     {
         $provisioner = $this->provisioner();
 
-        if ($this->roleExists($names->migratorRole)) {
-            $provisioner->statement(sprintf(
-                'GRANT %s TO CURRENT_USER WITH INHERIT TRUE, SET TRUE',
-                $this->ident($names->migratorRole),
-            ));
+        // Owning the database needs the migration role; ending the brand's open sessions (queue
+        // workers, web requests) for DROP ... WITH (FORCE) needs the privileges of both roles.
+        foreach ([$names->migratorRole, $names->appRole] as $role) {
+            if ($this->roleExists($role)) {
+                $provisioner->statement(sprintf('GRANT %s TO CURRENT_USER WITH INHERIT TRUE, SET TRUE', $this->ident($role)));
+            }
         }
 
         $provisioner->statement(sprintf('DROP DATABASE IF EXISTS %s WITH (FORCE)', $this->ident($names->database)));
         $provisioner->statement(sprintf('DROP ROLE IF EXISTS %s', $this->ident($names->appRole)));
         $provisioner->statement(sprintf('DROP ROLE IF EXISTS %s', $this->ident($names->migratorRole)));
+    }
+
+    /**
+     * An empty database owned by the tenant's migration role, reachable by that role only —
+     * the target of a restore drill. The name must be a validated identifier.
+     */
+    public function createScratchDatabase(TenantDatabaseNames $names, string $database): void
+    {
+        $provisioner = $this->provisioner();
+
+        $provisioner->statement(sprintf('GRANT %s TO CURRENT_USER WITH INHERIT TRUE, SET TRUE', $this->ident($names->migratorRole)));
+        $provisioner->statement(sprintf(
+            "CREATE DATABASE %s OWNER %s ENCODING 'UTF8' TEMPLATE template0",
+            $this->ident($database),
+            $this->ident($names->migratorRole),
+        ));
+        $provisioner->statement(sprintf('REVOKE ALL ON DATABASE %s FROM PUBLIC', $this->ident($database)));
+        $provisioner->statement(sprintf('GRANT CONNECT ON DATABASE %s TO %s', $this->ident($database), $this->ident($names->migratorRole)));
+    }
+
+    public function dropScratchDatabase(TenantDatabaseNames $names, string $database): void
+    {
+        $this->provisioner()->statement(sprintf('GRANT %s TO CURRENT_USER WITH INHERIT TRUE, SET TRUE', $this->ident($names->migratorRole)));
+        $this->provisioner()->statement(sprintf('DROP DATABASE IF EXISTS %s WITH (FORCE)', $this->ident($database)));
+    }
+
+    /**
+     * Re-apply the schema privileges after a restore (a dump is restored without them).
+     *
+     * @param  array{host: string, port: int}  $server
+     */
+    public function reapplyPrivileges(TenantDatabaseNames $names, string $migratorPassword, array $server): void
+    {
+        $this->configureSchema($names, $migratorPassword, $server);
     }
 
     public function databaseExists(string $database): bool

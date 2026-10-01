@@ -8,7 +8,7 @@ isolation real rather than merely conventional.
 
 | Role | Type | Used by | Privileges |
 |---|---|---|---|
-| `platform_provisioner` | LOGIN | `tenant:create` / `tenant:delete` only, credentials held outside the app runtime | `CREATEDB`, `CREATEROLE`. **Not** superuser. Never used to serve a request. |
+| `platform_provisioner` | LOGIN | `tenant:create` / `tenant:delete` only, credentials held outside the app runtime | `CREATEDB`, `CREATEROLE`, member of `pg_signal_backend` (so `DROP DATABASE … WITH (FORCE)` can end sessions on a tenant database; it cannot signal superuser sessions). **Not** superuser. Never used to serve a request. Also runs restore drills' scratch databases. |
 | `landlord_app` | LOGIN | the application, landlord connection | DML on landlord tables; no DDL |
 | `landlord_migrator` | LOGIN | deploys only | owns the landlord schema; DDL |
 | `tenant_<slug>_app` | LOGIN | the application, tenant connection | DML on that one tenant database only; no DDL |

@@ -169,6 +169,7 @@ final class TestPlatform
         // role, which (unlike the app role) may delete audit rows.
         $landlord = app('db')->connection('landlord_migrator');
         $landlord->table('tenant_migration_runs')->where('tenant_id', $tenant->id)->delete();
+        $landlord->table('tenant_restores')->where('tenant_id', $tenant->id)->delete();
         $landlord->table('tenant_backups')->where('tenant_id', $tenant->id)->delete();
         $landlord->table('company_owner_brand_links')->where('tenant_id', $tenant->id)->delete();
         $landlord->table('impersonation_sessions')->where('tenant_id', $tenant->id)->delete();

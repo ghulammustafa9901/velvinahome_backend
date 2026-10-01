@@ -59,3 +59,8 @@ Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
 Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
     fn () => SyncShipmentTrackingJob::dispatch(),
 ))->hourly()->name('tenants:shipment-tracking')->withoutOverlapping()->onOneServer();
+
+// Backups (spec §9): a nightly export of every brand; on Sundays each export is also restored
+// into a scratch database and compared with the live one (docs/runbooks/restore-tenant.md).
+Schedule::command('tenants:backup')->dailyAt('01:30')->days([1, 2, 3, 4, 5, 6])->withoutOverlapping()->onOneServer();
+Schedule::command('tenants:backup --drill')->sundays()->at('01:30')->withoutOverlapping()->onOneServer();

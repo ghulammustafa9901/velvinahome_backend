@@ -12,6 +12,8 @@
 -- tenant:delete, never to serve a request.
 CREATE ROLE platform_provisioner LOGIN PASSWORD 'local-provisioner'
   NOSUPERUSER CREATEDB CREATEROLE NOBYPASSRLS;
+-- Lets DROP DATABASE ... WITH (FORCE) end sessions on a tenant database (non-superuser only).
+GRANT pg_signal_backend TO platform_provisioner;
 
 -- Landlord roles.
 CREATE ROLE landlord_migrator LOGIN PASSWORD 'local-landlord-migrator'

@@ -42,6 +42,9 @@ return [
         'role_prefix' => env('TENANT_DB_ROLE_PREFIX', 'tenant_'),
         'backup_role' => env('DB_BACKUP_ROLE', 'backup_reader'),
         'pg_dump_binary' => env('PG_DUMP_BINARY', 'pg_dump'),
+        'pg_restore_binary' => env('PG_RESTORE_BINARY', 'pg_restore'),
+        // How many nightly exports per brand stay on disk (tenants:backup prunes the rest).
+        'export_retention' => (int) env('TENANT_EXPORT_RETENTION', 14),
         'export_disk' => env('TENANT_EXPORT_DISK', 'local'),
     ],
 

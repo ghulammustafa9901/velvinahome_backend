@@ -15,6 +15,8 @@ use Modules\Platform\Console\TenantActivateCommand;
 use Modules\Platform\Console\TenantCreateCommand;
 use Modules\Platform\Console\TenantDeleteCommand;
 use Modules\Platform\Console\TenantExportCommand;
+use Modules\Platform\Console\TenantRestoreCommand;
+use Modules\Platform\Console\TenantsBackupCommand;
 use Modules\Platform\Console\TenantsMigrateCommand;
 use Modules\Platform\Console\TenantSuspendCommand;
 use Modules\Platform\Contracts\FeatureFlags;
@@ -95,6 +97,8 @@ final class PlatformServiceProvider extends ModuleServiceProvider
             TenantSuspendCommand::class,
             TenantActivateCommand::class,
             TenantExportCommand::class,
+            TenantRestoreCommand::class,
+            TenantsBackupCommand::class,
             TenantDeleteCommand::class,
             TenantsMigrateCommand::class,
             PlatformUserCommand::class,
