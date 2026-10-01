@@ -14,6 +14,7 @@ use Modules\Platform\Http\Middleware\InitializeTenancyForPanelRequest;
 use Modules\Support\Http\ApiCachePolicy;
 use Modules\Support\Http\ApiErrorRenderer;
 use Modules\Support\Http\AssignRequestId;
+use Modules\Support\Http\SecurityHeaders;
 use Modules\Support\Http\TrustStorefrontService;
 use Modules\Support\Monitoring\PostHogErrors;
 
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->prepend(AssignRequestId::class);
+        $middleware->append(SecurityHeaders::class);
 
         // Tenancy must be initialised before sessions, authentication and route-model
         // binding run, or they would all read the landlord database.

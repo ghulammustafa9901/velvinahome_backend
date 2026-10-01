@@ -1,0 +1,15 @@
+# Supply chain (spec §8): weekly update PRs; security updates are raised as soon as published.
+version: 2
+updates:
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      laravel-and-filament:
+        patterns: ["laravel/*", "filament/*", "livewire/*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
