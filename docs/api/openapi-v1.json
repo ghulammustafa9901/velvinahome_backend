@@ -1205,6 +1205,12 @@
                                                                     "string",
                                                                     "null"
                                                                 ]
+                                                            },
+                                                            "tracking_url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
@@ -1212,6 +1218,7 @@
                                                             "status",
                                                             "courier",
                                                             "tracking_number",
+                                                            "tracking_url",
                                                             "shipped_at",
                                                             "delivered_at"
                                                         ],
@@ -8060,6 +8067,12 @@
                                                                     "string",
                                                                     "null"
                                                                 ]
+                                                            },
+                                                            "tracking_url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
@@ -8067,6 +8080,7 @@
                                                             "status",
                                                             "courier",
                                                             "tracking_number",
+                                                            "tracking_url",
                                                             "shipped_at",
                                                             "delivered_at"
                                                         ],
@@ -8524,6 +8538,12 @@
                                                                     "string",
                                                                     "null"
                                                                 ]
+                                                            },
+                                                            "tracking_url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
@@ -8531,6 +8551,7 @@
                                                             "status",
                                                             "courier",
                                                             "tracking_number",
+                                                            "tracking_url",
                                                             "shipped_at",
                                                             "delivered_at"
                                                         ],

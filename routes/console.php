@@ -7,6 +7,7 @@ use Modules\Cart\Jobs\SendCartRemindersJob;
 use Modules\Integrations\Jobs\PublishOutboxMessages;
 use Modules\Inventory\Jobs\RunInventoryMaintenance;
 use Modules\Orders\Jobs\CancelUnpaidOrdersJob;
+use Modules\Orders\Jobs\SyncShipmentTrackingJob;
 use Modules\Platform\Actions\DispatchToActiveTenants;
 use Modules\Reporting\Jobs\RefreshReportsJob;
 
@@ -53,3 +54,8 @@ Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
 Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
     fn () => SendCartRemindersJob::dispatch(),
 ))->everyFifteenMinutes()->name('tenants:cart-reminders')->withoutOverlapping()->onOneServer();
+
+// Courier tracking: deliveries and returns from couriers with an integration.
+Schedule::call(fn () => app(DispatchToActiveTenants::class)->handle(
+    fn () => SyncShipmentTrackingJob::dispatch(),
+))->hourly()->name('tenants:shipment-tracking')->withoutOverlapping()->onOneServer();

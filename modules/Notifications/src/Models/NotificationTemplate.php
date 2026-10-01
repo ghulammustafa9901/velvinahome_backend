@@ -20,7 +20,7 @@ final class NotificationTemplate extends Model
      * escaped when rendered; templates cannot inject markup. Staff-written reasons (e.g. why
      * an order was cancelled) are deliberately not available.
      */
-    public const PLACEHOLDERS = ['store_name', 'customer_name', 'order_number', 'order_total', 'courier', 'tracking_number', 'refund_amount'];
+    public const PLACEHOLDERS = ['store_name', 'customer_name', 'order_number', 'order_total', 'courier', 'tracking_number', 'tracking_url', 'refund_amount'];
 
     protected $guarded = ['id'];
 

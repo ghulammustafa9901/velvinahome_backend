@@ -71,7 +71,7 @@ abstract class SendOrderEmail implements OutboxHandler
      */
     private function placeholders(array $order, array $payload, string $storeName): array
     {
-        /** @var list<array{id: string, courier: string|null, tracking_number: string|null}> $shipments */
+        /** @var list<array{id: string, courier: string|null, tracking_number: string|null, tracking_url?: string|null}> $shipments */
         $shipments = $order['shipments'];
         $shipment = collect($shipments)->firstWhere('id', $payload['shipment_ulid'] ?? null) ?? end($shipments) ?: null;
 
@@ -89,6 +89,7 @@ abstract class SendOrderEmail implements OutboxHandler
             'order_total' => $total->format(),
             'courier' => $shipment['courier'] ?? null,
             'tracking_number' => $shipment['tracking_number'] ?? null,
+            'tracking_url' => $shipment['tracking_url'] ?? null,
             'refund_amount' => $refund,
         ];
     }

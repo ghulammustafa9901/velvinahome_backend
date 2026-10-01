@@ -34,6 +34,7 @@ use Modules\Orders\States\PartiallyFulfilled;
 use Modules\Orders\States\PendingPayment;
 use Modules\Orders\States\Processing;
 use Modules\Payments\Contracts\Payments;
+use Modules\Shipping\Contracts\Couriers;
 use Modules\Support\ValueObjects\Money;
 
 /**
@@ -147,7 +148,7 @@ final class ViewOrderPage extends ViewRecord
                 && $this->order()->status->equals(Confirmed::class, Processing::class, PartiallyFulfilled::class))
             ->fillForm(fn (): array => ['lines' => $this->order()->items->mapWithKeys(fn (OrderItem $item): array => [$item->ulid => $item->unfulfilled()])->all()])
             ->schema(fn (): array => [
-                TextInput::make('courier')->maxLength(64)->datalist(['Leopards', 'TCS', 'PostEx', 'Trax', 'M&P', 'Call Courier', 'BlueEx']),
+                TextInput::make('courier')->maxLength(64)->datalist(fn (): array => array_values(app(Couriers::class)->options())),
                 TextInput::make('tracking_number')->maxLength(100),
                 ...$this->order()->items->filter(fn (OrderItem $item): bool => $item->unfulfilled() > 0)->map(
                     fn (OrderItem $item) => TextInput::make('lines.'.$item->ulid)
