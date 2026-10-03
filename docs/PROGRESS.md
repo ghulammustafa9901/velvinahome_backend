@@ -3,11 +3,11 @@
 Updated continuously (spec §0.2 rule 6). A milestone is only `done` when the app boots,
 migrations run, and the whole test suite passes.
 
-**Current phase:** Phase 6 built — **Operations & Growth + migration tools** ([docs/phase-6-checkpoint.md](phase-6-checkpoint.md)).
-Next: Phase 7, Hardening & Production Readiness.
-**Test suite:** 360 passing (1 skipped) on real PostgreSQL 17, Redis and Typesense 30
-(architecture, unit, feature, isolation, multi-process concurrency). Larastan level 8 clean,
-Pint clean. platform-web: ESLint, strict typecheck, Vitest, `next build`, 22 Playwright E2E
+**Current phase:** Phase 7 built — **Hardening & Production Readiness** ([docs/phase-7-checkpoint.md](phase-7-checkpoint.md)),
+waiting for owner sign-off and the hosting decision. Next: Phase 8, Launch & Tenant Onboarding.
+**Test suite:** 394 passing on real PostgreSQL 17, Redis and Typesense 30
+(architecture, unit, feature, isolation, multi-process concurrency); deploy scripts 10/10.
+Larastan level 8 clean, Pint clean. platform-web: ESLint, strict typecheck, Vitest, `next build`, 22 Playwright E2E
 tests on the production build.
 
 ---
@@ -117,18 +117,30 @@ Owner decisions: payment adapters deferred; no courier account yet (framework + 
 | 6.8 | Onboarding checklist | done |
 | — | JazzCash/Easypaisa adapters | deferred (owner) |
 
-## Phases 7–8
+## Phase 7 — Hardening & Production Readiness
+
+Plan: [docs/plans/phase-7.md](plans/phase-7.md) · Report: [docs/phase-7-checkpoint.md](phase-7-checkpoint.md) · ADR-0019 ·
+[ASVS L2 review](security/asvs-l2.md) · [Load test](performance/load-test.md)
+
+Owner decisions: hosting not chosen yet (server work waits); monitoring with PostHog instead of Sentry.
+
+| # | Milestone | Status |
+|---|---|---|
+| 7.1 | Monitoring and alerting (PostHog, deep `/health`, request ids, failed-job alert) | done |
+| 7.2 | Dependency and header audit | done |
+| 7.3 | Security review against ASVS L2 | done — hosting items open (TLS, WAF, central logs) |
+| 7.4 | Backup and restore drill | done locally — off-site copies / PITR with hosting |
+| 7.5 | Load test and optimization | done locally (3 fixes: bulk search indexing, cached tenant resolution, pooler wiring) — capacity run on staging |
+| 7.6 | Deploy and environments (local part) | done — release/rollback scripts tested with stubs; first real deploy on staging |
+| 7.7 | Runbooks and docs; DoD walk-through | done — 14/16 DoD met, 2 partly (online gateway deferred; real deploy needs hosting) |
+
+## Phase 8
 
 | Phase | Scope | Status |
 |---|---|---|
-| 3 | Commerce Core | **built** — see above |
-| 4 | API Stabilization — v1 contract freeze | **built, v1 frozen** — see above |
-| 5 | Next.js Storefront | **built** — see above |
-| 6 | Operations & Growth | **built** — see above |
-| 7 | Hardening | not started |
-| 8 | Launch & Onboarding | not started |
+| 8 | Launch & Onboarding | not started — needs the hosting decision and Phase 7 sign-off |
 
 ## Decision log pointers
 
-- ADRs 0001–0018: [docs/adr/](adr/README.md)
+- ADRs 0001–0019: [docs/adr/](adr/README.md)
 - Open business decisions (spec §16): tracked in the checkpoint reports

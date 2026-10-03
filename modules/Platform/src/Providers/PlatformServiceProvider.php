@@ -11,11 +11,13 @@ use Modules\Platform\Console\CompanyCreateCommand;
 use Modules\Platform\Console\LandlordMigrateCommand;
 use Modules\Platform\Console\PlatformDemoCommand;
 use Modules\Platform\Console\PlatformUserCommand;
+use Modules\Platform\Console\SecretsReencryptCommand;
 use Modules\Platform\Console\TenantActivateCommand;
 use Modules\Platform\Console\TenantCreateCommand;
 use Modules\Platform\Console\TenantDeleteCommand;
 use Modules\Platform\Console\TenantExportCommand;
 use Modules\Platform\Console\TenantRestoreCommand;
+use Modules\Platform\Console\TenantRotateDbPasswordsCommand;
 use Modules\Platform\Console\TenantsBackupCommand;
 use Modules\Platform\Console\TenantsMigrateCommand;
 use Modules\Platform\Console\TenantSuspendCommand;
@@ -24,12 +26,17 @@ use Modules\Platform\Contracts\OnboardingChecks;
 use Modules\Platform\Contracts\OwnerBrands;
 use Modules\Platform\Contracts\TenantDirectory;
 use Modules\Platform\Listeners\AuditPlatformAuthentication;
+use Modules\Platform\Models\Domain;
+use Modules\Platform\Models\Tenant;
+use Modules\Platform\Models\TenantDatabase;
 use Modules\Platform\Support\LandlordTenantDirectory;
 use Modules\Platform\Support\LaunchChecklist;
 use Modules\Platform\Support\OwnerBrandDirectory;
 use Modules\Platform\Support\PlanFeatureFlags;
 use Modules\Platform\Tenancy\TenantResolver;
+use Modules\Support\Events\StoredSecretsReencrypted;
 use Modules\Support\Providers\ModuleServiceProvider;
+use Modules\Support\Security\EncryptedColumn;
 use Stancl\Tenancy\Events\TenancyEnded;
 use Stancl\Tenancy\Events\TenancyInitialized;
 use Stancl\Tenancy\Listeners\BootstrapTenancy;
@@ -84,8 +91,41 @@ final class PlatformServiceProvider extends ModuleServiceProvider
         Event::listen(Login::class, [AuditPlatformAuthentication::class, 'handleLogin']);
 
         $this->scopeInjectedCacheRepository();
+        $this->forgetCachedResolutions();
 
         $this->loadRoutesFrom($this->modulePath().'/routes/admin.php');
+    }
+
+    /**
+     * Host → tenant resolutions are cached (TenantResolver). Status, domains and credentials
+     * must take effect at once — a suspended brand answers 503 on its next request.
+     */
+    private function forgetCachedResolutions(): void
+    {
+        $resolver = fn (): TenantResolver => $this->app->make(TenantResolver::class);
+
+        Tenant::saved(fn (Tenant $tenant) => $resolver()->forgetTenant($tenant->id));
+        Tenant::deleting(fn (Tenant $tenant) => $resolver()->forgetTenant($tenant->id));
+        TenantDatabase::saved(fn (TenantDatabase $database) => $resolver()->forgetTenant($database->tenant_id));
+        TenantDatabase::deleted(fn (TenantDatabase $database) => $resolver()->forgetTenant($database->tenant_id));
+
+        $domain = function (Domain $domain) use ($resolver): void {
+            $resolver()->forget($domain->hostname, $domain->kind);
+            $original = $domain->getOriginal('hostname');
+
+            if (is_string($original) && $original !== $domain->hostname) {
+                $resolver()->forget($original, $domain->kind);
+            }
+        };
+        Domain::saved($domain);
+        Domain::deleted($domain);
+
+        // Re-encrypted database passwords are written without model events.
+        Event::listen(StoredSecretsReencrypted::class, function (StoredSecretsReencrypted $event) use ($resolver): void {
+            if ($event->scope === EncryptedColumn::CENTRAL) {
+                $resolver()->forgetAll();
+            }
+        });
     }
 
     protected function consoleCommands(): array
@@ -103,6 +143,18 @@ final class PlatformServiceProvider extends ModuleServiceProvider
             TenantsMigrateCommand::class,
             PlatformUserCommand::class,
             PlatformDemoCommand::class,
+            SecretsReencryptCommand::class,
+            TenantRotateDbPasswordsCommand::class,
+        ];
+    }
+
+    protected function encryptedColumns(): array
+    {
+        return [
+            EncryptedColumn::central('tenant_databases', 'app_password'),
+            EncryptedColumn::central('tenant_databases', 'migration_password'),
+            EncryptedColumn::central('platform_users', 'two_factor_secret'),
+            EncryptedColumn::central('platform_users', 'two_factor_recovery_codes'),
         ];
     }
 }

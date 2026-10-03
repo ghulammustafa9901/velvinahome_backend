@@ -12,6 +12,7 @@ use Illuminate\Support\ServiceProvider;
 use Modules\Support\Http\ApiCachePolicy;
 use Modules\Support\Http\TrustStorefrontService;
 use Modules\Support\Modules\ModuleRegistry;
+use Modules\Support\Security\EncryptedColumn;
 use ReflectionClass;
 use RuntimeException;
 
@@ -50,6 +51,7 @@ abstract class ModuleServiceProvider extends ServiceProvider
             $this->landlordMigrationPath(),
             $this->appendOnlyTables(),
             $this->tenantSeeders(),
+            $this->encryptedColumns(),
         );
 
         $this->registerModule();
@@ -62,6 +64,18 @@ abstract class ModuleServiceProvider extends ServiceProvider
      * @return list<string>
      */
     protected function appendOnlyTables(): array
+    {
+        return [];
+    }
+
+    /**
+     * Columns this module stores APP_KEY ciphertext in (encrypted casts, Crypt calls), so a key
+     * rotation re-encrypts them (`secrets:reencrypt`). An architecture test checks that every
+     * encrypted cast is declared.
+     *
+     * @return list<EncryptedColumn>
+     */
+    protected function encryptedColumns(): array
     {
         return [];
     }

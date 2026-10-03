@@ -57,9 +57,9 @@ final class CsvImport
 
             $rows = $this->rows($path, $run->source === ImportRun::SOURCE_CSV_PRODUCTS ? self::PRODUCT_COLUMNS : self::STOCK_COLUMNS);
 
-            $run->source === ImportRun::SOURCE_CSV_PRODUCTS
+            $this->catalog->inBulk(fn () => $run->source === ImportRun::SOURCE_CSV_PRODUCTS
                 ? $this->products($rows, $run->dry_run, $log)
-                : $this->stockLevels($rows, $run->dry_run, $log);
+                : $this->stockLevels($rows, $run->dry_run, $log));
         } finally {
             fclose($stream);
             @unlink($path);

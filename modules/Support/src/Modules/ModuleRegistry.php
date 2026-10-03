@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Support\Modules;
 
+use Modules\Support\Security\EncryptedColumn;
+
 /**
  * What every module contributes to a tenant database, collected in one place.
  *
@@ -26,12 +28,16 @@ final class ModuleRegistry
     /** @var array<string, list<class-string>> module => seeder classes */
     private array $tenantSeeders = [];
 
+    /** @var list<EncryptedColumn> */
+    private array $encryptedColumns = [];
+
     /** @var list<string> */
     private array $modules = [];
 
     /**
      * @param  list<string>  $appendOnlyTables
      * @param  list<class-string>  $tenantSeeders
+     * @param  list<EncryptedColumn>  $encryptedColumns
      */
     public function register(
         string $module,
@@ -39,8 +45,10 @@ final class ModuleRegistry
         ?string $landlordMigrationPath,
         array $appendOnlyTables,
         array $tenantSeeders,
+        array $encryptedColumns = [],
     ): void {
         $this->modules[] = $module;
+        array_push($this->encryptedColumns, ...$encryptedColumns);
 
         if ($tenantMigrationPath !== null) {
             $this->tenantMigrationPaths[$module] = $tenantMigrationPath;
@@ -98,5 +106,16 @@ final class ModuleRegistry
     public function tenantSeeders(): array
     {
         return array_values(array_merge(...array_values($this->tenantSeeders) ?: [[]]));
+    }
+
+    /**
+     * Columns holding APP_KEY ciphertext, in the central database or in every tenant database.
+     *
+     * @param  EncryptedColumn::CENTRAL|EncryptedColumn::TENANT  $scope
+     * @return list<EncryptedColumn>
+     */
+    public function encryptedColumns(string $scope): array
+    {
+        return array_values(array_filter($this->encryptedColumns, fn (EncryptedColumn $column): bool => $column->scope === $scope));
     }
 }

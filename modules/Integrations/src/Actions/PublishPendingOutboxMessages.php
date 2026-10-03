@@ -15,7 +15,8 @@ use Throwable;
  *
  * Each message is claimed with `FOR UPDATE SKIP LOCKED` inside its own short transaction, so
  * concurrent publishers never deliver the same message twice at the same time, and one
- * failing message never blocks the rest. Failures back off exponentially.
+ * failing message never blocks the rest. Failures back off exponentially, and are retried only
+ * after every new message.
  */
 final class PublishPendingOutboxMessages implements Action
 {
@@ -38,9 +39,12 @@ final class PublishPendingOutboxMessages implements Action
         for ($i = 0; $i < self::BATCH; $i++) {
             $outcome = $this->db->connection()->transaction(function (): ?string {
                 /** @var OutboxMessage|null $message */
+                // Never-tried messages first: a backlog of failing retries (a storefront that
+                // is down) must not hold back an order email recorded a moment ago.
                 $message = OutboxMessage::query()
                     ->whereNull('published_at')
                     ->where('available_at', '<=', now())
+                    ->orderBy('attempts')
                     ->orderBy('id')
                     ->lock('FOR UPDATE SKIP LOCKED')
                     ->first();

@@ -13,6 +13,17 @@ use Modules\Catalog\Data\ProductData;
 interface CatalogImport
 {
     /**
+     * Run a bulk import: products saved or restocked inside are indexed for search together at
+     * the end, instead of one search job per save and per stock change.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $work
+     * @return T
+     */
+    public function inBulk(callable $work): mixed;
+
+    /**
      * Create a category, or update it when a ULID is given and still exists.
      *
      * @return string category ULID

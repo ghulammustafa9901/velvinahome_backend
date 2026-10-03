@@ -15,6 +15,7 @@ use Modules\Identity\Seeders\StaffRolesSeeder;
 use Modules\Identity\Support\ActionCustomerImport;
 use Modules\Identity\Support\EloquentStaffDirectory;
 use Modules\Support\Providers\ModuleServiceProvider;
+use Modules\Support\Security\EncryptedColumn;
 
 final class IdentityServiceProvider extends ModuleServiceProvider
 {
@@ -46,5 +47,13 @@ final class IdentityServiceProvider extends ModuleServiceProvider
     protected function tenantSeeders(): array
     {
         return [StaffRolesSeeder::class];
+    }
+
+    protected function encryptedColumns(): array
+    {
+        return [
+            EncryptedColumn::tenant('users', 'two_factor_secret'),
+            EncryptedColumn::tenant('users', 'two_factor_recovery_codes'),
+        ];
     }
 }

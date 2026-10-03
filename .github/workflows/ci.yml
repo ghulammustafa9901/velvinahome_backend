@@ -196,6 +196,15 @@ jobs:
       - run: composer install --no-interaction --prefer-dist --no-progress
       - run: composer audit
 
+  deploy-scripts:
+    name: Deploy scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck deploy/*.sh deploy/tests/*.sh
+      # Release, migration gate, automatic rollback and pruning, with stub php/composer/curl.
+      - run: bash deploy/tests/release.test.sh
+
   docs:
     name: Documentation checks
     runs-on: ubuntu-latest

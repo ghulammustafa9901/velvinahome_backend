@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Modules\Integrations\Actions\PublishPendingOutboxMessages;
 use Modules\Integrations\Contracts\Outbox;
 use Modules\Integrations\Contracts\OutboxHandler;
@@ -29,6 +30,14 @@ final class RecordingOutboxHandler implements OutboxHandler
         }
 
         self::$delivered[] = $messageUlid;
+    }
+}
+
+final class FailingOutboxHandler implements OutboxHandler
+{
+    public function handle(string $messageUlid, array $payload): void
+    {
+        throw new RuntimeException('storefront unreachable');
     }
 }
 
@@ -78,6 +87,31 @@ it('publishes a committed message exactly once', function (): void {
 
     expect(array_count_values(RecordingOutboxHandler::$delivered)[$ulid] ?? 0)->toBe(1)
         ->and($this->tenant->run(fn () => OutboxMessage::query()->where('ulid', $ulid)->value('published_at')))->not->toBeNull();
+});
+
+it('never lets a backlog of failing retries starve a new message', function (): void {
+    // A storefront that is down leaves revalidations failing; an order email must still go out.
+    app(OutboxHandlerRegistry::class)->register('test.retry', FailingOutboxHandler::class);
+
+    $ulid = $this->tenant->run(function (): string {
+        $now = now();
+        OutboxMessage::query()->insert(array_map(fn (int $i): array => [
+            'ulid' => (string) Str::ulid(),
+            'event_type' => 'test.retry',
+            'payload' => json_encode(['n' => $i], JSON_THROW_ON_ERROR),
+            'available_at' => $now->copy()->subMinute(),
+            'attempts' => 3,
+            'created_at' => $now->copy()->subHour(),
+        ], range(1, 120)));
+
+        return app(Outbox::class)->record('test.event', ['n' => 4]);
+    });
+
+    try {
+        expect(RecordingOutboxHandler::$delivered)->toContain($ulid);
+    } finally {
+        $this->tenant->run(fn () => OutboxMessage::query()->where('event_type', 'test.retry')->delete());
+    }
 });
 
 it('keeps a failed message pending with backoff instead of losing it', function (): void {

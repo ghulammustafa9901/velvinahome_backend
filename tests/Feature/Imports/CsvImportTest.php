@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Laravel\Scout\Jobs\MakeSearchable;
 use Modules\Catalog\Models\ProductVariant;
 use Modules\Imports\Actions\StartCsvImport;
 use Modules\Imports\Models\ImportRun;
@@ -76,6 +78,43 @@ it('rejects a file with missing columns and files outside the upload folder', fu
 
     expect(fn () => app(StartCsvImport::class)->handle(ImportRun::SOURCE_CSV_STOCK, '../secrets.csv', false, $this->owner))
         ->toThrow(ValidationException::class);
+});
+
+it('imports a CSV from the command line into the named brand only', function (): void {
+    $s = $this->sku;
+    $file = tempnam(sys_get_temp_dir(), 'csvcli');
+    file_put_contents($file, "handle,title,status,sku,price,stock\nlamp-{$s},Lamp,active,{$s}-LAMP,4500,7\n");
+    tenancy()->end();
+
+    try {
+        $this->artisan('imports:csv', ['tenant' => $this->brand->getTenantKey(), 'file' => $file])
+            ->expectsOutputToContain('created 1')->assertSuccessful();
+        $this->artisan('imports:csv', ['tenant' => $this->brand->getTenantKey(), 'file' => $file.'-missing'])->assertFailed();
+    } finally {
+        @unlink($file);
+    }
+
+    $variant = $this->brand->run(fn () => ProductVariant::query()->where('sku', "{$s}-LAMP")->firstOrFail());
+
+    expect($variant->price->amount)->toBe(450_000)
+        ->and($this->brand->run(fn () => app(StockReader::class)->available([$variant->id])[$variant->id]))->toBe(7)
+        ->and(TestPlatform::brand(TestPlatform::BRAND_C)->run(fn () => ProductVariant::query()->where('sku', "{$s}-LAMP")->exists()))->toBeFalse();
+});
+
+it('indexes an import for search in bulk, not one job per product and stock change', function (): void {
+    $s = $this->sku;
+    Queue::fake([MakeSearchable::class]);
+
+    csvRun($this, ImportRun::SOURCE_CSV_PRODUCTS, "handle,title,status,option1_name,option1_value,sku,price,stock\n"
+        ."a-{$s},Alpha,active,Size,S,{$s}-AS,100,3\na-{$s},Alpha,active,Size,M,{$s}-AM,100,3\n"
+        ."b-{$s},Beta,active,,,{$s}-B,200,5\nc-{$s},Gamma,draft,,,{$s}-C,300,1\n", false);
+
+    Queue::assertPushed(MakeSearchable::class, 1);
+    Queue::assertPushed(MakeSearchable::class, fn (MakeSearchable $job): bool => $job->models->pluck('title')->sort()->values()->all() === ['Alpha', 'Beta']);
+
+    csvRun($this, ImportRun::SOURCE_CSV_STOCK, "sku,quantity\n{$s}-AS,0\n{$s}-B,9\n", false);
+
+    Queue::assertPushed(MakeSearchable::class, 2);
 });
 
 it('shows the imports screen to an owner', function (): void {

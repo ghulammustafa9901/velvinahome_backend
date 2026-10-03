@@ -88,7 +88,7 @@ final class WooCommerceImport
         }
 
         if (in_array('products', $entities, true)) {
-            $this->products($client);
+            $this->catalog->inBulk(fn () => $this->products($client));
         }
 
         if (in_array('customers', $entities, true)) {

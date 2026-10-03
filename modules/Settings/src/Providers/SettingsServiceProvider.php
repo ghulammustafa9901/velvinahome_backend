@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Settings\Providers;
 
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Modules\Integrations\Contracts\StorefrontCache;
 use Modules\Platform\Contracts\OnboardingChecks;
 use Modules\Settings\Contracts\TenantSettings;
@@ -11,7 +13,9 @@ use Modules\Settings\Models\Setting;
 use Modules\Settings\Seeders\DefaultSettingsSeeder;
 use Modules\Settings\Support\DatabaseTenantSettings;
 use Modules\Settings\Support\StoreEmailCheck;
+use Modules\Support\Events\StoredSecretsReencrypted;
 use Modules\Support\Providers\ModuleServiceProvider;
+use Modules\Support\Security\EncryptedColumn;
 
 final class SettingsServiceProvider extends ModuleServiceProvider
 {
@@ -30,10 +34,21 @@ final class SettingsServiceProvider extends ModuleServiceProvider
         $this->app->make(OnboardingChecks::class)->register(StoreEmailCheck::class);
         // Theme, store name, flags… are part of every page: purge the brand's config tag.
         Setting::saved(fn () => $this->app->make(StorefrontCache::class)->invalidate(['config']));
+        // The settings cache holds ciphertext; after a key rotation it must not outlive the old key.
+        Event::listen(StoredSecretsReencrypted::class, function (StoredSecretsReencrypted $event): void {
+            if ($event->scope === EncryptedColumn::TENANT) {
+                Cache::forget(DatabaseTenantSettings::CACHE_KEY);
+            }
+        });
     }
 
     protected function tenantSeeders(): array
     {
         return [DefaultSettingsSeeder::class];
+    }
+
+    protected function encryptedColumns(): array
+    {
+        return [EncryptedColumn::tenant('settings', 'value')->json()->where('is_encrypted', true)];
     }
 }

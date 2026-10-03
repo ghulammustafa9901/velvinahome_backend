@@ -34,7 +34,13 @@ final class ActionCatalogImport implements CatalogImport
         private readonly UpdateVariant $updateVariant,
         private readonly ChangeProductStatus $changeStatus,
         private readonly AttachProductImage $attachImage,
+        private readonly DeferredSearchSync $deferredSearch,
     ) {}
+
+    public function inBulk(callable $work): mixed
+    {
+        return $this->deferredSearch->run($work);
+    }
 
     public function saveCategory(?string $ulid, string $name, ?string $parentUlid, ?string $slug, ?string $description): string
     {
@@ -99,6 +105,11 @@ final class ActionCatalogImport implements CatalogImport
         $status = $active ? ProductStatus::Active : ProductStatus::Draft;
         if ($product->status !== $status) {
             $this->changeStatus->handle($product, $status);
+        }
+
+        // Variant-only changes do not save the product row; it still needs re-indexing.
+        if ($this->deferredSearch->active()) {
+            $this->deferredSearch->touch([$product->id]);
         }
 
         return [

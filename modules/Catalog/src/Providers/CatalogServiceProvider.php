@@ -12,9 +12,11 @@ use Modules\Catalog\Contracts\SearchIndex;
 use Modules\Catalog\Contracts\VariantCatalog;
 use Modules\Catalog\Contracts\VariantLookup;
 use Modules\Catalog\Listeners\RefreshSearchAfterStockChange;
+use Modules\Catalog\Models\Product;
 use Modules\Catalog\Support\ActionCatalogImport;
 use Modules\Catalog\Support\CatalogLaunchCheck;
 use Modules\Catalog\Support\CategorySitemapSource;
+use Modules\Catalog\Support\DeferredSearchSync;
 use Modules\Catalog\Support\EloquentCategoryDirectory;
 use Modules\Catalog\Support\EloquentProductDirectory;
 use Modules\Catalog\Support\EloquentVariantCatalog;
@@ -44,6 +46,7 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $this->app->bind(CatalogImport::class, ActionCatalogImport::class);
         $this->app->bind(CategoryDirectory::class, EloquentCategoryDirectory::class);
         $this->app->singleton(Client::class, fn (): Client => new Client((array) config('scout.typesense.client-settings')));
+        $this->app->singleton(DeferredSearchSync::class);
     }
 
     protected function bootModule(): void
@@ -54,6 +57,15 @@ final class CatalogServiceProvider extends ModuleServiceProvider
         $sitemap->register(CategorySitemapSource::class);
 
         StorefrontRevalidation::register();
+
+        // Inside a bulk run, saved products are indexed together at the end.
+        Product::saved(function (Product $product): void {
+            $deferred = $this->app->make(DeferredSearchSync::class);
+
+            if ($deferred->active()) {
+                $deferred->touch([$product->id]);
+            }
+        });
     }
 
     protected function listeners(): array

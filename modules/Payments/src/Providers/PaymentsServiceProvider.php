@@ -13,6 +13,7 @@ use Modules\Payments\Support\LedgerPayments;
 use Modules\Payments\Support\PaymentsLaunchCheck;
 use Modules\Platform\Contracts\OnboardingChecks;
 use Modules\Support\Providers\ModuleServiceProvider;
+use Modules\Support\Security\EncryptedColumn;
 
 final class PaymentsServiceProvider extends ModuleServiceProvider
 {
@@ -36,6 +37,11 @@ final class PaymentsServiceProvider extends ModuleServiceProvider
     protected function tenantSeeders(): array
     {
         return [DefaultPaymentMethodsSeeder::class];
+    }
+
+    protected function encryptedColumns(): array
+    {
+        return [EncryptedColumn::tenant('payment_methods', 'credentials')];
     }
 
     protected function bootModule(): void

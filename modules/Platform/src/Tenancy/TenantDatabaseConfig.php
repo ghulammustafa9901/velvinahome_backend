@@ -52,10 +52,16 @@ final class TenantDatabaseConfig extends DatabaseConfig
      */
     public function connection(): array
     {
-        return $this->build($this->credentials->app_username, $this->credentials->app_password);
+        /** @var array{host?: string, port?: int|string} $pooler */
+        $pooler = (array) config('database.pooler', []);
+
+        // Through PgBouncer when configured (config/database.php); it routes by database name.
+        return array_merge($this->build($this->credentials->app_username, $this->credentials->app_password), $pooler);
     }
 
     /**
+     * Always direct, never through the pooler: migrations need a session connection.
+     *
      * @return array<string, mixed>
      */
     public function migratorConnection(): array

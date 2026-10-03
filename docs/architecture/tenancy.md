@@ -60,7 +60,7 @@ on a storefront host and vice versa.
 | Search | Per-tenant Typesense collections (`{tenant_id}_products`). No shared collection. See [ADR-0005](../adr/0005-search-typesense-per-tenant-collections.md). |
 | Sessions / cookies | Session cookie scoped to the tenant admin domain; storefront cookies are first-party on the brand domain. |
 | Rate limits | Every limiter key includes the tenant id. |
-| Logs / Sentry | A middleware plus Monolog processor stamps `tenant_id`, `request_id`, `user_id` on every log line; the Sentry scope is tagged with the tenant. |
+| Logs / error reports | A middleware plus Monolog processor stamps `tenant_id`, `request_id`, `user_id` on every log line; error reports (PostHog, ADR-0019) are tagged with the tenant. |
 | Mail | From-name, from-address, branding and templates resolved from tenant settings. |
 | Inbound webhooks | Tenant-specific webhook URLs (`https://api.<brand>/api/v1/webhooks/{provider}`) so routing is by host, plus signature verification. |
 

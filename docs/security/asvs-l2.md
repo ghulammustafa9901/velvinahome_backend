@@ -72,6 +72,7 @@ per-account lockout and audit, and is not a public sign-up surface.
 | Secrets encrypted at rest | ✅ | Tenant DB credentials (landlord, encrypted casts); payment/courier credentials and secret settings (`encrypted` casts, "stores encrypted settings as unreadable ciphertext") |
 | Approved algorithms, no custom crypto | ✅ | Laravel encrypter (AES-256-GCM/CBC+HMAC), HMAC-SHA256 for signatures, Web Crypto AES-GCM for BFF cookies (`lib/crypto.ts` + tests) |
 | Random values from CSPRNG | ✅ | `Str::random`/`random_bytes`, `crypto.randomUUID()` |
+| Key and credential rotation without data loss (6.4.1/6.4.2) | 🔧 | **New** `secrets:reencrypt` moves every stored secret (declared per module, completeness enforced by test) to a new `APP_KEY`; **new** `tenant:rotate-db-passwords`; `SecretsRotationTest`; runbook `rotate-secrets.md` |
 
 ## V7 Errors and logging
 
@@ -135,7 +136,8 @@ per-account lockout and audit, and is not a public sign-up surface.
 | Security headers on API, panels, storefront | ✅ | `SecurityHeaders` middleware (`SecurityHeadersTest`), `next.config.ts`; storefront now also sends `frame-src 'none'` unless Turnstile is on |
 | No secrets in the repositories | ✅ | `.env.example` placeholders only; keys only in local env files (checked with `git grep`) |
 | Database privileges | 🔧 | Provisioner additionally gets `pg_signal_backend` (bounded: non-superuser sessions only) so `DROP DATABASE … WITH (FORCE)` cannot fail on a connecting session — found by the restore drill tests |
-| Production build without debug, cached config | ⏳ | Deploy runbook (7.6) |
+| Production build without debug, cached config | ✅ ⏳ | `deploy/release.sh` caches config/routes/events/views and bakes the release id; `deploy.md` sets `APP_DEBUG=false`. First real run on staging (hosting) |
+| Tenant resolution does not depend on request input or a single landlord round trip | ✅ | Cached host → tenant resolution (plain arrays, ciphertext kept; invalidated on every tenant/domain/credential write); `TenantResolutionTest` |
 
 ## Open items (owners)
 

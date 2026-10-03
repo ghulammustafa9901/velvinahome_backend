@@ -13,6 +13,7 @@ use Modules\Shipping\Support\DatabaseCouriers;
 use Modules\Shipping\Support\ShippingLaunchCheck;
 use Modules\Shipping\Support\ZoneShippingRates;
 use Modules\Support\Providers\ModuleServiceProvider;
+use Modules\Support\Security\EncryptedColumn;
 
 final class ShippingServiceProvider extends ModuleServiceProvider
 {
@@ -31,6 +32,11 @@ final class ShippingServiceProvider extends ModuleServiceProvider
     protected function tenantSeeders(): array
     {
         return [DefaultShippingSeeder::class];
+    }
+
+    protected function encryptedColumns(): array
+    {
+        return [EncryptedColumn::tenant('couriers', 'credentials')];
     }
 
     protected function bootModule(): void

@@ -37,13 +37,23 @@ $pgsql = static fn (array $overrides): array => array_merge([
     'sslmode' => env('DB_LANDLORD_SSLMODE', 'prefer'),
 ], $overrides);
 
+// Runtime connections — the landlord and tenant application roles — go through PgBouncer in
+// transaction mode when DB_POOLER_HOST is set (ADR-0001). Without it every request starts a
+// fresh PostgreSQL backend: a connect plus cold catalog caches on every query
+// (docs/performance/load-test.md). Migration and provisioning roles always connect directly:
+// transactional DDL needs a session.
+$pooler = env('DB_POOLER_HOST') ? ['host' => env('DB_POOLER_HOST'), 'port' => env('DB_POOLER_PORT', '6432')] : [];
+
 return [
 
     'default' => env('DB_CONNECTION', 'landlord'),
 
+    'pooler' => $pooler,
+
     'connections' => [
 
         'landlord' => $pgsql([
+            ...$pooler,
             'database' => env('DB_LANDLORD_DATABASE', 'platform_landlord'),
             'username' => env('DB_LANDLORD_USERNAME', 'landlord_app'),
             'password' => env('DB_LANDLORD_PASSWORD', ''),

@@ -67,7 +67,7 @@ marketing consent. Afterwards, `php artisan reports:refresh --tenant=<id>` and
 - [ ] Order appears in admin; staff can confirm, fulfill, cancel and refund
 - [ ] Stock moved correctly, and the movement ledger reads correctly for that order
 - [ ] Backups running; **a restore of this tenant has been drilled**
-- [ ] Uptime monitoring and Sentry releases configured for this domain
+- [ ] Uptime monitoring configured for this domain; its errors visible in PostHog (tagged with the brand)
 - [ ] Isolation suite passes with this tenant present
 
 ## 8. Launch

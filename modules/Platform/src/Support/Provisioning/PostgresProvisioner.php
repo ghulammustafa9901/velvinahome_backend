@@ -6,6 +6,7 @@ namespace Modules\Platform\Support\Provisioning;
 
 use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
+use RuntimeException;
 
 /**
  * Creates and removes tenant databases with the privilege model in
@@ -115,6 +116,19 @@ final class PostgresProvisioner
     public function reapplyPrivileges(TenantDatabaseNames $names, string $migratorPassword, array $server): void
     {
         $this->configureSchema($names, $migratorPassword, $server);
+    }
+
+    /**
+     * New password for an existing tenant role (docs/runbooks/rotate-secrets.md). Sessions
+     * already open keep working; new connections need the new password.
+     */
+    public function changePassword(string $role, string $password): void
+    {
+        if (! $this->roleExists($role)) {
+            throw new RuntimeException("Role {$role} does not exist.");
+        }
+
+        $this->ensureRole($this->provisioner(), $role, $password);
     }
 
     public function databaseExists(string $database): bool
