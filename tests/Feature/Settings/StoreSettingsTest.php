@@ -175,3 +175,20 @@ it('refuses an SVG logo', function (): void {
 
     app(SaveStoreLogo::class)->handle($svg, $this->owner);
 })->throws(ValidationException::class);
+
+it('never serves settings cached by a reader that raced a write', function (): void {
+    $version = fn (): int => (int) Illuminate\Support\Facades\Cache::get(Modules\Settings\Support\DatabaseStoreSettings::VERSION_KEY, 0);
+
+    Illuminate\Support\Facades\DB::transaction(function () use ($version): void {
+        app(Modules\Settings\Actions\UpdateSetting::class)->handle('store', 'name', 'Written In A Transaction');
+
+        // A concurrent reader that loaded the old rows before the commit fills the cache.
+        Illuminate\Support\Facades\Cache::put(
+            Modules\Settings\Support\DatabaseStoreSettings::CACHE_KEY.':'.$version(),
+            ['store' => ['name' => ['value' => 'Stale Name', 'encrypted' => false]]],
+            3600,
+        );
+    });
+
+    expect(app(StoreSettings::class)->string('store.name'))->toBe('Written In A Transaction');
+});

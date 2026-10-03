@@ -17,6 +17,8 @@ use Modules\Inventory\Actions\ReceiveStock;
 use Modules\Inventory\Data\StockDocumentData;
 use Modules\Inventory\Models\Location;
 use Modules\Inventory\Models\StockLevel;
+use Modules\Payments\Actions\UpdatePaymentMethod;
+use Modules\Payments\Models\PaymentMethod;
 use Modules\Settings\Actions\UpdateSetting;
 
 /**
@@ -75,6 +77,15 @@ final class SeedDemoStoreCommand extends Command
                 [$group, $name] = explode('.', $key, 2);
                 app(UpdateSetting::class)->handle($group, $name, $value);
             }
+
+            // Both launch payment methods on, so the demo checkout offers each of them.
+            app(UpdatePaymentMethod::class)->handle(
+                PaymentMethod::query()->where('code', 'manual_transfer')->firstOrFail(),
+                true,
+                'Bank transfer',
+                'Pay into our bank account and upload the receipt.',
+                "Demo Bank\nAccount title: Velvina Home\nIBAN: PK00DEMO0000000000000000",
+            );
         }
 
         $this->components->info($added.' products added.');

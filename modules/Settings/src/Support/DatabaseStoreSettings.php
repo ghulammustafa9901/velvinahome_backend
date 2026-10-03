@@ -6,6 +6,7 @@ namespace Modules\Settings\Support;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\Settings\Contracts\StoreSettings;
 use Modules\Settings\Models\Setting;
@@ -13,6 +14,8 @@ use Modules\Settings\Models\Setting;
 final class DatabaseStoreSettings implements StoreSettings
 {
     public const CACHE_KEY = 'settings:all';
+
+    public const VERSION_KEY = 'settings:version';
 
     public function get(string $key, mixed $default = null): mixed
     {
@@ -56,14 +59,29 @@ final class DatabaseStoreSettings implements StoreSettings
     }
 
     /**
-     * Cached until a setting changes (UpdateSetting forgets the key).
+     * Retire the cached settings once the surrounding transaction commits. The cache key carries
+     * a version, so a reader that loaded the old rows while the write was in flight (a queue
+     * worker, another request) can only fill a key nobody reads any more.
+     */
+    public static function flush(): void
+    {
+        DB::afterCommit(function (): void {
+            Cache::add(self::VERSION_KEY, 0);
+            Cache::increment(self::VERSION_KEY);
+        });
+    }
+
+    /**
+     * Cached until a setting changes (see flush()).
      *
      * @return array<string, array<string, array{value: mixed, encrypted: bool}>>
      */
     private function all(): array
     {
+        $key = self::CACHE_KEY.':'.(int) Cache::get(self::VERSION_KEY, 0);
+
         /** @var array<string, array<string, array{value: mixed, encrypted: bool}>> */
-        return Cache::remember(self::CACHE_KEY, now()->addHour(), function (): array {
+        return Cache::remember($key, now()->addHour(), function (): array {
             $settings = [];
 
             foreach (Setting::query()->get() as $setting) {

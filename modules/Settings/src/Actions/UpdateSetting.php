@@ -7,7 +7,6 @@ namespace Modules\Settings\Actions;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Modules\Settings\Models\Setting;
 use Modules\Settings\Support\DatabaseStoreSettings;
@@ -35,7 +34,7 @@ final class UpdateSetting implements Action
             ['value' => $stored, 'is_encrypted' => $encrypted],
         );
 
-        Cache::forget(DatabaseStoreSettings::CACHE_KEY);
+        DatabaseStoreSettings::flush();
 
         return $setting;
     }

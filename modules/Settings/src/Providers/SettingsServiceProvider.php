@@ -40,7 +40,7 @@ final class SettingsServiceProvider extends ModuleServiceProvider
         // Theme, store name, flags… are part of every page: purge the storefront's config tag.
         Setting::saved(fn () => $this->app->make(StorefrontCache::class)->invalidate(['config']));
         // The settings cache holds ciphertext; after a key rotation it must not outlive the old key.
-        Event::listen(StoredSecretsReencrypted::class, fn () => Cache::forget(DatabaseStoreSettings::CACHE_KEY));
+        Event::listen(StoredSecretsReencrypted::class, fn () => DatabaseStoreSettings::flush());
     }
 
     protected function defaultSeeders(): array

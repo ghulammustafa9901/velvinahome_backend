@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Settings\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Cache;
 use Modules\Settings\Models\Setting;
 use Modules\Settings\Support\DatabaseStoreSettings;
 use Modules\Settings\Support\SettingsFeatureFlags;
@@ -60,7 +59,7 @@ final class DefaultSettingsSeeder extends Seeder
             }
         }
 
-        Cache::forget(DatabaseStoreSettings::CACHE_KEY);
+        DatabaseStoreSettings::flush();
     }
 
     /**

@@ -88,7 +88,7 @@ it('purges the storefront tags after a catalog change, signed', function (): voi
 
         return $request->url() === 'http://storefront.internal/api/revalidate'
             && hash_equals($expected, $request->header('X-Revalidate-Signature')[0])
-            && $payload['site'] === 'store.test'
+            && ! array_key_exists('site', $payload)
             && in_array('product:'.$slug, $payload['tags'], true)
             && in_array('product:'.str_replace('-renamed', '', $slug), $payload['tags'], true);
     });

@@ -30,7 +30,6 @@ final class RevalidateStorefront implements OutboxHandler
 
         $url = config('store.storefront.revalidate_url') ?: $origin.'/api/revalidate';
         $body = (string) json_encode([
-            'site' => (string) parse_url($origin, PHP_URL_HOST),
             'tags' => array_values(array_filter((array) ($payload['tags'] ?? []), 'is_string')),
             'message' => $messageUlid,
         ], JSON_THROW_ON_ERROR);
