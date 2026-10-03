@@ -3,8 +3,9 @@
 Updated continuously (spec §0.2 rule 6). A milestone is only `done` when the app boots,
 migrations run, and the whole test suite passes.
 
-**Current phase:** Phase 7 built — **Hardening & Production Readiness** ([docs/phase-7-checkpoint.md](phase-7-checkpoint.md)),
-waiting for owner sign-off and the hosting decision. Next: Phase 8, Launch & Tenant Onboarding.
+**Current work:** **Single-store conversion** — multi-tenancy is being removed (owner decision
+2026-10-03). Plan: [docs/plans/remove-multi-tenancy.md](plans/remove-multi-tenancy.md); status in the
+section below. Phase 7 is built and waits for owner sign-off and the hosting decision.
 **Test suite:** 394 passing on real PostgreSQL 17, Redis and Typesense 30
 (architecture, unit, feature, isolation, multi-process concurrency); deploy scripts 10/10.
 Larastan level 8 clean, Pint clean. platform-web: ESLint, strict typecheck, Vitest, `next build`, 22 Playwright E2E
@@ -133,6 +134,24 @@ Owner decisions: hosting not chosen yet (server work waits); monitoring with Pos
 | 7.5 | Load test and optimization | done locally (3 fixes: bulk search indexing, cached tenant resolution, pooler wiring) — capacity run on staging |
 | 7.6 | Deploy and environments (local part) | done — release/rollback scripts tested with stubs; first real deploy on staging |
 | 7.7 | Runbooks and docs; DoD walk-through | done — 14/16 DoD met, 2 partly (online gateway deferred; real deploy needs hosting) |
+
+## Single-store conversion (remove multi-tenancy)
+
+Plan: [docs/plans/remove-multi-tenancy.md](plans/remove-multi-tenancy.md). Owner decisions D1–D7 approved
+2026-10-03 as recommended. Branch `single-store` in both repositories.
+
+| # | Milestone | Status | Notes |
+|---|---|---|---|
+| R0 | Baseline and safety net | done | Phase 7 work committed to `main` first. Baseline: Pest 394 passed, Larastan 8 and Pint clean; web lint, typecheck, Vitest 11, `next build`, Playwright 22 passed. All 8 local databases dumped to `%USERPROFILE%\devtools\backups\pre-single-store-20261003` |
+| R1 | Store identity and feature flags in settings | not started | |
+| R2 | Shared services out of Platform | not started | |
+| R3 | Switch to one database | not started | |
+| R4 | Delete tenancy, add guard test | not started | |
+| R5 | Per-installation naming | not started | |
+| R6 | Install, backup and deploy tooling | not started | |
+| R7 | Storefront | not started | |
+| R8 | Documentation | not started | |
+| R9 | Root CLAUDE.md | not started | |
 
 ## Phase 8
 
