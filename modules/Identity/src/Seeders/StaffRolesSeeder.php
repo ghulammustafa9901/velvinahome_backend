@@ -13,11 +13,11 @@ use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Seeds the permissions and the six default roles. Runs at provisioning and after every
- * `tenants:migrate`, so it converges without undoing a brand's own changes:
+ * `app:migrate`, so it converges without undoing the store's own changes:
  *
  *  - a role created now gets the full default matrix;
  *  - an existing role only gains permissions that did not exist before this run — a
- *    permission a brand deliberately removed from its Manager role stays removed.
+ *    permission the store deliberately removed from its Manager role stays removed.
  */
 final class StaffRolesSeeder extends Seeder
 {

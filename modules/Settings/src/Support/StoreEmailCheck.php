@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Settings\Support;
 
 use Modules\Settings\Contracts\OnboardingCheck;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 
 final class StoreEmailCheck implements OnboardingCheck
 {
@@ -21,6 +21,6 @@ final class StoreEmailCheck implements OnboardingCheck
 
     public function passes(): bool
     {
-        return trim(app(TenantSettings::class)->string('mail.from_address')) !== '';
+        return trim(app(StoreSettings::class)->string('mail.from_address')) !== '';
     }
 }

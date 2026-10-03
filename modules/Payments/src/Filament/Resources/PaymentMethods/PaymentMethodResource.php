@@ -21,7 +21,7 @@ use Modules\Payments\Models\PaymentMethod;
 use UnitEnum;
 
 /**
- * The payment methods a brand offers. COD and manual transfer at launch; online gateways
+ * The payment methods the store offers. COD and manual transfer at launch; online gateways
  * appear here as adapters are added.
  */
 final class PaymentMethodResource extends Resource

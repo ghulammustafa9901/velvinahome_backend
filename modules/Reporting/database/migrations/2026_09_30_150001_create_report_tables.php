@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // One row per brand-local calendar day and currency. Rebuilt whole from the order and
+        // One row per store-local calendar day and currency. Rebuilt whole from the order and
         // payment records, never incremented, so a rebuild always converges on the truth.
         Schema::create('report_sales_days', function (Blueprint $table): void {
             $table->id();

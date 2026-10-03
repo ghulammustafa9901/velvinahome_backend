@@ -17,8 +17,8 @@ final class TaxServiceProvider extends ModuleServiceProvider
 
     protected function registerModule(): void
     {
-        // Not scoped: the rate cache lives inside one instance, so it can never outlive a
-        // tenant switch within the same request or job.
+        // Not a singleton: the rate cache lives inside one instance, so a long-running worker
+        // never keeps rates that staff have since changed.
         $this->app->bind(TaxCalculator::class, RateTableTaxCalculator::class);
     }
 }

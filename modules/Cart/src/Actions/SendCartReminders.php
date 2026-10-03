@@ -9,12 +9,12 @@ use Illuminate\Support\Carbon;
 use Modules\Cart\Models\Cart;
 use Modules\Integrations\Contracts\Outbox;
 use Modules\Settings\Contracts\FeatureFlags;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\Contracts\Action;
 
 /**
  * One reminder per abandoned guest cart (feature `abandoned_cart`): a cart with items and a
- * checkout email, untouched for the brand's delay (default two hours) but not older than three
+ * checkout email, untouched for the store's delay (default two hours) but not older than three
  * days. The email itself goes through the outbox (`cart.abandoned`), which re-checks the cart
  * right before sending, so a cart bought in between is never chased.
  */
@@ -24,7 +24,7 @@ final class SendCartReminders implements Action
 
     public function __construct(
         private readonly FeatureFlags $features,
-        private readonly TenantSettings $settings,
+        private readonly StoreSettings $settings,
         private readonly Outbox $outbox,
         private readonly DatabaseManager $db,
     ) {}

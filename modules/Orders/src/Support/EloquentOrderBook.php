@@ -12,13 +12,13 @@ use Modules\Orders\Data\NewOrderLine;
 use Modules\Orders\Models\Order;
 use Modules\Orders\Models\OrderAddress;
 use Modules\Orders\Models\OrderItem;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 
 final class EloquentOrderBook implements OrderBook
 {
     public function __construct(
         private readonly Outbox $outbox,
-        private readonly TenantSettings $settings,
+        private readonly StoreSettings $settings,
         private readonly OrderPresenter $presenter,
     ) {}
 

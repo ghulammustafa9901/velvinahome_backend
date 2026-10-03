@@ -18,7 +18,7 @@ final class RemoteUrl
         $parts = parse_url(trim($url));
         $scheme = strtolower((string) ($parts['scheme'] ?? ''));
         $host = strtolower((string) ($parts['host'] ?? ''));
-        $local = (bool) config('platform.imports.allow_private_hosts', false);
+        $local = (bool) config('store.imports.allow_private_hosts', false);
 
         $fail = fn (string $message) => throw ValidationException::withMessages([$field => $message]);
 

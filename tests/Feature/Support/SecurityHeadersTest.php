@@ -25,7 +25,7 @@ it('sends HSTS over HTTPS and frame protection on the admin and platform panels'
     expect($response->headers->get('Strict-Transport-Security'))->toBe('max-age=31536000; includeSubDomains')
         ->and($response->headers->get('Content-Security-Policy'))->toContain("frame-ancestors 'none'")
         ->and($response->headers->get('X-Frame-Options'))->toBe('DENY');
-})->with(['localhost', 'platform.test']);
+})->with(['localhost', 'admin.store.test']);
 
 it('never shows exception details when debug is off', function (): void {
     config(['app.debug' => false]);

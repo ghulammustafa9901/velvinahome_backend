@@ -98,7 +98,7 @@ final class LedgerPayments implements Payments
             return null;
         }
 
-        $disk = Storage::disk('tenant_private');
+        $disk = Storage::disk('private');
 
         return $disk->providesTemporaryUrls() ? $disk->temporaryUrl($path, now()->addMinutes(10)) : null;
     }

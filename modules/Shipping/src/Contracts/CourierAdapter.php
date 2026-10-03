@@ -7,7 +7,7 @@ namespace Modules\Shipping\Contracts;
 use Modules\Shipping\Data\CourierTracking;
 
 /**
- * One courier integration (spec §6.7). Adapters are registered by key; a brand's courier row
+ * One courier integration (spec §6.7). Adapters are registered by key; the store's courier row
  * names its adapter and holds its own encrypted credentials. The first live adapter arrives
  * with a courier account; until then every courier is "manual".
  */
@@ -25,7 +25,7 @@ interface CourierAdapter
     /**
      * The shipment's current status at the courier.
      *
-     * @param  array<string, string>  $credentials  the brand's own, decrypted
+     * @param  array<string, string>  $credentials  the store's own, decrypted
      */
     public function track(string $trackingNumber, array $credentials): CourierTracking;
 }

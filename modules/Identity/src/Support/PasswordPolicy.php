@@ -18,7 +18,7 @@ final class PasswordPolicy
     {
         $rule = Password::min(10)->letters()->numbers();
 
-        return config('platform.passwords.check_breached', true) ? $rule->uncompromised() : $rule;
+        return config('store.passwords.check_breached', true) ? $rule->uncompromised() : $rule;
     }
 
     public function assertAcceptable(string $password, string $field): void

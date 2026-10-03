@@ -8,7 +8,7 @@ use DateTimeInterface;
 use Modules\Orders\Contracts\SalesLedger;
 use Modules\Orders\Data\SalesDay;
 use Modules\Payments\Contracts\RefundLedger;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 
 /**
  * What one day's report rows must contain, derived from the order and payment records. Used
@@ -19,7 +19,7 @@ final class ReportFacts
     public function __construct(
         private readonly SalesLedger $sales,
         private readonly RefundLedger $refunds,
-        private readonly TenantSettings $settings,
+        private readonly StoreSettings $settings,
     ) {}
 
     public function timezone(): string

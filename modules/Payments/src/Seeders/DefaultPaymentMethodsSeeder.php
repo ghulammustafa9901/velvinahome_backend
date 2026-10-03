@@ -9,7 +9,7 @@ use Modules\Payments\Models\PaymentMethod;
 
 /**
  * Cash on Delivery on by default (the dominant method, spec §1.3); manual transfer present but
- * off until the brand enters its own account details.
+ * off until staff enter the store's account details.
  */
 final class DefaultPaymentMethodsSeeder extends Seeder
 {

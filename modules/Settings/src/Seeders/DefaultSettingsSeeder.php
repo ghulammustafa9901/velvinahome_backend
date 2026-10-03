@@ -7,7 +7,7 @@ namespace Modules\Settings\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 use Modules\Settings\Models\Setting;
-use Modules\Settings\Support\DatabaseTenantSettings;
+use Modules\Settings\Support\DatabaseStoreSettings;
 use Modules\Settings\Support\SettingsFeatureFlags;
 
 /**
@@ -60,7 +60,7 @@ final class DefaultSettingsSeeder extends Seeder
             }
         }
 
-        Cache::forget(DatabaseTenantSettings::CACHE_KEY);
+        Cache::forget(DatabaseStoreSettings::CACHE_KEY);
     }
 
     /**
@@ -68,7 +68,7 @@ final class DefaultSettingsSeeder extends Seeder
      */
     private function storefrontUrl(): ?string
     {
-        $configured = config('platform.storefront.url');
+        $configured = config('store.storefront.url');
 
         return is_string($configured) && $configured !== '' ? rtrim($configured, '/') : null;
     }

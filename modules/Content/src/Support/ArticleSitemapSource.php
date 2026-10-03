@@ -9,7 +9,7 @@ use Modules\Seo\Contracts\SitemapSource;
 use Modules\Settings\Contracts\FeatureFlags;
 
 /**
- * Published blog posts, only while the brand has its blog switched on.
+ * Published blog posts, only while the blog is switched on.
  */
 final class ArticleSitemapSource implements SitemapSource
 {

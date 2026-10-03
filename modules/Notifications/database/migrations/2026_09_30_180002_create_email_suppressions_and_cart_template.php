@@ -24,7 +24,7 @@ return new class extends Migration
             $table->char('cart_ulid', 26)->nullable();
         });
 
-        // Brands created before this template existed get it too (switched on; the feature
+        // Stores created before this template existed get it too (switched on; the feature
         // flag decides whether reminders go out at all).
         if (! DB::table('notification_templates')->where('key', 'cart.abandoned')->exists()) {
             DB::table('notification_templates')->insert([

@@ -16,7 +16,7 @@ use Modules\Catalog\Models\ProductOption;
 use Modules\Catalog\Models\ProductVariant;
 use Modules\Catalog\Support\Slugs;
 use Modules\Catalog\Support\VariantMatrix;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\Authorization\ChecksPermission;
 use Modules\Support\Contracts\Action;
 use Modules\Support\Enums\Currency;
@@ -24,7 +24,7 @@ use Modules\Support\ValueObjects\Money;
 
 /**
  * Creates a product as a draft, with its option matrix and variants, in one transaction.
- * Prices are in the store currency from tenant settings; the first variant is the default.
+ * Prices are in the store currency from the store settings; the first variant is the default.
  */
 final class CreateProduct implements Action
 {
@@ -32,7 +32,7 @@ final class CreateProduct implements Action
 
     public function __construct(
         private readonly DatabaseManager $db,
-        private readonly TenantSettings $settings,
+        private readonly StoreSettings $settings,
     ) {}
 
     public function handle(ProductData $data, ?Authorizable $actor = null): Product

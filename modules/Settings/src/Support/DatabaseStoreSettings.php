@@ -7,10 +7,10 @@ namespace Modules\Settings\Support;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use InvalidArgumentException;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Settings\Models\Setting;
 
-final class DatabaseTenantSettings implements TenantSettings
+final class DatabaseStoreSettings implements StoreSettings
 {
     public const CACHE_KEY = 'settings:all';
 
@@ -56,8 +56,7 @@ final class DatabaseTenantSettings implements TenantSettings
     }
 
     /**
-     * Cached in the tenant-tagged cache; the key never needs the tenant id because the Cache
-     * facade is scoped to the current tenant (spec §4.4).
+     * Cached until a setting changes (UpdateSetting forgets the key).
      *
      * @return array<string, array<string, array{value: mixed, encrypted: bool}>>
      */

@@ -11,7 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Modules\Orders\Actions\SyncShipmentTracking;
 
 /**
- * Scheduled per active tenant: pick up deliveries and returns from courier integrations.
+ * Scheduled: pick up deliveries and returns from courier integrations.
  */
 final class SyncShipmentTrackingJob implements ShouldQueue
 {

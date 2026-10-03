@@ -6,7 +6,7 @@ namespace Modules\Cart\Actions;
 
 use Illuminate\Support\Str;
 use Modules\Cart\Models\Cart;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\Contracts\Action;
 
 /**
@@ -17,7 +17,7 @@ final class CreateCart implements Action
 {
     public const GUEST_TTL_DAYS = 30;
 
-    public function __construct(private readonly TenantSettings $settings) {}
+    public function __construct(private readonly StoreSettings $settings) {}
 
     /**
      * @return array{cart: Cart, token: string|null}

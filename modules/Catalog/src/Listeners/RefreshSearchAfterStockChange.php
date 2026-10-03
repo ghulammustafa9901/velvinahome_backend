@@ -10,7 +10,7 @@ use Modules\Inventory\Events\StockChanged;
 
 /**
  * `in_stock` lives in the search document, so a stock change re-indexes the affected
- * products (queued by Scout on the `search` queue, in this tenant's context). During a bulk
+ * products (queued by Scout on the `search` queue). During a bulk
  * run the products are only collected and indexed together at its end.
  */
 final class RefreshSearchAfterStockChange

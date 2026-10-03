@@ -6,7 +6,7 @@ namespace Modules\Settings\Http\Controllers\V1;
 
 use Illuminate\Http\JsonResponse;
 use Modules\Settings\Contracts\FeatureFlags;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Settings\Support\StoreLogo;
 use Modules\Support\ValueObjects\StringMap;
 
@@ -17,7 +17,7 @@ use Modules\Support\ValueObjects\StringMap;
  */
 final class StorefrontConfigController
 {
-    public function __invoke(TenantSettings $settings, FeatureFlags $flags): JsonResponse
+    public function __invoke(StoreSettings $settings, FeatureFlags $flags): JsonResponse
     {
         return response()
             ->json([

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
-| No central web routes
+| No other web routes
 |--------------------------------------------------------------------------
 |
-| Storefronts are served by the Next.js app. This application serves only:
-|   - the tenant admin panel on admin.<brand>   (Filament, `tenant:admin`)
-|   - the storefront API on api.<brand>         (module api_v1 routes, `tenant:api`)
-|   - the platform panel on the platform host   (Filament, `platform.host`)
-|   - the health check, on any host
+| The storefront is served by the Next.js app. This application serves only:
+|   - the store admin (Filament; ADMIN_DOMAIN when set)
+|   - the storefront API under /api/v1 (module api_v1 routes)
+|   - Horizon and the API docs for staff with system.monitor
+|   - the health check
 |
 */
 

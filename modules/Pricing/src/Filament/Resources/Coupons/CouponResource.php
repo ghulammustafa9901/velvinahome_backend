@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Model;
 use Modules\Pricing\Actions\SaveCoupon;
 use Modules\Pricing\Data\CouponData;
 use Modules\Pricing\Models\Coupon;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\ValueObjects\Money;
 use UnitEnum;
 
@@ -168,7 +168,7 @@ final class CouponResource extends Resource
 
     private static function currency(): string
     {
-        return app(TenantSettings::class)->string('store.currency', 'PKR');
+        return app(StoreSettings::class)->string('store.currency', 'PKR');
     }
 
     private static function decimal(int $minor): string

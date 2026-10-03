@@ -15,13 +15,13 @@ use Modules\Imports\Models\ImportedOrder;
 use Modules\Imports\Models\ImportRun;
 use Modules\Inventory\Contracts\StockImport;
 use Modules\Seo\Contracts\Seo;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\ValueObjects\Money;
 use RuntimeException;
 use Throwable;
 
 /**
- * Moves a WooCommerce store into a brand: categories, products (simple and variable, with
+ * Moves a WooCommerce store into this store: categories, products (simple and variable, with
  * stock and images), customers with their addresses, historical orders, and a 301 from
  * every old product and category URL to its new one.
  *
@@ -56,7 +56,7 @@ final class WooCommerceImport
         private readonly CustomerImport $customers,
         private readonly AddressImport $addresses,
         private readonly Seo $seo,
-        private readonly TenantSettings $settings,
+        private readonly StoreSettings $settings,
     ) {}
 
     public static function sourceKey(string $storeUrl): string
@@ -80,7 +80,7 @@ final class WooCommerceImport
         $theirs = strtoupper((string) ($client->get('data/currencies/current')['code'] ?? ''));
 
         if ($theirs !== $currency) {
-            throw new RuntimeException("The store sells in {$theirs}, this brand in {$currency}. Prices cannot be imported across currencies.");
+            throw new RuntimeException("The store sells in {$theirs}, this store in {$currency}. Prices cannot be imported across currencies.");
         }
 
         if (in_array('categories', $entities, true) || in_array('products', $entities, true)) {

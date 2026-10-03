@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Tax\Support;
 
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\ValueObjects\Money;
 use Modules\Tax\Contracts\TaxCalculator;
 use Modules\Tax\Data\TaxLineData;
@@ -22,7 +22,7 @@ final class RateTableTaxCalculator implements TaxCalculator
     /** @var array<string, TaxRate|null> */
     private array $resolved = [];
 
-    public function __construct(private readonly TenantSettings $settings) {}
+    public function __construct(private readonly StoreSettings $settings) {}
 
     public function tax(Money $amount, ?string $countryCode, ?string $province): TaxLineData
     {

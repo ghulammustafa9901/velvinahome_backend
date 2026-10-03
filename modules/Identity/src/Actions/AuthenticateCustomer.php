@@ -18,7 +18,7 @@ use Modules\Support\Contracts\Action;
  * storefront BFF stores it in an httpOnly cookie; browser JavaScript never sees it
  * (ADR-0003).
  *
- * Every attempt is audited; failures are throttled per account and per IP, keyed by tenant.
+ * Every attempt is audited; failures are throttled per account and per IP.
  */
 final class AuthenticateCustomer implements Action
 {

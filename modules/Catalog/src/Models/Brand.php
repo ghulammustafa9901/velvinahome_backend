@@ -10,8 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Support\Concerns\HasUlid;
 
 /**
- * A product brand (manufacturer / label) inside one tenant's catalog — not to be confused with
- * the platform's brands, which are tenants.
+ * A product brand (manufacturer / label) in the store's catalog.
  *
  * @property int $id
  * @property string $ulid

@@ -11,8 +11,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Each brand's own methods and merchant credentials (encrypted); funds always settle to
-        // the brand's own account (spec §6.6).
+        // The store's payment methods and merchant credentials (encrypted); funds always settle
+        // to the store's own account (spec §6.6).
         Schema::create('payment_methods', function (Blueprint $table): void {
             $table->id();
             $table->char('ulid', 26)->unique();
@@ -38,7 +38,7 @@ return new class extends Migration
             $table->bigInteger('paid_amount')->default(0);
             $table->bigInteger('refunded_amount')->default(0);
             $table->string('gateway_reference')->nullable();
-            // Manual transfer: the customer's receipt, on the tenant's private disk.
+            // Manual transfer: the customer's receipt, on the private disk.
             $table->string('proof_path')->nullable();
             $table->string('idempotency_key', 100)->nullable()->unique();
             $table->text('failure_reason')->nullable();

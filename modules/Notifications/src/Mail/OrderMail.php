@@ -11,7 +11,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 
 /**
- * One email layout for every order message: the brand's intro text, then the order summary.
+ * One email layout for every order message: the store's intro text, then the order summary.
  * Sent synchronously from the outbox publisher, which already runs in a queued job after
  * commit, so no mail ever goes out for an order that rolled back.
  */

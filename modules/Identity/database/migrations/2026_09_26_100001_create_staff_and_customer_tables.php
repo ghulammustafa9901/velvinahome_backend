@@ -11,8 +11,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Tenant staff: the people who operate this brand's admin. Separate table, separate
-        // guard from customers and from platform users (spec §6.2).
+        // Staff: the people who operate the store admin. Separate table, separate guard from
+        // customers (spec §6.2).
         Schema::create('users', function (Blueprint $table): void {
             $table->id();
             $table->char('ulid', 26)->unique();
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('status')->default('active');
             $table->rememberToken();
             $table->timestampTz('last_login_at')->nullable();
-            // Set when this account is a company owner's local account in this brand.
+            // Historical (multi-brand owners); dropped by 2026_10_04_100001.
             $table->char('landlord_owner_identity_ulid', 26)->nullable();
             $table->timestampsTz();
             $table->softDeletesTz();

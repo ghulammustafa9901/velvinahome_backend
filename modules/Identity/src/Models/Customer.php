@@ -11,9 +11,8 @@ use Laravel\Sanctum\HasApiTokens;
 use Modules\Support\Concerns\HasUlid;
 
 /**
- * A shopper of one brand. Authenticates with a Sanctum token that the storefront BFF keeps in
- * an httpOnly cookie (ADR-0003); a token is only ever valid on the brand that issued it,
- * because it lives in that brand's database.
+ * A shopper. Authenticates with a Sanctum token that the storefront BFF keeps in an httpOnly
+ * cookie (ADR-0003).
  *
  * @property int $id
  * @property string $ulid

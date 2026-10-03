@@ -10,7 +10,7 @@ use Modules\Integrations\Contracts\OutboxHandler;
 use Modules\Notifications\Mail\OrderMail;
 use Modules\Notifications\Models\NotificationTemplate;
 use Modules\Orders\Contracts\OrderBook;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\Enums\Currency;
 use Modules\Support\ValueObjects\Money;
 
@@ -24,7 +24,7 @@ abstract class SendOrderEmail implements OutboxHandler
 {
     public function __construct(
         private readonly OrderBook $orders,
-        private readonly TenantSettings $settings,
+        private readonly StoreSettings $settings,
         private readonly Mailer $mailer,
     ) {}
 

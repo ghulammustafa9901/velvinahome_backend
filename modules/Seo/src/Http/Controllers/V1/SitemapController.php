@@ -9,7 +9,7 @@ use Modules\Seo\Support\SitemapRegistry;
 
 /**
  * Data for the storefront's chunked sitemap.xml (spec §7.5). Paths only: the storefront adds
- * its own origin, so the same data serves every domain of the brand.
+ * its own origin, so the same data serves every domain of the store.
  */
 final class SitemapController
 {

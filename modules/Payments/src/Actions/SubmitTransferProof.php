@@ -13,7 +13,7 @@ use Modules\Payments\Models\Payment;
 use Modules\Support\Contracts\Action;
 
 /**
- * The customer uploads their bank/wallet transfer receipt. It goes to the tenant's private
+ * The customer uploads their bank/wallet transfer receipt. It goes to the private
  * disk (never public; staff view it through a signed, expiring URL) and the payment waits for
  * a person to verify it — an uploaded image is not proof of payment either.
  */
@@ -38,7 +38,7 @@ final class SubmitTransferProof implements Action
 
         $extension = $mime === 'application/pdf' ? 'pdf' : 'img';
         $path = 'payment-proofs/'.strtolower((string) Str::ulid()).'.'.$extension;
-        Storage::disk('tenant_private')->put($path, (string) file_get_contents($receipt->getRealPath()));
+        Storage::disk('private')->put($path, (string) file_get_contents($receipt->getRealPath()));
 
         $payment->forceFill([
             'status' => 'awaiting_verification',

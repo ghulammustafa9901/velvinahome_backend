@@ -1,7 +1,7 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "modules/imports",
-    "description": "Imports module: WooCommerce and CSV migrations into a brand, with dry runs and reports.",
+    "description": "Imports module: WooCommerce and CSV migrations into the store, with dry runs and reports.",
     "type": "library",
     "license": "proprietary",
     "require": {

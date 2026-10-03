@@ -18,7 +18,7 @@ final class TypesenseSearchIndex implements SearchIndex
 
     public function ensureCollections(): void
     {
-        // The collection references the tenant's synonym set, so the set comes first.
+        // The collection references the store's synonym set, so the set comes first.
         $this->synonyms->sync();
 
         $schema = (new Product)->typesenseCollectionSchema();

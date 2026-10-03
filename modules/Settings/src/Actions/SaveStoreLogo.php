@@ -6,7 +6,7 @@ namespace Modules\Settings\Actions;
 
 use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Support\Str;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Settings\Support\StoreLogo;
 use Modules\Support\Authorization\ChecksPermission;
 use Modules\Support\Contracts\Action;
@@ -26,7 +26,7 @@ final class SaveStoreLogo implements Action
     public const MAX_DIMENSION = 2000;
 
     public function __construct(
-        private readonly TenantSettings $settings,
+        private readonly StoreSettings $settings,
         private readonly UpdateSetting $update,
     ) {}
 

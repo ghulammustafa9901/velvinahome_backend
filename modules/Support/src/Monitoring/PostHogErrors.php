@@ -27,7 +27,7 @@ final class PostHogErrors
 
     public function enabled(): bool
     {
-        return (string) config('platform.monitoring.posthog.key') !== '' && (string) config('platform.monitoring.posthog.host') !== '';
+        return (string) config('store.monitoring.posthog.key') !== '' && (string) config('store.monitoring.posthog.host') !== '';
     }
 
     public function report(Throwable $e): void
@@ -47,7 +47,7 @@ final class PostHogErrors
         $send = function () use ($payload): void {
             try {
                 Http::timeout(3)->connectTimeout(2)->asJson()
-                    ->post(rtrim((string) config('platform.monitoring.posthog.host'), '/').'/i/v0/e/', $payload);
+                    ->post(rtrim((string) config('store.monitoring.posthog.host'), '/').'/i/v0/e/', $payload);
             } catch (Throwable $sendError) {
                 // Monitoring must never become the outage: log locally and move on.
                 Log::warning('Could not send an error to PostHog', ['exception' => $sendError::class]);
@@ -66,7 +66,7 @@ final class PostHogErrors
         $frames = $this->frames($e);
 
         return [
-            'api_key' => (string) config('platform.monitoring.posthog.key'),
+            'api_key' => (string) config('store.monitoring.posthog.key'),
             'event' => '$exception',
             // Errors are not tied to people: one technical id for the service.
             'distinct_id' => 'platform-api',
@@ -81,7 +81,7 @@ final class PostHogErrors
                 '$exception_fingerprint' => $e::class.'|'.($frames[0]['filename'] ?? '').':'.($frames[0]['lineno'] ?? 0),
                 'service' => 'platform-api',
                 'environment' => (string) config('app.env'),
-                'release' => (string) config('platform.release'),
+                'release' => (string) config('store.release'),
                 'request_id' => Context::get('request_id'),
                 'http_method' => $request?->method(),
                 'route' => $request?->route()?->uri(),

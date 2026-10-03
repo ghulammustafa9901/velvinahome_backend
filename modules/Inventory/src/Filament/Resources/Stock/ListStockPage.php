@@ -15,7 +15,7 @@ use Modules\Inventory\Actions\ReceiveStock;
 use Modules\Inventory\Actions\TransferStock;
 use Modules\Inventory\Data\StockDocumentData;
 use Modules\Inventory\Filament\InventoryForms;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\ValueObjects\Money;
 
 /**
@@ -40,7 +40,7 @@ final class ListStockPage extends ListRecords
                     Textarea::make('notes'),
                 ])
                 ->action(function (array $data): void {
-                    $currency = app(TenantSettings::class)->string('store.currency', 'PKR');
+                    $currency = app(StoreSettings::class)->string('store.currency', 'PKR');
 
                     app(ReceiveStock::class)->handle(StockDocumentData::validateAndCreate([
                         'locationUlid' => $data['location'],

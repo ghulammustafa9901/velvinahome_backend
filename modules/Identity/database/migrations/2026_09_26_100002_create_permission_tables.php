@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * spatie/laravel-permission tables, in the tenant database: roles and permissions are per
+ * spatie/laravel-permission tables, in the store database: roles and permissions are per
  * brand and never shared (spec §5).
  */
 return new class extends Migration

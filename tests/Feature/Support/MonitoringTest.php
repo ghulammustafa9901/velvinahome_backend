@@ -16,7 +16,7 @@ use Modules\Support\Monitoring\PostHogErrors;
 */
 
 beforeEach(function (): void {
-    config(['platform.monitoring.posthog.key' => 'phc_test_only_key', 'platform.monitoring.posthog.host' => 'https://posthog.test']);
+    config(['store.monitoring.posthog.key' => 'phc_test_only_key', 'store.monitoring.posthog.host' => 'https://posthog.test']);
     Http::fake(['posthog.test/*' => Http::response(['status' => 1])]);
 });
 
@@ -58,7 +58,7 @@ it('reports the same error once a minute, and nothing without a key', function (
     app(PostHogErrors::class)->report($error);
     Http::assertSentCount(1);
 
-    config(['platform.monitoring.posthog.key' => '']);
+    config(['store.monitoring.posthog.key' => '']);
     Cache::flush();
     app(PostHogErrors::class)->report(new LogicException('Off'));
     Http::assertSentCount(1);
@@ -77,7 +77,7 @@ it('tells monitors the platform is healthy, with detail only for the token', fun
 
     $this->get('http://localhost/health')->assertOk()->assertExactJson(['status' => 'ok']);
 
-    $this->get('http://localhost/health', ['X-Health-Token' => config('platform.monitoring.health_token')])
+    $this->get('http://localhost/health', ['X-Health-Token' => config('store.monitoring.health_token')])
         ->assertOk()
         ->assertJsonPath('checks.database', true)
         ->assertJsonPath('checks.redis', true)

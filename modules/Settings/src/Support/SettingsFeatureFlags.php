@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Settings\Support;
 
 use Modules\Settings\Contracts\FeatureFlags;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 
 /**
  * Flags are ordinary settings (`features.<flag>`), so they are cached, audited and invalidated
@@ -29,7 +29,7 @@ final class SettingsFeatureFlags implements FeatureFlags
         'customer_accounts' => true,
     ];
 
-    public function __construct(private readonly TenantSettings $settings) {}
+    public function __construct(private readonly StoreSettings $settings) {}
 
     public function enabled(string $feature): bool
     {

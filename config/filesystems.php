@@ -50,15 +50,15 @@ return [
         ],
 
         /*
-         * Tenant object storage (ADR-0004). One bucket; the FilesystemTenancyBootstrapper
-         * rewrites each root to tenants/{tenant_id}/... so a tenant can only ever address its
-         * own prefix. OBJECT_STORAGE_DRIVER=local keeps files on disk for machines without
-         * MinIO (ADR-0009) — never in production, where uploads never touch the app server.
+         * Object storage (ADR-0004): one bucket, everything under OBJECT_STORAGE_PREFIX, so two
+         * installations can share a bucket without sharing files. OBJECT_STORAGE_DRIVER=local
+         * keeps files on disk for machines without MinIO (ADR-0009) — never in production,
+         * where uploads never touch the app server.
          */
-        'tenant_media' => env('OBJECT_STORAGE_DRIVER', 's3') === 'local' ? [
+        'media' => env('OBJECT_STORAGE_DRIVER', 's3') === 'local' ? [
             'driver' => 'local',
             'root' => storage_path('app/media'),
-            // Served by the tenant API host itself (dev only), see Catalog routes.
+            // Served by the API itself (dev only), see Catalog routes.
             'url' => '/api/v1/media',
             'visibility' => 'public',
             'throw' => true,
@@ -68,6 +68,7 @@ return [
             'secret' => env('R2_SECRET_ACCESS_KEY'),
             'region' => env('R2_REGION', 'auto'),
             'bucket' => env('R2_BUCKET'),
+            'root' => trim((string) env('OBJECT_STORAGE_PREFIX', 'store'), '/').'/media',
             'url' => env('R2_PUBLIC_URL'),
             'endpoint' => env('R2_ENDPOINT'),
             'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', false),
@@ -77,7 +78,7 @@ return [
 
         // Invoices, exports, payment receipts: private, served only through signed,
         // expiring URLs (spec §6.9).
-        'tenant_private' => env('OBJECT_STORAGE_DRIVER', 's3') === 'local' ? [
+        'private' => env('OBJECT_STORAGE_DRIVER', 's3') === 'local' ? [
             'driver' => 'local',
             'root' => storage_path('app/private-objects'),
             'visibility' => 'private',
@@ -88,6 +89,7 @@ return [
             'secret' => env('R2_SECRET_ACCESS_KEY'),
             'region' => env('R2_REGION', 'auto'),
             'bucket' => env('R2_BUCKET'),
+            'root' => trim((string) env('OBJECT_STORAGE_PREFIX', 'store'), '/').'/private',
             'endpoint' => env('R2_ENDPOINT'),
             'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', false),
             'visibility' => 'private',

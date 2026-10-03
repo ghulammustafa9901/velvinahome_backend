@@ -7,7 +7,7 @@ namespace Modules\Support\Enums;
 /**
  * Currencies the platform can operate in.
  *
- * Currency is a tenant setting (spec §1.3), not a constant: PKR is only the default. The
+ * Currency is a store setting (spec §1.3), not a constant: PKR is only the default. The
  * list is an enum rather than free text so an unknown code cannot reach a money column,
  * and so minor-unit handling is defined per currency rather than assumed to be two digits.
  */

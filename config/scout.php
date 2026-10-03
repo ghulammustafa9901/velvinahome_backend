@@ -7,7 +7,7 @@ declare(strict_types=1);
 | Laravel Scout + Typesense (spec §6.10, ADR-0005)
 |--------------------------------------------------------------------------
 |
-| Collections are per tenant — the model's searchableAs() adds the tenant id — and schemas
+| One collection, {SCOUT_PREFIX}products (the model's searchableAs()); schemas
 | and search parameters live on the model (Modules\Catalog\Support\ProductSearch).
 | Indexing is queued on the `search` queue and only after the surrounding transaction
 | commits, so a rolled-back save never leaves a phantom document.
@@ -18,7 +18,8 @@ return [
 
     'driver' => env('SCOUT_DRIVER', 'typesense'),
 
-    // Separates environments sharing one Typesense node (the test suite uses `test_`).
+    // Separates installations and environments sharing one Typesense node (the test suite
+    // uses `test_`).
     'prefix' => env('SCOUT_PREFIX', ''),
 
     'queue' => [

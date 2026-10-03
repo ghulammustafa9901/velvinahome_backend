@@ -6,7 +6,7 @@ namespace Modules\Integrations\Support;
 
 use Illuminate\Support\Facades\Http;
 use Modules\Integrations\Contracts\OutboxHandler;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use RuntimeException;
 
 /**
@@ -17,18 +17,18 @@ use RuntimeException;
  */
 final class RevalidateStorefront implements OutboxHandler
 {
-    public function __construct(private readonly TenantSettings $settings) {}
+    public function __construct(private readonly StoreSettings $settings) {}
 
     public function handle(string $messageUlid, array $payload): void
     {
-        $secret = config('platform.storefront.revalidate_secret');
+        $secret = config('store.storefront.revalidate_secret');
         $origin = $this->settings->storefrontUrl();
 
         if (! is_string($secret) || strlen($secret) < 32 || $origin === null) {
             return;
         }
 
-        $url = config('platform.storefront.revalidate_url') ?: $origin.'/api/revalidate';
+        $url = config('store.storefront.revalidate_url') ?: $origin.'/api/revalidate';
         $body = (string) json_encode([
             'site' => (string) parse_url($origin, PHP_URL_HOST),
             'tags' => array_values(array_filter((array) ($payload['tags'] ?? []), 'is_string')),

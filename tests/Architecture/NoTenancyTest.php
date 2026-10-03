@@ -91,7 +91,7 @@ it('recognises every kind of tenancy code it guards against', function (string $
 it('lets ordinary code through', function (string $code): void {
     expect(tenancyMatches($code))->toBe([]);
 })->with([
-    'settings contract' => ['public function __construct(private TenantSettings $settings) {}'],
+    'settings contract' => ['public function __construct(private StoreSettings $settings) {}'],
     'scoped binding' => ['$this->app->scoped(Cache::class, Buffered::class);'],
     'product brand' => ['$product->brand->name;'],
 ]);

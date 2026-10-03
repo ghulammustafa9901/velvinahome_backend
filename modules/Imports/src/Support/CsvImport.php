@@ -10,7 +10,7 @@ use Modules\Catalog\Data\ProductData;
 use Modules\Imports\Actions\StartCsvImport;
 use Modules\Imports\Models\ImportRun;
 use Modules\Inventory\Contracts\StockImport;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\ValueObjects\Money;
 use RuntimeException;
 use Throwable;
@@ -38,7 +38,7 @@ final class CsvImport
     public function __construct(
         private readonly CatalogImport $catalog,
         private readonly StockImport $stock,
-        private readonly TenantSettings $settings,
+        private readonly StoreSettings $settings,
     ) {}
 
     public function run(ImportRun $run, ImportLog $log): void

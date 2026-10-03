@@ -10,11 +10,11 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Modules\Settings\Models\Setting;
-use Modules\Settings\Support\DatabaseTenantSettings;
+use Modules\Settings\Support\DatabaseStoreSettings;
 use Modules\Support\Contracts\Action;
 
 /**
- * Writes one tenant setting. Encrypted settings (integration secrets, API keys) are stored as
+ * Writes one store setting. Encrypted settings (integration secrets, API keys) are stored as
  * ciphertext so the raw column is unreadable without APP_KEY (spec §8).
  *
  * `$actor` is null for system callers (provisioning); a staff actor must hold
@@ -35,7 +35,7 @@ final class UpdateSetting implements Action
             ['value' => $stored, 'is_encrypted' => $encrypted],
         );
 
-        Cache::forget(DatabaseTenantSettings::CACHE_KEY);
+        Cache::forget(DatabaseStoreSettings::CACHE_KEY);
 
         return $setting;
     }

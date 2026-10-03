@@ -11,7 +11,7 @@ use Modules\Support\Contracts\Action;
 use Throwable;
 
 /**
- * Publishes due outbox messages for the current tenant.
+ * Publishes due outbox messages.
  *
  * Each message is claimed with `FOR UPDATE SKIP LOCKED` inside its own short transaction, so
  * concurrent publishers never deliver the same message twice at the same time, and one

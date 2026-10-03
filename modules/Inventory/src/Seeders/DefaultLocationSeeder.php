@@ -8,7 +8,7 @@ use Illuminate\Database\Seeder;
 use Modules\Inventory\Models\Location;
 
 /**
- * Every tenant has at least one location, even if it only ever uses one (spec §6.5).
+ * The store has at least one location, even if it only ever uses one (spec §6.5).
  */
 final class DefaultLocationSeeder extends Seeder
 {

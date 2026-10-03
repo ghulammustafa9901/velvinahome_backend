@@ -14,7 +14,7 @@ use Modules\Support\Authorization\ChecksPermission;
 use Modules\Support\Contracts\Action;
 
 /**
- * Queue a CSV import of a file already stored on the brand's private disk (the admin upload
+ * Queue a CSV import of a file already stored on the private disk (the admin upload
  * puts it there). The file is deleted when the run ends.
  */
 final class StartCsvImport implements Action
@@ -23,8 +23,8 @@ final class StartCsvImport implements Action
 
     public const MAX_BYTES = 5 * 1024 * 1024;
 
-    /** Shared by web and queue servers (object storage in production), per tenant. */
-    public const DISK = 'tenant_private';
+    /** Shared by web and queue servers (object storage in production). */
+    public const DISK = 'private';
 
     public function __construct(private readonly DatabaseManager $db) {}
 

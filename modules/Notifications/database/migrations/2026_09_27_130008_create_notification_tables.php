@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // The brand's own wording for each transactional message.
+        // The store's own wording for each transactional message.
         Schema::create('notification_templates', function (Blueprint $table): void {
             $table->id();
             $table->string('key', 64)->unique();

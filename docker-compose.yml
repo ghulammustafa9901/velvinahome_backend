@@ -109,8 +109,7 @@ services:
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
   minio:
-    # S3-compatible stand-in for Cloudflare R2 (ADR-0004). Same driver, same per-tenant
-    # prefixes, so storage isolation is exercised locally.
+    # S3-compatible stand-in for Cloudflare R2 (ADR-0004). Same driver, same prefix layout.
     image: minio/minio:latest
     container_name: platform-minio
     restart: unless-stopped
@@ -139,7 +138,7 @@ services:
       /bin/sh -c "
       mc alias set local http://minio:9000 minio minio-secret &&
       mc mb --ignore-existing local/platform-local &&
-      mc anonymous set download local/platform-local/tenants &&
+      mc anonymous set download local/platform-local/store/media &&
       echo 'bucket ready'
       "
     restart: "no"

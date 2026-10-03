@@ -18,7 +18,7 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Shipping\Actions\SaveShippingMethod;
 use Modules\Shipping\Actions\SaveShippingZone;
 use Modules\Shipping\Models\ShippingMethod;
@@ -28,7 +28,7 @@ use Modules\Support\ValueObjects\Money;
 use UnitEnum;
 
 /**
- * Delivery methods and the zones they serve, on one screen: most brands have one or two
+ * Delivery methods and the zones they serve, on one screen: most stores have one or two
  * zones and a handful of methods.
  */
 final class ShippingMethodResource extends Resource
@@ -65,7 +65,7 @@ final class ShippingMethodResource extends Resource
 
     public static function currency(): string
     {
-        return app(TenantSettings::class)->string('store.currency', 'PKR');
+        return app(StoreSettings::class)->string('store.currency', 'PKR');
     }
 
     public static function table(Table $table): Table

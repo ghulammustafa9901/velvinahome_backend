@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace Modules\Shipping\Seeders;
 
 use Illuminate\Database\Seeder;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Shipping\Models\ShippingZone;
 use Modules\Support\ValueObjects\Money;
 
 /**
- * A starting point every brand edits (spec §4.6 "default tax/shipping"): nationwide standard
- * delivery, COD allowed, flat Rs 250, free over Rs 5,000. Only seeded when a brand has no
+ * A starting point the store edits: nationwide standard
+ * delivery, COD allowed, flat Rs 250, free over Rs 5,000. Only seeded when the store has no
  * shipping set up at all.
  */
 final class DefaultShippingSeeder extends Seeder
 {
-    public function run(TenantSettings $settings): void
+    public function run(StoreSettings $settings): void
     {
         if (ShippingZone::query()->exists()) {
             return;

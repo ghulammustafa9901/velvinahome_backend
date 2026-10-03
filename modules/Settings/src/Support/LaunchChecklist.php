@@ -7,7 +7,7 @@ namespace Modules\Settings\Support;
 use Illuminate\Contracts\Container\Container;
 use Modules\Settings\Contracts\OnboardingCheck;
 use Modules\Settings\Contracts\OnboardingChecks;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Throwable;
 
 /**
@@ -21,7 +21,7 @@ final class LaunchChecklist implements OnboardingChecks
 
     public function __construct(
         private readonly Container $container,
-        private readonly TenantSettings $settings,
+        private readonly StoreSettings $settings,
     ) {}
 
     public function register(string $check): void

@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Panel sessions end after `platform.panels.max_session_hours`, however active they are
+ * Panel sessions end after `store.panels.max_session_hours`, however active they are
  * (ASVS 3.3.2); idle sessions already end after SESSION_LIFETIME minutes. Logging out also
  * cycles the remember-me token, so the cookie cannot quietly start a new session.
  *
@@ -37,7 +37,7 @@ final class EnforceSessionAge
             return $next($request);
         }
 
-        $maxSeconds = (int) (config('platform.panels.max_session_hours', 12) * 3600);
+        $maxSeconds = (int) (config('store.panels.max_session_hours', 12) * 3600);
 
         if (now()->getTimestamp() - $started >= $maxSeconds) {
             auth($guard)->logout();

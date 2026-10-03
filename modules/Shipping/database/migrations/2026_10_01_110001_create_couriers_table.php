@@ -11,7 +11,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // The brand's couriers. "manual" couriers only build tracking links; an API adapter
+        // The store's couriers. "manual" couriers only build tracking links; an API adapter
         // (when a courier account exists) books shipments and reports their status.
         Schema::create('couriers', function (Blueprint $table): void {
             $table->id();
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestampsTz();
         });
 
-        // Pakistani couriers a brand most likely uses; tracking links are left for staff to
+        // Pakistani couriers a store most likely uses; tracking links are left for staff to
         // fill in from their courier account, never guessed.
         $now = now();
         foreach (['Leopards', 'TCS', 'PostEx', 'Trax', 'M&P', 'Call Courier', 'BlueEx'] as $position => $name) {

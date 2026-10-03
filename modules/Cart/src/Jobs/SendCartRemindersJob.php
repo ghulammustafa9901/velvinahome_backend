@@ -11,7 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Modules\Cart\Actions\SendCartReminders;
 
 /**
- * Scheduled per active tenant: queue reminders for carts abandoned long enough.
+ * Scheduled: queue reminders for carts abandoned long enough.
  */
 final class SendCartRemindersJob implements ShouldQueue
 {

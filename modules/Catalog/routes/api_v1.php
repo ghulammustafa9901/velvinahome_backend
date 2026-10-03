@@ -16,10 +16,10 @@ Route::middleware('throttle:catalog')->group(function (): void {
     Route::get('collections/{slug}', [CategoryController::class, 'collection'])->name('collections.show');
 });
 
-// Development only: without object storage, the tenant's own media is streamed from its
-// tenant-prefixed local disk. In every real environment media is served by the CDN.
-if (config('filesystems.disks.tenant_media.driver') === 'local') {
-    Route::get('media/{path}', fn (string $path) => Illuminate\Support\Facades\Storage::disk('tenant_media')->response($path))
+// Development only: without object storage, media is streamed from the local disk. In every
+// real environment media is served by the CDN.
+if (config('filesystems.disks.media.driver') === 'local') {
+    Route::get('media/{path}', fn (string $path) => Illuminate\Support\Facades\Storage::disk('media')->response($path))
         ->where('path', '[A-Za-z0-9/_.-]+')
         ->name('media.local');
 }

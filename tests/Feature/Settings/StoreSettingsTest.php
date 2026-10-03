@@ -11,7 +11,7 @@ use Livewire\Livewire;
 use Modules\Identity\Mail\CustomerPasswordResetMail;
 use Modules\Settings\Actions\SaveStoreLogo;
 use Modules\Settings\Actions\SaveStoreSettings;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Settings\Data\StoreSettingsData;
 use Modules\Settings\Filament\Pages\StoreSettingsPage;
 use Modules\Settings\Support\StoreLogo;
@@ -34,7 +34,7 @@ beforeEach(function (): void {
     $this->api = 'http://localhost/api/v1';
     $this->admin = 'http://localhost';
     $this->owner = TestStore::staff(role: 'Owner');
-    $this->snapshot = collect(SNAPSHOT_KEYS)->mapWithKeys(fn (string $key): array => [$key => app(TenantSettings::class)->get($key)])->all();
+    $this->snapshot = collect(SNAPSHOT_KEYS)->mapWithKeys(fn (string $key): array => [$key => app(StoreSettings::class)->get($key)])->all();
 });
 
 afterEach(function (): void {
@@ -108,7 +108,7 @@ it('saves identity, theme, SEO, mail and flags, and publishes them to the storef
         ->assertJsonPath('data.features.reviews', false)
         ->assertJsonMissingPath('data.features.not-a-flag');
 
-    expect(app(TenantSettings::class)->get('mail.from_address'))->toBe('orders@shop.example.test');
+    expect(app(StoreSettings::class)->get('mail.from_address'))->toBe('orders@shop.example.test');
 });
 
 it('saves through the admin page form', function (): void {
@@ -120,9 +120,9 @@ it('saves through the admin page form', function (): void {
         ->call('save')
         ->assertHasNoFormErrors();
 
-    expect(app(TenantSettings::class)->string('store.name'))->toBe('Typed In The Admin')
-        ->and(app(TenantSettings::class)->storefrontUrl())->toBe('https://typed.example.test')
-        ->and(app(TenantSettings::class)->get('features.blog'))->toBeTrue();
+    expect(app(StoreSettings::class)->string('store.name'))->toBe('Typed In The Admin')
+        ->and(app(StoreSettings::class)->storefrontUrl())->toBe('https://typed.example.test')
+        ->and(app(StoreSettings::class)->get('features.blog'))->toBeTrue();
 });
 
 it('refuses a caller without settings.manage, inside the Action', function (): void {

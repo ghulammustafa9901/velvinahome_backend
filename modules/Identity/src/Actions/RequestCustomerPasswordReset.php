@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Modules\Identity\Mail\CustomerPasswordResetMail;
 use Modules\Identity\Models\Customer;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\Contracts\Action;
 
 /**
@@ -22,7 +22,7 @@ final class RequestCustomerPasswordReset implements Action
 {
     public const TTL_MINUTES = 60;
 
-    public function __construct(private readonly TenantSettings $settings) {}
+    public function __construct(private readonly StoreSettings $settings) {}
 
     public function handle(string $email): void
     {

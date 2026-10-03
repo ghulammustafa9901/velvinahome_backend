@@ -11,7 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Modules\Orders\Actions\CancelUnpaidOrders;
 
 /**
- * Scheduled per active tenant: cancel transfer orders left unpaid past the payment window.
+ * Scheduled: cancel transfer orders left unpaid past the payment window.
  */
 final class CancelUnpaidOrdersJob implements ShouldQueue
 {

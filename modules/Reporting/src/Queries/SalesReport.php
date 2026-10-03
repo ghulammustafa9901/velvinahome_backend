@@ -10,7 +10,7 @@ use Modules\Reporting\Models\SalesDayReport;
 use Modules\Reporting\Support\ReportFacts;
 
 /**
- * Reads the brand's own aggregates only (never orders), in the brand's currency. Days are
+ * Reads the store's aggregates only (never orders), in the store's currency. Days are
  * inclusive, brand-local.
  */
 final class SalesReport

@@ -9,12 +9,12 @@ use Modules\Orders\Models\Order;
 use Modules\Orders\States\PendingPayment;
 use Modules\Orders\Support\OrderCanceller;
 use Modules\Orders\Support\OrderLock;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\Contracts\Action;
 
 /**
  * Scheduled: a transfer order that is still unpaid, with no receipt uploaded, after the
- * brand's payment window is cancelled so its reserved stock goes back on sale. Orders with a
+ * store's payment window is cancelled so its reserved stock goes back on sale. Orders with a
  * receipt awaiting verification are left for staff.
  */
 final class CancelUnpaidOrders implements Action
@@ -23,7 +23,7 @@ final class CancelUnpaidOrders implements Action
 
     public function __construct(
         private readonly OrderCanceller $canceller,
-        private readonly TenantSettings $settings,
+        private readonly StoreSettings $settings,
         private readonly DatabaseManager $db,
     ) {}
 

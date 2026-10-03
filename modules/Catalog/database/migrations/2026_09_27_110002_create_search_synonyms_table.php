@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Per-tenant search synonyms (spec §6.10), managed in the admin — where Roman Urdu and local
+ * Search synonyms (spec §6.10), managed in the admin — where Roman Urdu and local
  * spellings live ("takia" = cushion, "lown" → lawn). PostgreSQL holds them; Typesense gets a
  * full copy on every change.
  */

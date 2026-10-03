@@ -195,7 +195,7 @@ it('refuses a store selling in another currency', function (): void {
 });
 
 it('only reaches public https stores, with well-formed keys, one run at a time', function (): void {
-    config(['platform.imports.allow_private_hosts' => false]);
+    config(['store.imports.allow_private_hosts' => false]);
     $start = fn (string $url, string $key = 'ck_aaaaaaaaaaaaaaaaaaaaaaaa') => app(StartWooCommerceImport::class)->handle($url, $key, 'cs_bbbbbbbbbbbbbbbbbbbbbbbb', true, ['products'], $this->owner);
 
     expect(fn () => $start('http://93.184.215.14'))->toThrow(ValidationException::class, 'https')
@@ -204,7 +204,7 @@ it('only reaches public https stores, with well-formed keys, one run at a time',
         ->and(fn () => $start('https://user:pass@93.184.215.14'))->toThrow(ValidationException::class)
         ->and(fn () => $start('https://93.184.215.14', 'not-a-key'))->toThrow(ValidationException::class, 'ck_');
 
-    config(['platform.imports.allow_private_hosts' => true]);
+    config(['store.imports.allow_private_hosts' => true]);
     ImportRun::query()->create(['source' => 'woocommerce', 'status' => 'running', 'dry_run' => true, 'options' => [], 'counts' => [], 'issues' => []]);
 
     try {

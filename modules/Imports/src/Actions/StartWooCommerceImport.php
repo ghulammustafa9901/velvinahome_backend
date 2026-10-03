@@ -16,7 +16,7 @@ use Modules\Support\Contracts\Action;
 
 /**
  * Queue a WooCommerce import. The API keys are stored encrypted on the run and erased when it
- * ends; only one import per brand runs at a time.
+ * ends; only one import runs at a time.
  */
 final class StartWooCommerceImport implements Action
 {
@@ -47,7 +47,7 @@ final class StartWooCommerceImport implements Action
         }
 
         return $this->db->connection()->transaction(function () use ($storeUrl, $consumerKey, $consumerSecret, $dryRun, $entities, $actor): ImportRun {
-            // Serialise starts within this brand's database, so two clicks cannot start two runs.
+            // Serialise starts in the database, so two clicks cannot start two runs.
             $this->db->connection()->statement("select pg_advisory_xact_lock(hashtext('import_runs'))");
 
             if (ImportRun::query()->whereIn('status', ['queued', 'running'])->exists()) {

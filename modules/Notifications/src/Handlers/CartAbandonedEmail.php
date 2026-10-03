@@ -11,7 +11,7 @@ use Modules\Integrations\Contracts\OutboxHandler;
 use Modules\Notifications\Mail\CartReminderMail;
 use Modules\Notifications\Models\NotificationTemplate;
 use Modules\Notifications\Support\EmailPreferences;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 
 /**
  * `cart.abandoned`: the one reminder for a cart. Re-checks everything at send time — the cart
@@ -22,7 +22,7 @@ final class CartAbandonedEmail implements OutboxHandler
 {
     public function __construct(
         private readonly Carts $carts,
-        private readonly TenantSettings $settings,
+        private readonly StoreSettings $settings,
         private readonly Mailer $mailer,
     ) {}
 

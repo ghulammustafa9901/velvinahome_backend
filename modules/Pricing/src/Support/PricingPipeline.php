@@ -11,7 +11,7 @@ use Modules\Pricing\Data\PricedCart;
 use Modules\Pricing\Data\PricedLine;
 use Modules\Pricing\Data\PricingRequest;
 use Modules\Pricing\Models\Coupon;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Shipping\Contracts\ShippingRates;
 use Modules\Shipping\Data\ShippingOptionData;
 use Modules\Support\ValueObjects\Money;
@@ -36,7 +36,7 @@ final class PricingPipeline implements CartPricer
         private readonly VariantCatalog $catalog,
         private readonly ShippingRates $shipping,
         private readonly TaxCalculator $tax,
-        private readonly TenantSettings $settings,
+        private readonly StoreSettings $settings,
         private readonly PromotionEngine $promotions,
     ) {}
 

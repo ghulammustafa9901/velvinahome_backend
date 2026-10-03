@@ -6,8 +6,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Platform identity (spec §16.1 — final name and domain still open)
+    | Store application settings that belong to the installation, not the admin
     |--------------------------------------------------------------------------
+    |
+    | Store identity (name, URL, logo, currency, theme, flags) lives in the admin's settings;
+    | this file holds only what is deployment configuration or a secret, from `.env`.
+    |
     */
 
     // Hosts (ADR-0002). Empty = answer on any host. In production the admin and the API live on
@@ -48,7 +52,7 @@ return [
         'secret_key' => env('TURNSTILE_SECRET_KEY', ''),
     ],
 
-    // Admin and platform panel sessions: signed out after this many hours however active
+    // Admin sessions: signed out after this many hours however active
     // (ASVS 3.3.2). Idle sign-out is SESSION_LIFETIME (minutes, 30 by default).
     'panels' => [
         'max_session_hours' => (float) env('PANEL_MAX_SESSION_HOURS', 12),

@@ -51,11 +51,11 @@ final class LoginThrottle
 
     private function maxAttempts(): int
     {
-        return (int) config('platform.staff.max_login_attempts', 5);
+        return (int) config('store.staff.max_login_attempts', 5);
     }
 
     private function lockoutSeconds(): int
     {
-        return (int) config('platform.staff.lockout_seconds', 900);
+        return (int) config('store.staff.lockout_seconds', 900);
     }
 }

@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * spatie/laravel-medialibrary, in the tenant database; files live under the tenant's own
+ * spatie/laravel-medialibrary, in the store database; files live under the store's
  * object-storage prefix (spec §6.9, ADR-0004).
  */
 return new class extends Migration

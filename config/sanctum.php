@@ -10,7 +10,7 @@ declare(strict_types=1);
 | The storefront never uses Sanctum's cookie (SPA) mode: the Next.js BFF holds the token in
 | an httpOnly cookie and sends it as a bearer token server-side. So there are no stateful
 | domains and no session guard fallback — a request is authenticated by a token from the
-| current brand's database, or not at all.
+| store database, or not at all.
 |
 */
 

@@ -9,7 +9,7 @@ use Modules\Catalog\Models\Product;
 use Typesense\Client;
 
 /**
- * Storefront search against the tenant's own Typesense collection (ADR-0005). Typesense
+ * Storefront search against the store's Typesense collection (ADR-0005). Typesense
  * decides relevance, facets and typo tolerance; the products returned are re-read from
  * PostgreSQL, so price and stock shown are never the index's possibly stale copy.
  */

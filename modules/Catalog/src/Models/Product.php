@@ -48,7 +48,7 @@ final class Product extends Model implements HasMedia
 
     /**
      * Product images: raster only (never SVG from uploads, spec §6.9), stored under the
-     * tenant's media prefix, with WebP conversions generated on the `media` queue.
+     * media disk, with WebP conversions generated on the `media` queue.
      */
     public function registerMediaCollections(): void
     {

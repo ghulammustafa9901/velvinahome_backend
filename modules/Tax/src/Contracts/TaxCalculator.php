@@ -11,7 +11,7 @@ interface TaxCalculator
 {
     /**
      * Tax on a (post-discount) amount delivered to the given place, in the store's tax mode
-     * (inclusive or exclusive, a tenant setting).
+     * (inclusive or exclusive, a store setting).
      */
     public function tax(Money $amount, ?string $countryCode, ?string $province): TaxLineData;
 }

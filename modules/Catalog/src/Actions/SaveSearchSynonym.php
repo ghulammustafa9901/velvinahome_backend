@@ -14,7 +14,7 @@ use Modules\Support\Contracts\Action;
 
 /**
  * Creates, edits or (with an empty term list) deletes a synonym rule, then pushes the whole
- * set to the tenant's Typesense synonym set once the transaction commits.
+ * set to the store's Typesense synonym set once the transaction commits.
  */
 final class SaveSearchSynonym implements Action
 {

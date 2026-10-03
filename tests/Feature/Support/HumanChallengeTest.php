@@ -26,13 +26,13 @@ function attemptLogin(object $test, array $headers = []): Illuminate\Testing\Tes
 
 it('does nothing while no secret key is configured', function (): void {
     Http::preventStrayRequests();
-    config(['platform.turnstile.secret_key' => '']);
+    config(['store.turnstile.secret_key' => '']);
 
     attemptLogin($this)->assertStatus(422)->assertJsonMissingPath('error.details.turnstile');
 });
 
 it('refuses a missing or rejected token', function (): void {
-    config(['platform.turnstile.secret_key' => 'test-secret']);
+    config(['store.turnstile.secret_key' => 'test-secret']);
     Http::fake(['challenges.cloudflare.com/*' => Http::response(['success' => false, 'error-codes' => ['invalid-input-response']])]);
 
     attemptLogin($this)->assertStatus(422)->assertJsonPath('error.details.turnstile.0', 'Please complete the security check and try again.');
@@ -40,7 +40,7 @@ it('refuses a missing or rejected token', function (): void {
 });
 
 it('verifies a token with Cloudflare and lets two follow-up calls through', function (): void {
-    config(['platform.turnstile.secret_key' => 'test-secret']);
+    config(['store.turnstile.secret_key' => 'test-secret']);
     Http::fake(['challenges.cloudflare.com/*' => Http::response(['success' => true])]);
 
     attemptLogin($this, ['X-Turnstile-Token' => 'good-token'])->assertJsonMissingPath('error.details.turnstile');
@@ -53,7 +53,7 @@ it('verifies a token with Cloudflare and lets two follow-up calls through', func
 });
 
 it('lets the request through when Cloudflare cannot be reached', function (): void {
-    config(['platform.turnstile.secret_key' => 'test-secret']);
+    config(['store.turnstile.secret_key' => 'test-secret']);
     Http::fake(fn () => throw new ConnectionException('timeout'));
 
     attemptLogin($this, ['X-Turnstile-Token' => 'any'])->assertJsonMissingPath('error.details.turnstile');

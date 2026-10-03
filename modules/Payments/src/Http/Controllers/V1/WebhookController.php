@@ -10,8 +10,7 @@ use Modules\Payments\Actions\ReceiveWebhook;
 use Modules\Payments\Data\InboundWebhook;
 
 /**
- * POST /api/v1/webhooks/{provider} on the brand's API host: the host selects the tenant, the
- * adapter verifies the signature. Always 200 for a stored event, so providers stop retrying.
+ * POST /api/v1/webhooks/{provider}: the adapter verifies the signature. Always 200 for a stored event, so providers stop retrying.
  */
 final class WebhookController
 {

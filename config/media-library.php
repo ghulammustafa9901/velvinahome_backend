@@ -35,8 +35,8 @@ return [
      * The disk on which to store added files and derived images by default. Choose
      * one or more of the disks you've configured in config/filesystems.php.
      */
-    // Always the tenant-prefixed object-storage disk (spec §6.9): never the app server.
-    'disk_name' => env('MEDIA_DISK', 'tenant_media'),
+    // Always the object-storage disk (spec §6.9): never the app server.
+    'disk_name' => env('MEDIA_DISK', 'media'),
 
     /*
      * The disk on which to store conversions (thumbnails, etc.) and responsive images

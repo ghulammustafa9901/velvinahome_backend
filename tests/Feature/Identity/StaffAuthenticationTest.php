@@ -9,7 +9,7 @@ use Modules\Identity\Actions\RegisterCustomer;
 use Modules\Identity\Data\CustomerRegistrationData;
 use Modules\Identity\Models\LoginAudit;
 use Modules\Settings\Actions\UpdateSetting;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Tests\Support\TestStore;
 
 /*
@@ -33,7 +33,7 @@ it('audits staff sign-in successes and failures', function (): void {
 it('locks a staff account after repeated failures', function (): void {
     $staff = TestStore::staff('correct-horse-9');
 
-    foreach (range(1, (int) config('platform.staff.max_login_attempts')) as $attempt) {
+    foreach (range(1, (int) config('store.staff.max_login_attempts')) as $attempt) {
         Auth::guard('staff')->attempt(['email' => $staff->email, 'password' => 'nope-nope-9']);
     }
 
@@ -72,6 +72,6 @@ it('stores encrypted settings as unreadable ciphertext', function (): void {
     $raw = DB::table('settings')->where('group', 'integrations')->where('key', 'probe_secret')->value('value');
 
     expect($raw)->not->toContain('sk_live_not_really')
-        ->and(app(TenantSettings::class)->get('integrations.probe_secret'))->toBe('sk_live_not_really')
-        ->and(app(TenantSettings::class)->group('integrations'))->not->toHaveKey('probe_secret');
+        ->and(app(StoreSettings::class)->get('integrations.probe_secret'))->toBe('sk_live_not_really')
+        ->and(app(StoreSettings::class)->group('integrations'))->not->toHaveKey('probe_secret');
 });

@@ -9,7 +9,7 @@ use Modules\Support\Contracts\Action;
 
 /**
  * The email a guest typed at checkout stays with their cart, so an abandoned-cart reminder
- * can reach them (only when the brand has reminders switched on).
+ * can reach them (only when the store has reminders switched on).
  */
 final class RememberCheckoutEmail implements Action
 {

@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Event;
 use Modules\Integrations\Contracts\StorefrontCache;
 use Modules\Settings\Contracts\FeatureFlags;
 use Modules\Settings\Contracts\OnboardingChecks;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Settings\Models\Setting;
 use Modules\Settings\Seeders\DefaultSettingsSeeder;
-use Modules\Settings\Support\DatabaseTenantSettings;
+use Modules\Settings\Support\DatabaseStoreSettings;
 use Modules\Settings\Support\LaunchChecklist;
 use Modules\Settings\Support\SettingsFeatureFlags;
 use Modules\Settings\Support\StoreEmailCheck;
@@ -29,7 +29,7 @@ final class SettingsServiceProvider extends ModuleServiceProvider
 
     protected function registerModule(): void
     {
-        $this->app->bind(TenantSettings::class, DatabaseTenantSettings::class);
+        $this->app->bind(StoreSettings::class, DatabaseStoreSettings::class);
         $this->app->bind(FeatureFlags::class, SettingsFeatureFlags::class);
         $this->app->singleton(OnboardingChecks::class, LaunchChecklist::class);
     }
@@ -37,10 +37,10 @@ final class SettingsServiceProvider extends ModuleServiceProvider
     protected function bootModule(): void
     {
         $this->app->make(OnboardingChecks::class)->register(StoreEmailCheck::class);
-        // Theme, store name, flags… are part of every page: purge the brand's config tag.
+        // Theme, store name, flags… are part of every page: purge the storefront's config tag.
         Setting::saved(fn () => $this->app->make(StorefrontCache::class)->invalidate(['config']));
         // The settings cache holds ciphertext; after a key rotation it must not outlive the old key.
-        Event::listen(StoredSecretsReencrypted::class, fn () => Cache::forget(DatabaseTenantSettings::CACHE_KEY));
+        Event::listen(StoredSecretsReencrypted::class, fn () => Cache::forget(DatabaseStoreSettings::CACHE_KEY));
     }
 
     protected function defaultSeeders(): array

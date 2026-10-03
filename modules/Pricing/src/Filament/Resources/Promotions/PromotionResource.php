@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Model;
 use Modules\Catalog\Contracts\CategoryDirectory;
 use Modules\Pricing\Actions\SavePromotion;
 use Modules\Pricing\Models\Promotion;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\ValueObjects\Money;
 use UnitEnum;
 
@@ -182,7 +182,7 @@ final class PromotionResource extends Resource
 
     public static function describe(Promotion $promotion): string
     {
-        $currency = app(TenantSettings::class)->string('store.currency', 'PKR');
+        $currency = app(StoreSettings::class)->string('store.currency', 'PKR');
         $config = $promotion->config;
 
         return match ($promotion->type) {

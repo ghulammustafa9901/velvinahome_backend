@@ -28,7 +28,7 @@ use Modules\Reporting\Models\ReportCursor;
 use Modules\Reporting\Models\SalesDayReport;
 use Modules\Reporting\Queries\ReportDiscrepancies;
 use Modules\Reporting\Queries\SalesReport;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\ValueObjects\Money;
 use Tests\Support\TestCommerce;
 use Tests\Support\TestStore;
@@ -73,7 +73,7 @@ function reportOrder(ProductVariant $variant, int $quantity): Order
  */
 function todayRow(): array
 {
-    $today = Carbon::now(app(TenantSettings::class)->string('store.timezone', 'Asia/Karachi'))->format('Y-m-d');
+    $today = Carbon::now(app(StoreSettings::class)->string('store.timezone', 'Asia/Karachi'))->format('Y-m-d');
     $row = SalesDayReport::query()->whereDate('date', $today)->where('currency', 'PKR')->first();
 
     return $row === null ? array_fill_keys(SalesDayReport::COUNTERS, 0) : $row->only(SalesDayReport::COUNTERS);

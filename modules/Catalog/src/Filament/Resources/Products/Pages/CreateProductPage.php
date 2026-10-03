@@ -17,7 +17,7 @@ use Modules\Catalog\Actions\CreateProduct;
 use Modules\Catalog\Data\ProductData;
 use Modules\Catalog\Filament\Resources\Products\ProductResource;
 use Modules\Catalog\Filament\StaffAccess;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\ValueObjects\Money;
 
 /**
@@ -60,7 +60,7 @@ final class CreateProductPage extends CreateRecord
      */
     protected function handleRecordCreation(array $data): Model
     {
-        $currency = app(TenantSettings::class)->string('store.currency', 'PKR');
+        $currency = app(StoreSettings::class)->string('store.currency', 'PKR');
         $toMinor = fn (?string $value): ?int => $value === null || $value === '' ? null : Money::parse($value, $currency)->amount;
 
         // Empty lists are omitted rather than sent as [], which the DTO's validation would

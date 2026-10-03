@@ -16,7 +16,7 @@ use Modules\Settings\Contracts\OnboardingChecks;
 use UnitEnum;
 
 /**
- * What still has to happen before the store opens (docs/tenant-onboarding.md), computed from
+ * What still has to happen before the store opens (docs/store-launch-checklist.md), computed from
  * the store's real state every time the page is opened.
  */
 final class LaunchChecklistPage extends Page

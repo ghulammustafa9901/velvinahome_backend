@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Payments\Models\PaymentMethod;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Settings\Models\Setting;
 use Modules\Support\Contracts\ReencryptsStoredSecrets;
 use Modules\Support\Modules\ModuleRegistry;
@@ -70,7 +70,7 @@ it('moves every stored secret to the new key and can retire the old one', functi
     // Secrets under the old key, and the settings cache warmed with that ciphertext.
     PaymentMethod::query()->where('code', 'cod')->firstOrFail()->forceFill(['credentials' => ['token' => 'cod-secret']])->save();
     Setting::query()->create(['group' => 'test', 'key' => $settingKey, 'value' => Crypt::encryptString('setting-secret'), 'is_encrypted' => true]);
-    expect(app(TenantSettings::class)->string("test.{$settingKey}"))->toBe('setting-secret');
+    expect(app(StoreSettings::class)->string("test.{$settingKey}"))->toBe('setting-secret');
 
     try {
         useAppKey($new, [$old]);
@@ -83,7 +83,7 @@ it('moves every stored secret to the new key and can retire the old one', functi
         $raw = (string) DB::table('payment_methods')->where('code', 'cod')->value('credentials');
 
         expect(json_decode($fresh->decryptString($raw), true))->toBe(['token' => 'cod-secret'])
-            ->and(app(TenantSettings::class)->string("test.{$settingKey}"))->toBe('setting-secret');
+            ->and(app(StoreSettings::class)->string("test.{$settingKey}"))->toBe('setting-secret');
 
         // A second run has nothing left to move.
         useAppKey($new, [$old]);

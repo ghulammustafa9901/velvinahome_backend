@@ -18,7 +18,7 @@ use Throwable;
  * (spec §8). The storefront passes the widget's token as `X-Turnstile-Token`; it is checked
  * with Cloudflare once (tokens are single-use).
  *
- *  - Off until TURNSTILE_SECRET_KEY is set (local development, tests, brands before launch).
+ *  - Off until TURNSTILE_SECRET_KEY is set (local development, tests, a store before launch).
  *  - A passed check covers the same client's next two protected calls for two minutes, so
  *    "register, then sign in" needs one challenge. Throttles still apply to every call.
  *  - An invalid token is refused. If Cloudflare cannot be reached the request is let through
@@ -36,7 +36,7 @@ final class VerifyHumanChallenge
 
     public function handle(Request $request, Closure $next): Response
     {
-        $secret = (string) config('platform.turnstile.secret_key');
+        $secret = (string) config('store.turnstile.secret_key');
 
         if ($secret === '') {
             return $next($request);

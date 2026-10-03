@@ -7,15 +7,15 @@ namespace Modules\Content\Seeders;
 use Illuminate\Database\Seeder;
 use Modules\Content\Models\Menu;
 use Modules\Content\Models\Page;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 
 /**
  * A working home page and menus for a new brand (spec §4.6), so the default theme renders a
- * complete store on day one. Idempotent: never touches a page or menu the brand already has.
+ * complete store on day one. Idempotent: never touches a page or menu the store already has.
  */
 final class DefaultContentSeeder extends Seeder
 {
-    public function run(TenantSettings $settings): void
+    public function run(StoreSettings $settings): void
     {
         $store = $settings->string('store.name', 'our store');
 

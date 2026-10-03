@@ -19,7 +19,7 @@ use Tests\Support\TestCatalog;
 
 beforeEach(function (): void {
     $this->secret = str_repeat('s', 40);
-    config(['platform.service_auth.secret' => $this->secret]);
+    config(['store.service_auth.secret' => $this->secret]);
     $this->api = 'http://localhost/api/v1';
 });
 
@@ -71,8 +71,8 @@ it('accepts a signed customer call through the trusted local proxy', function ()
 
 it('purges the storefront tags after a catalog change, signed', function (): void {
     config([
-        'platform.storefront.revalidate_secret' => str_repeat('r', 40),
-        'platform.storefront.revalidate_url' => 'http://storefront.internal/api/revalidate',
+        'store.storefront.revalidate_secret' => str_repeat('r', 40),
+        'store.storefront.revalidate_url' => 'http://storefront.internal/api/revalidate',
     ]);
     Http::fake(['storefront.internal/*' => Http::response(['ok' => true])]);
     // Only this test's messages: the shared test store may hold others from earlier tests.

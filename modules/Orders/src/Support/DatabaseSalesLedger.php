@@ -15,7 +15,7 @@ use Modules\Orders\Data\SalesDay;
 
 /**
  * Sales facts computed with SQL aggregates over `orders` and `order_items`. A day is bounded
- * in UTC from the brand's local midnight, so the `placed_at` index is used.
+ * in UTC from the store's local midnight, so the `placed_at` index is used.
  */
 final class DatabaseSalesLedger implements SalesLedger
 {

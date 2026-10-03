@@ -8,8 +8,8 @@ use Modules\Payments\Data\InboundWebhook;
 use Modules\Support\ValueObjects\Money;
 
 /**
- * One adapter per online provider (PayFast, JazzCash, Easypaisa, …), configured per brand with
- * the brand's own credentials (spec §6.6). Not implemented yet: the owner chose COD and manual
+ * One adapter per online provider (PayFast, JazzCash, Easypaisa, …), configured in the admin with
+ * the store's own credentials (spec §6.6). Not implemented yet: the owner chose COD and manual
  * transfer for launch. The intake, ledger and confirmation flow already assume this shape.
  */
 interface PaymentGateway

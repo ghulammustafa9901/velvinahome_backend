@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Settings\Contracts;
 
 /**
- * One item of the store's launch checklist (docs/tenant-onboarding.md), owned by the module
+ * One item of the store's launch checklist (docs/store-launch-checklist.md), owned by the module
  * that knows the answer.
  */
 interface OnboardingCheck

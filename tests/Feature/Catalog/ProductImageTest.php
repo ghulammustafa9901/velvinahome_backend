@@ -8,7 +8,7 @@ use Tests\Support\TestCatalog;
 
 /*
 | Spec §6.9: MIME by content, size limits, re-encoding (strips EXIF and embedded payloads),
-| random names, no SVG; files under the tenant's own prefix; conversions for responsive use.
+| random names, no SVG; files on the media disk; conversions for responsive use.
 */
 
 beforeEach(function (): void {
@@ -84,4 +84,18 @@ it('shows images with their sizes in the storefront API', function (): void {
         ->assertJsonPath('data.images.0.width', 1200)
         ->assertJsonPath('data.images.0.sizes.card.width', 800)
         ->assertJsonPath('data.image.alt', 'Front view');
+});
+
+it('stores images on the media disk and moves rows from the old tenant disk names', function (): void {
+    $media = app(AttachProductImage::class)->handle($this->product, tempFile($this, jpegWithExif(), 'jpg'));
+
+    expect($media->disk)->toBe('media');
+
+    // A row written before the single-store conversion.
+    Illuminate\Support\Facades\DB::table('media')->where('id', $media->id)->update(['disk' => 'tenant_media', 'conversions_disk' => 'tenant_media']);
+    (require base_path('modules/Catalog/database/migrations/2026_10_04_100002_rename_media_disks.php'))->up();
+
+    expect($media->refresh()->disk)->toBe('media')
+        ->and($media->conversions_disk)->toBe('media')
+        ->and(is_file($media->getPath()))->toBeTrue();
 });

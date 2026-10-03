@@ -19,7 +19,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Support\Http\EnforceSessionAge;
 use Throwable;
 
@@ -31,7 +31,7 @@ final class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        $domain = config('platform.admin_domain');
+        $domain = config('store.admin_domain');
 
         return $panel
             ->id('admin')
@@ -41,7 +41,7 @@ final class AdminPanelProvider extends PanelProvider
             ->login()
             ->multiFactorAuthentication(
                 [AppAuthentication::make()->recoverable()],
-                isRequired: fn (): bool => (bool) config('platform.staff.two_factor_required'),
+                isRequired: fn (): bool => (bool) config('store.staff.two_factor_required'),
             )
             ->brandName(fn (): string => self::storeName())
             ->colors(['primary' => Color::Slate])
@@ -87,7 +87,7 @@ final class AdminPanelProvider extends PanelProvider
     private static function storeName(): string
     {
         try {
-            return app(TenantSettings::class)->string('store.name') ?: 'Store admin';
+            return app(StoreSettings::class)->string('store.name') ?: 'Store admin';
         } catch (Throwable) {
             return 'Store admin';
         }

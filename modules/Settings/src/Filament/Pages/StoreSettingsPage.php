@@ -25,7 +25,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Modules\Settings\Actions\SaveStoreLogo;
 use Modules\Settings\Actions\SaveStoreSettings;
 use Modules\Settings\Contracts\FeatureFlags;
-use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Contracts\StoreSettings;
 use Modules\Settings\Data\StoreSettingsData;
 use Modules\Settings\Support\StoreLogo;
 use UnitEnum;
@@ -61,7 +61,7 @@ final class StoreSettingsPage extends Page
 
     public function mount(): void
     {
-        $settings = app(TenantSettings::class);
+        $settings = app(StoreSettings::class);
 
         $this->form->fill([
             'name' => $settings->string('store.name'),
@@ -86,7 +86,7 @@ final class StoreSettingsPage extends Page
 
     public function form(Schema $schema): Schema
     {
-        $settings = app(TenantSettings::class);
+        $settings = app(StoreSettings::class);
         $logo = StoreLogo::url($settings->string('store.logo'));
 
         return $schema

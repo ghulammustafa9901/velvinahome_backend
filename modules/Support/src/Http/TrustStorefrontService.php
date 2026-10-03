@@ -9,9 +9,8 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Recognises calls from the brand's own storefront server (ADR-0002, ADR-0003), signed with
- * SERVICE_AUTH_SECRET. It authenticates the caller only — the brand is always chosen by the
- * host, never by these headers.
+ * Recognises calls from the store's own storefront server (ADR-0002, ADR-0003), signed with
+ * SERVICE_AUTH_SECRET. It authenticates the caller only and grants nothing else.
  *
  *  - `X-Storefront-Render: hmac("storefront-render:v1")` — page rendering (ISR). Constant so it
  *    stays part of a cacheable request; such requests are not rate-limited per server IP.
@@ -27,7 +26,7 @@ final class TrustStorefrontService
 
     public function handle(Request $request, Closure $next): Response
     {
-        $secret = config('platform.service_auth.secret');
+        $secret = config('store.service_auth.secret');
 
         if (is_string($secret) && strlen($secret) >= 32) {
             $this->recognise($request, $secret);
@@ -54,7 +53,7 @@ final class TrustStorefrontService
         }
 
         [, $timestamp, $mac] = $signature;
-        $maxAge = (int) config('platform.service_auth.max_age_seconds', 60);
+        $maxAge = (int) config('store.service_auth.max_age_seconds', 60);
 
         if (! ctype_digit($timestamp) || abs(time() - (int) $timestamp) > $maxAge) {
             return;
@@ -65,8 +64,8 @@ final class TrustStorefrontService
         }
 
         // Resolve what the (trusted) proxy said about host and scheme first: once REMOTE_ADDR is
-        // the customer's, the forwarded headers are no longer trusted, and the brand (chosen by
-        // host) would be lost.
+        // the customer's, the forwarded headers are no longer trusted, and the host and scheme
+        // would be lost.
         $host = $request->getHost();
         $port = $request->getPort();
         $secure = $request->isSecure();

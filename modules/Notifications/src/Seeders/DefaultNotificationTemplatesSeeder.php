@@ -8,7 +8,7 @@ use Illuminate\Database\Seeder;
 use Modules\Notifications\Models\NotificationTemplate;
 
 /**
- * Default wording; brands edit it in the admin. Idempotent: never overwrites edits.
+ * Default wording; staff edit it in the admin. Idempotent: never overwrites edits.
  */
 final class DefaultNotificationTemplatesSeeder extends Seeder
 {
