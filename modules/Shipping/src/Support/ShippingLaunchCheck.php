@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Shipping\Support;
 
-use Modules\Platform\Contracts\OnboardingCheck;
+use Modules\Settings\Contracts\OnboardingCheck;
 use Modules\Shipping\Models\ShippingMethod;
 
 final class ShippingLaunchCheck implements OnboardingCheck

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Shipping\Providers;
 
-use Modules\Platform\Contracts\OnboardingChecks;
+use Modules\Settings\Contracts\OnboardingChecks;
 use Modules\Shipping\Contracts\Couriers;
 use Modules\Shipping\Contracts\ShippingRates;
 use Modules\Shipping\Seeders\DefaultShippingSeeder;

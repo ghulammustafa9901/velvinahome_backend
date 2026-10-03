@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Content\Support;
 
 use Modules\Content\Models\Page;
-use Modules\Platform\Contracts\OnboardingCheck;
+use Modules\Settings\Contracts\OnboardingCheck;
 
 final class HomePageCheck implements OnboardingCheck
 {

@@ -4,31 +4,18 @@ declare(strict_types=1);
 
 namespace Modules\Platform\Support;
 
-use Illuminate\Contracts\Container\Container;
-use Modules\Platform\Contracts\OnboardingCheck;
-use Modules\Platform\Contracts\OnboardingChecks;
 use Modules\Platform\Enums\DomainKind;
 use Modules\Platform\Enums\TenantStatus;
 use Modules\Platform\Models\Tenant;
-use Throwable;
+use Modules\Settings\Contracts\OnboardingChecks;
 
 /**
- * A brand's launch checklist, computed from its real state every time it is shown: landlord
- * facts (domains, plan, theme) here, everything inside the brand from the modules' checks.
- * A check that errors counts as not done, with the reason, never as done.
+ * A brand's launch checklist on the platform panel: landlord facts (domains, plan) here, the
+ * store's own checklist (Settings) from inside the brand. Removed with the platform panel in
+ * the single-store conversion.
  */
-final class LaunchChecklist implements OnboardingChecks
+final class LaunchChecklist
 {
-    /** @var list<class-string<OnboardingCheck>> */
-    private array $checks = [];
-
-    public function __construct(private readonly Container $container) {}
-
-    public function register(string $check): void
-    {
-        $this->checks[] = $check;
-    }
-
     /**
      * @return list<array{label: string, done: bool, hint: string}>
      */
@@ -48,11 +35,6 @@ final class LaunchChecklist implements OnboardingChecks
                 'done' => $tenant->getAttribute('plan_id') !== null,
                 'hint' => 'Choose the brand\'s plan; it decides the default features.',
             ],
-            [
-                'label' => 'Theme chosen',
-                'done' => trim((string) $tenant->getAttribute('theme_id')) !== '',
-                'hint' => 'Set the storefront theme for this brand.',
-            ],
         ];
 
         if ($tenant->status !== TenantStatus::Active) {
@@ -60,19 +42,7 @@ final class LaunchChecklist implements OnboardingChecks
         }
 
         /** @var list<array{label: string, done: bool, hint: string}> $inside */
-        $inside = $tenant->run(fn (): array => array_map(function (string $class): array {
-            $check = $this->container->make($class);
-
-            try {
-                $done = $check->passes();
-                $hint = $check->hint();
-            } catch (Throwable $e) {
-                $done = false;
-                $hint = 'Could not be checked: '.class_basename($e);
-            }
-
-            return ['label' => $check->label(), 'done' => $done, 'hint' => $hint];
-        }, $this->checks));
+        $inside = $tenant->run(fn (): array => app(OnboardingChecks::class)->items());
 
         return [...$items, ...$inside];
     }

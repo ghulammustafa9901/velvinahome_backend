@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Settings\Support;
 
-use Modules\Platform\Contracts\OnboardingCheck;
+use Modules\Settings\Contracts\OnboardingCheck;
 use Modules\Settings\Contracts\TenantSettings;
 
 final class StoreEmailCheck implements OnboardingCheck

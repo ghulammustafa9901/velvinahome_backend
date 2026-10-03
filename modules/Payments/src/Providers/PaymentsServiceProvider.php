@@ -11,7 +11,7 @@ use Modules\Payments\Support\DatabaseRefundLedger;
 use Modules\Payments\Support\GatewayRegistry;
 use Modules\Payments\Support\LedgerPayments;
 use Modules\Payments\Support\PaymentsLaunchCheck;
-use Modules\Platform\Contracts\OnboardingChecks;
+use Modules\Settings\Contracts\OnboardingChecks;
 use Modules\Support\Providers\ModuleServiceProvider;
 use Modules\Support\Security\EncryptedColumn;
 

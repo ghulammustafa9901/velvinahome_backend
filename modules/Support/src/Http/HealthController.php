@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Platform\Http\Controllers;
+namespace Modules\Support\Http;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,16 +13,16 @@ use Throwable;
 use Typesense\Client;
 
 /**
- * Deep health check for uptime monitoring (spec §9), on the platform host only. Anyone gets
- * the overall status; the per-component detail needs the HEALTH_CHECK_TOKEN, because it
- * describes the infrastructure. Answers 503 when something is down, so a monitor alerts.
+ * Deep health check for uptime monitoring (spec §9). Anyone gets the overall status; the
+ * per-component detail needs the HEALTH_CHECK_TOKEN, because it describes the infrastructure.
+ * Answers 503 when something is down, so a monitor alerts.
  */
 final class HealthController
 {
     public function __invoke(Request $request): JsonResponse
     {
         $checks = [
-            'database' => $this->check(fn (): bool => DB::connection('landlord')->select('select 1 as ok')[0]->ok === 1),
+            'database' => $this->check(fn (): bool => DB::connection()->select('select 1 as ok')[0]->ok === 1),
             'redis' => $this->check(fn (): bool => (bool) Redis::connection()->ping()),
             'search' => $this->check(fn (): bool => (bool) (app(Client::class)->health->retrieve()['ok'] ?? false)),
             'queue_backlog' => $this->check(fn (): bool => Queue::size('default') < (int) config('platform.monitoring.queue_backlog_alert', 1000)),

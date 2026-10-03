@@ -25,8 +25,8 @@ use Modules\Catalog\Support\ProductSitemapSource;
 use Modules\Catalog\Support\StorefrontRevalidation;
 use Modules\Catalog\Support\TypesenseSearchIndex;
 use Modules\Inventory\Events\StockChanged;
-use Modules\Platform\Contracts\OnboardingChecks;
 use Modules\Seo\Contracts\SitemapSources;
+use Modules\Settings\Contracts\OnboardingChecks;
 use Modules\Support\Providers\ModuleServiceProvider;
 use Typesense\Client;
 

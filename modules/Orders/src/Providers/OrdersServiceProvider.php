@@ -13,7 +13,7 @@ use Modules\Orders\Support\EloquentOrderBook;
 use Modules\Orders\Support\TestOrderCheck;
 use Modules\Payments\Events\PaymentConfirmed;
 use Modules\Payments\Events\PaymentFailed;
-use Modules\Platform\Contracts\OnboardingChecks;
+use Modules\Settings\Contracts\OnboardingChecks;
 use Modules\Support\Providers\ModuleServiceProvider;
 
 final class OrdersServiceProvider extends ModuleServiceProvider

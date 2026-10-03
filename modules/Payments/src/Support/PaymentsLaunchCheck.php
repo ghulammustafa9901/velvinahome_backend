@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Payments\Support;
 
 use Modules\Payments\Models\PaymentMethod;
-use Modules\Platform\Contracts\OnboardingCheck;
+use Modules\Settings\Contracts\OnboardingCheck;
 
 final class PaymentsLaunchCheck implements OnboardingCheck
 {

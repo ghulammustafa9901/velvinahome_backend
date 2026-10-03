@@ -6,7 +6,7 @@ namespace Modules\Catalog\Support;
 
 use Modules\Catalog\Enums\ProductStatus;
 use Modules\Catalog\Models\Product;
-use Modules\Platform\Contracts\OnboardingCheck;
+use Modules\Settings\Contracts\OnboardingCheck;
 
 final class CatalogLaunchCheck implements OnboardingCheck
 {

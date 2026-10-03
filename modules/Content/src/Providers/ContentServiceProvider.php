@@ -13,8 +13,8 @@ use Modules\Content\Support\ArticleSitemapSource;
 use Modules\Content\Support\HomePageCheck;
 use Modules\Content\Support\PageSitemapSource;
 use Modules\Integrations\Contracts\StorefrontCache;
-use Modules\Platform\Contracts\OnboardingChecks;
 use Modules\Seo\Contracts\SitemapSources;
+use Modules\Settings\Contracts\OnboardingChecks;
 use Modules\Support\Providers\ModuleServiceProvider;
 
 final class ContentServiceProvider extends ModuleServiceProvider

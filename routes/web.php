@@ -11,12 +11,12 @@ declare(strict_types=1);
 |   - the tenant admin panel on admin.<brand>   (Filament, `tenant:admin`)
 |   - the storefront API on api.<brand>         (module api_v1 routes, `tenant:api`)
 |   - the platform panel on the platform host   (Filament, `platform.host`)
-| Anything else is a 404 by design: an unknown host never falls back to a tenant.
+|   - the health check, on any host
 |
 */
 
 use Illuminate\Support\Facades\Route;
-use Modules\Platform\Http\Controllers\HealthController;
+use Modules\Support\Http\HealthController;
 
-// Deep health check for uptime monitoring, on the platform host only (spec §9).
-Route::get('health', HealthController::class)->middleware('platform.host')->name('health');
+// Deep health check for uptime monitoring (spec §9).
+Route::get('health', HealthController::class)->name('health');

@@ -21,7 +21,6 @@ use Modules\Platform\Console\TenantRotateDbPasswordsCommand;
 use Modules\Platform\Console\TenantsBackupCommand;
 use Modules\Platform\Console\TenantsMigrateCommand;
 use Modules\Platform\Console\TenantSuspendCommand;
-use Modules\Platform\Contracts\OnboardingChecks;
 use Modules\Platform\Contracts\OwnerBrands;
 use Modules\Platform\Contracts\TenantDirectory;
 use Modules\Platform\Listeners\AuditPlatformAuthentication;
@@ -29,7 +28,6 @@ use Modules\Platform\Models\Domain;
 use Modules\Platform\Models\Tenant;
 use Modules\Platform\Models\TenantDatabase;
 use Modules\Platform\Support\LandlordTenantDirectory;
-use Modules\Platform\Support\LaunchChecklist;
 use Modules\Platform\Support\OwnerBrandDirectory;
 use Modules\Platform\Tenancy\TenantResolver;
 use Modules\Support\Events\StoredSecretsReencrypted;
@@ -52,8 +50,6 @@ final class PlatformServiceProvider extends ModuleServiceProvider
         $this->app->singleton(TenantResolver::class);
         $this->app->bind(OwnerBrands::class, OwnerBrandDirectory::class);
         $this->app->bind(TenantDirectory::class, LandlordTenantDirectory::class);
-        $this->app->singleton(LaunchChecklist::class);
-        $this->app->alias(LaunchChecklist::class, OnboardingChecks::class);
     }
 
     /**

@@ -85,7 +85,8 @@ it('tells monitors the platform is healthy, with detail only for the token', fun
         ->assertJsonPath('checks.redis', true)
         ->assertJsonPath('checks.search', true);
 
-    $this->get('http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/health')->assertNotFound();
+    // Any host the application answers on; the details still need the token.
+    $this->get('http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/health')->assertOk()->assertExactJson(['status' => 'ok']);
 });
 
 it('answers 503 when jobs failed in the last hour', function (): void {

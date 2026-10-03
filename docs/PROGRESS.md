@@ -143,8 +143,8 @@ Plan: [docs/plans/remove-multi-tenancy.md](plans/remove-multi-tenancy.md). Owner
 | # | Milestone | Status | Notes |
 |---|---|---|---|
 | R0 | Baseline and safety net | done | Phase 7 work committed to `main` first. Baseline: Pest 394 passed, Larastan 8 and Pint clean; web lint, typecheck, Vitest 11, `next build`, Playwright 22 passed. All 8 local databases dumped to `%USERPROFILE%\devtools\backups\pre-single-store-20261003` |
-| R1 | Store identity and feature flags in settings | not started | |
-| R2 | Shared services out of Platform | not started | |
+| R1 | Store identity and feature flags in settings | done | Flags = `features.*` settings (Settings `FeatureFlags` contract); `store.url` drives reset links, cart reminders and revalidation; logo upload via `SafeImage`; admin **Settings → Store** page; config gains `store.url`, `store.logo_url` (additive). Pest 407 |
+| R2 | Shared services out of Platform | done | Launch checklist → Settings (`OnboardingChecks::items()`, admin **Settings → Launch checklist**); `/health` → Support, any host. `secrets:reencrypt` moves in R3 instead: while tenants exist it must loop over them, which Support cannot do |
 | R3 | Switch to one database | not started | |
 | R4 | Delete tenancy, add guard test | not started | |
 | R5 | Per-installation naming | not started | |
