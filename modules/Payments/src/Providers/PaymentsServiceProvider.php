@@ -41,7 +41,7 @@ final class PaymentsServiceProvider extends ModuleServiceProvider
 
     protected function encryptedColumns(): array
     {
-        return [EncryptedColumn::tenant('payment_methods', 'credentials')];
+        return [EncryptedColumn::make('payment_methods', 'credentials')];
     }
 
     protected function bootModule(): void

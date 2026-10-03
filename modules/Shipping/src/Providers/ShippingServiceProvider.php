@@ -36,7 +36,7 @@ final class ShippingServiceProvider extends ModuleServiceProvider
 
     protected function encryptedColumns(): array
     {
-        return [EncryptedColumn::tenant('couriers', 'credentials')];
+        return [EncryptedColumn::make('couriers', 'credentials')];
     }
 
     protected function bootModule(): void

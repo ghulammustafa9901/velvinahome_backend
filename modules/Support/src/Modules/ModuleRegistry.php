@@ -77,11 +77,10 @@ final class ModuleRegistry
     /**
      * Columns holding APP_KEY ciphertext.
      *
-     * @param  EncryptedColumn::CENTRAL|EncryptedColumn::TENANT  $scope
      * @return list<EncryptedColumn>
      */
-    public function encryptedColumns(string $scope): array
+    public function encryptedColumns(): array
     {
-        return array_values(array_filter($this->encryptedColumns, fn (EncryptedColumn $column): bool => $column->scope === $scope));
+        return $this->encryptedColumns;
     }
 }

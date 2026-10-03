@@ -6,7 +6,6 @@ namespace Modules\Support\Console;
 
 use Illuminate\Console\Command;
 use Modules\Support\Contracts\ReencryptsStoredSecrets;
-use Modules\Support\Security\EncryptedColumn;
 
 /**
  * Step 2 of an APP_KEY rotation (docs/runbooks/rotate-secrets.md): with the new key in APP_KEY
@@ -21,7 +20,7 @@ final class SecretsReencryptCommand extends Command
 
     public function handle(ReencryptsStoredSecrets $reencrypt): int
     {
-        $columns = $reencrypt->handle(EncryptedColumn::TENANT, (string) config('database.default'));
+        $columns = $reencrypt->handle();
         $unreadable = 0;
 
         foreach ($columns as $column => $counts) {

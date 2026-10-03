@@ -40,11 +40,7 @@ final class SettingsServiceProvider extends ModuleServiceProvider
         // Theme, store name, flags… are part of every page: purge the brand's config tag.
         Setting::saved(fn () => $this->app->make(StorefrontCache::class)->invalidate(['config']));
         // The settings cache holds ciphertext; after a key rotation it must not outlive the old key.
-        Event::listen(StoredSecretsReencrypted::class, function (StoredSecretsReencrypted $event): void {
-            if ($event->scope === EncryptedColumn::TENANT) {
-                Cache::forget(DatabaseTenantSettings::CACHE_KEY);
-            }
-        });
+        Event::listen(StoredSecretsReencrypted::class, fn () => Cache::forget(DatabaseTenantSettings::CACHE_KEY));
     }
 
     protected function defaultSeeders(): array
@@ -54,6 +50,6 @@ final class SettingsServiceProvider extends ModuleServiceProvider
 
     protected function encryptedColumns(): array
     {
-        return [EncryptedColumn::tenant('settings', 'value')->json()->where('is_encrypted', true)];
+        return [EncryptedColumn::make('settings', 'value')->json()->where('is_encrypted', true)];
     }
 }

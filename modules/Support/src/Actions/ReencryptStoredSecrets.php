@@ -11,13 +11,12 @@ use Modules\Support\Contracts\Action;
 use Modules\Support\Contracts\ReencryptsStoredSecrets;
 use Modules\Support\Events\StoredSecretsReencrypted;
 use Modules\Support\Modules\ModuleRegistry;
-use Modules\Support\Security\EncryptedColumn;
 
 /**
- * Re-encrypt every declared secret column of one database (the central one, or the current
- * tenant's) with the current APP_KEY. Values still under a key from APP_PREVIOUS_KEYS are decrypted with
- * it and written back under the current key; values already under the current key are left
- * alone, so a re-run changes nothing (docs/runbooks/rotate-secrets.md).
+ * Re-encrypt every declared secret column with the current APP_KEY. Values still under a key
+ * from APP_PREVIOUS_KEYS are decrypted with it and written back under the current key; values
+ * already under the current key are left alone, so a re-run changes nothing
+ * (docs/runbooks/rotate-secrets.md).
  *
  * A value no configured key can decrypt is counted as unreadable and left untouched.
  */
@@ -30,15 +29,15 @@ final class ReencryptStoredSecrets implements Action, ReencryptsStoredSecrets
     ) {}
 
     /**
-     * @param  EncryptedColumn::CENTRAL|EncryptedColumn::TENANT  $scope
      * @return array<string, array{reencrypted: int, current: int, unreadable: int}> table.column => counts
      */
-    public function handle(string $scope, string $connection): array
+    public function handle(): array
     {
+        $connection = (string) config('database.default');
         $current = new Encrypter($this->encrypter->getKey(), (string) config('app.cipher'));
         $report = [];
 
-        foreach ($this->modules->encryptedColumns($scope) as $column) {
+        foreach ($this->modules->encryptedColumns() as $column) {
             $counts = ['reencrypted' => 0, 'current' => 0, 'unreadable' => 0];
             $query = $this->db->connection($connection)->table($column->table)->whereNotNull($column->column);
 
@@ -84,7 +83,7 @@ final class ReencryptStoredSecrets implements Action, ReencryptsStoredSecrets
         }
 
         if (array_sum(array_column($report, 'reencrypted')) > 0) {
-            StoredSecretsReencrypted::dispatch($scope);
+            StoredSecretsReencrypted::dispatch();
         }
 
         return $report;

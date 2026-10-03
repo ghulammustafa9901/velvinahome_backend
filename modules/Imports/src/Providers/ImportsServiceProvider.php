@@ -22,6 +22,6 @@ final class ImportsServiceProvider extends ModuleServiceProvider
 
     protected function encryptedColumns(): array
     {
-        return [EncryptedColumn::tenant('import_runs', 'credentials')];
+        return [EncryptedColumn::make('import_runs', 'credentials')];
     }
 }

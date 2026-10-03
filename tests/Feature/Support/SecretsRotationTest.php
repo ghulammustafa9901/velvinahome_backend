@@ -36,7 +36,7 @@ function onlyKey(string $key): Encrypter
 it('declares every encrypted model cast, so a rotation cannot miss one', function (): void {
     $declared = array_map(
         fn (EncryptedColumn $column): string => $column->key(),
-        app(ModuleRegistry::class)->encryptedColumns(EncryptedColumn::TENANT),
+        app(ModuleRegistry::class)->encryptedColumns(),
     );
     $missing = [];
 
@@ -87,7 +87,7 @@ it('moves every stored secret to the new key and can retire the old one', functi
 
         // A second run has nothing left to move.
         useAppKey($new, [$old]);
-        $second = app(ReencryptsStoredSecrets::class)->handle(EncryptedColumn::TENANT, (string) config('database.default'));
+        $second = app(ReencryptsStoredSecrets::class)->handle();
         expect(array_sum(array_column($second, 'reencrypted')))->toBe(0);
     } finally {
         // Put the shared test database back under the suite's key.

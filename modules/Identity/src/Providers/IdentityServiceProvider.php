@@ -52,8 +52,8 @@ final class IdentityServiceProvider extends ModuleServiceProvider
     protected function encryptedColumns(): array
     {
         return [
-            EncryptedColumn::tenant('users', 'two_factor_secret'),
-            EncryptedColumn::tenant('users', 'two_factor_recovery_codes'),
+            EncryptedColumn::make('users', 'two_factor_secret'),
+            EncryptedColumn::make('users', 'two_factor_recovery_codes'),
         ];
     }
 }
