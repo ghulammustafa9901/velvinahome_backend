@@ -11655,15 +11655,29 @@
                                                         "locale": {
                                                             "type": "string"
                                                         },
+                                                        "logo_url": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
                                                         "name": {
                                                             "type": "string"
                                                         },
                                                         "timezone": {
                                                             "type": "string"
+                                                        },
+                                                        "url": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
                                                         }
                                                     },
                                                     "required": [
                                                         "name",
+                                                        "url",
+                                                        "logo_url",
                                                         "currency",
                                                         "locale",
                                                         "timezone",

@@ -100,6 +100,8 @@ return [
     // Backend-triggered ISR purges (spec §6.13). The URL defaults to <storefront>/api/revalidate;
     // set it for local development, where the storefront runs on its own port.
     'storefront' => [
+        // Install-time default for the `store.url` setting, which the admin owns afterwards.
+        'url' => env('STOREFRONT_URL'),
         'revalidate_secret' => env('STOREFRONT_REVALIDATE_SECRET'),
         'revalidate_url' => env('STOREFRONT_REVALIDATE_URL'),
     ],

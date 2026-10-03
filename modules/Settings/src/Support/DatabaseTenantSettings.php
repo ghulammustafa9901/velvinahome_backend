@@ -47,6 +47,14 @@ final class DatabaseTenantSettings implements TenantSettings
         return $values;
     }
 
+    public function storefrontUrl(): ?string
+    {
+        $url = rtrim(trim($this->string('store.url')), '/');
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+        return in_array($scheme, ['http', 'https'], true) && is_string(parse_url($url, PHP_URL_HOST)) ? $url : null;
+    }
+
     /**
      * Cached in the tenant-tagged cache; the key never needs the tenant id because the Cache
      * facade is scoped to the current tenant (spec §4.4).

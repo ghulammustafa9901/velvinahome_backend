@@ -8,7 +8,7 @@ use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Carbon;
 use Modules\Cart\Models\Cart;
 use Modules\Integrations\Contracts\Outbox;
-use Modules\Platform\Contracts\FeatureFlags;
+use Modules\Settings\Contracts\FeatureFlags;
 use Modules\Settings\Contracts\TenantSettings;
 use Modules\Support\Contracts\Action;
 

@@ -8,11 +8,10 @@ use Modules\Content\Actions\SaveArticle;
 use Modules\Content\Actions\SaveContentEntry;
 use Modules\Content\Actions\SaveContentType;
 use Modules\Content\Models\Article;
-use Modules\Platform\Contracts\FeatureFlags;
-use Modules\Platform\Models\TenantFeatureFlag;
 use Modules\Seo\Contracts\Seo;
 use Tests\Support\Contract;
 use Tests\Support\TestPlatform;
+use Tests\Support\TestSettings;
 
 /*
 | Blog (feature `blog`) and staff-defined content types (spec §13 phase 6): plain text only,
@@ -26,14 +25,12 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
-    app('db')->connection('landlord')->table('tenant_feature_flags')->where('tenant_id', $this->brand->id)->where('key', 'blog')->delete();
-    app(FeatureFlags::class)->forget($this->brand->id);
+    TestSettings::feature($this->brand, 'blog', false);
 });
 
 function blogOn(object $test): void
 {
-    TenantFeatureFlag::query()->create(['tenant_id' => $test->brand->id, 'key' => 'blog', 'enabled' => true]);
-    app(FeatureFlags::class)->forget($test->brand->id);
+    TestSettings::feature($test->brand, 'blog', true);
 }
 
 function post(object $test, string $title, bool $published = true): Article

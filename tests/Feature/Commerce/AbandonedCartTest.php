@@ -15,10 +15,9 @@ use Modules\Integrations\Actions\PublishPendingOutboxMessages;
 use Modules\Integrations\Jobs\PublishOutboxMessages;
 use Modules\Notifications\Mail\CartReminderMail;
 use Modules\Notifications\Support\EmailPreferences;
-use Modules\Platform\Contracts\FeatureFlags;
-use Modules\Platform\Models\TenantFeatureFlag;
 use Tests\Support\TestCommerce;
 use Tests\Support\TestPlatform;
+use Tests\Support\TestSettings;
 
 /*
 | Abandoned-cart reminders (spec §13 phase 6): one reminder per guest cart with a checkout
@@ -34,14 +33,12 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
-    app('db')->connection('landlord')->table('tenant_feature_flags')->where('tenant_id', $this->brand->id)->where('key', 'abandoned_cart')->delete();
-    app(FeatureFlags::class)->forget($this->brand->id);
+    TestSettings::feature($this->brand, 'abandoned_cart', false);
 });
 
 function remindersOn(object $test): void
 {
-    TenantFeatureFlag::query()->create(['tenant_id' => $test->brand->id, 'key' => 'abandoned_cart', 'enabled' => true]);
-    app(FeatureFlags::class)->forget($test->brand->id);
+    TestSettings::feature($test->brand, 'abandoned_cart', true);
 }
 
 /**

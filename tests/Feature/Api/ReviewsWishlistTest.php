@@ -7,12 +7,11 @@ use Illuminate\Support\Str;
 use Modules\Orders\Actions\ConfirmCodOrder;
 use Modules\Orders\Actions\CreateShipment;
 use Modules\Orders\Actions\UpdateShipment;
-use Modules\Platform\Contracts\FeatureFlags;
-use Modules\Platform\Models\TenantFeatureFlag;
 use Modules\Reviews\Actions\ModerateReview;
 use Modules\Reviews\Models\Review;
 use Tests\Support\TestCommerce;
 use Tests\Support\TestPlatform;
+use Tests\Support\TestSettings;
 
 /*
 | Flag-gated storefront features (spec §5): reviews from verified buyers after moderation;
@@ -26,14 +25,13 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
-    app('db')->connection('landlord')->table('tenant_feature_flags')->where('tenant_id', $this->brand->id)->whereIn('key', ['reviews', 'wishlist'])->delete();
-    app(FeatureFlags::class)->forget($this->brand->id);
+    TestSettings::feature($this->brand, 'reviews', false);
+    TestSettings::feature($this->brand, 'wishlist', false);
 });
 
 function enableFlag(object $test, string $key): void
 {
-    TenantFeatureFlag::query()->create(['tenant_id' => $test->brand->id, 'key' => $key, 'enabled' => true]);
-    app(FeatureFlags::class)->forget($test->brand->id);
+    TestSettings::feature($test->brand, $key, true);
 }
 
 /**

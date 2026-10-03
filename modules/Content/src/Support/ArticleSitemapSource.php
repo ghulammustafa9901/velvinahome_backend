@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Modules\Content\Support;
 
 use Modules\Content\Models\Article;
-use Modules\Platform\Contracts\FeatureFlags;
 use Modules\Seo\Contracts\SitemapSource;
+use Modules\Settings\Contracts\FeatureFlags;
 
 /**
  * Published blog posts, only while the brand has its blog switched on.

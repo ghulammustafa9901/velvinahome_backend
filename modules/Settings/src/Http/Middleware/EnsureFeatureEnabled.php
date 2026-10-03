@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Modules\Platform\Http\Middleware;
+namespace Modules\Settings\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Context;
-use Modules\Platform\Contracts\FeatureFlags;
+use Modules\Settings\Contracts\FeatureFlags;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * `feature:{flag}` — a switched-off feature answers 403 `feature_disabled`, never a blank page
- * or a misleading 404, so the storefront can tell "off for this brand" from "not found".
+ * or a misleading 404, so the storefront can tell "switched off" from "not found".
  */
 final class EnsureFeatureEnabled
 {

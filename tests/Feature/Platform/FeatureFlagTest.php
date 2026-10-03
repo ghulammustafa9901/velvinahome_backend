@@ -3,61 +3,57 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Modules\Platform\Contracts\FeatureFlags;
-use Modules\Platform\Models\Plan;
-use Modules\Platform\Models\TenantFeatureFlag;
+use Modules\Settings\Contracts\FeatureFlags;
+use Modules\Settings\Support\SettingsFeatureFlags;
 use Tests\Support\TestPlatform;
+use Tests\Support\TestSettings;
 
 /*
-| Plan 1.7: effective flags = plan defaults overridden by the tenant's own rows; a gated
-| endpoint answers 403 feature_disabled.
+| Feature flags are store settings (`features.*`): defaults for a new store, switched in the
+| admin; a gated endpoint answers 403 feature_disabled.
 */
 
 afterEach(function (): void {
-    $brandB = TestPlatform::brand(TestPlatform::BRAND_B);
-
-    app('db')->connection('landlord')->table('tenant_feature_flags')->where('tenant_id', $brandB->id)->delete();
-    $brandB->forceFill(['plan_id' => null])->save();
-    app(FeatureFlags::class)->forget($brandB->id);
+    foreach (['wishlist', 'reviews'] as $flag) {
+        TestSettings::feature(TestPlatform::brand(TestPlatform::BRAND_B), $flag, false);
+    }
 });
 
-it('lets a tenant override its plan default', function (): void {
-    $brandB = TestPlatform::brand(TestPlatform::BRAND_B);
-    $plan = Plan::query()->firstOrCreate(['key' => 'test-plan'], ['name' => 'Test', 'default_features' => ['wishlist' => true, 'reviews' => true]]);
+it('starts a store with the default flags and reports every known flag', function (): void {
+    $flags = TestPlatform::brand(TestPlatform::BRAND_B)->run(fn (): array => app(FeatureFlags::class)->all());
 
-    $brandB->forceFill(['plan_id' => $plan->id])->save();
-    TenantFeatureFlag::query()->create(['tenant_id' => $brandB->id, 'key' => 'reviews', 'enabled' => false]);
-    app(FeatureFlags::class)->forget($brandB->id);
-
-    $flags = $brandB->run(fn (): array => app(FeatureFlags::class)->all());
-
-    expect($flags['wishlist'])->toBeTrue()
-        ->and($flags['reviews'])->toBeFalse()
-        ->and($flags['blog'])->toBeFalse();
+    expect($flags)->toBe(collect(SettingsFeatureFlags::DEFAULTS)->sortKeys()->all());
 });
 
-it('keeps flags per brand', function (): void {
+it('follows the setting when a flag is switched on or off', function (): void {
     $brandB = TestPlatform::brand(TestPlatform::BRAND_B);
-    TenantFeatureFlag::query()->create(['tenant_id' => $brandB->id, 'key' => 'wishlist', 'enabled' => true]);
-    app(FeatureFlags::class)->forget($brandB->id);
+    TestSettings::feature($brandB, 'reviews', true);
+
+    expect($brandB->run(fn (): bool => app(FeatureFlags::class)->enabled('reviews')))->toBeTrue();
+
+    TestSettings::feature($brandB, 'reviews', false);
+
+    expect($brandB->run(fn (): bool => app(FeatureFlags::class)->enabled('reviews')))->toBeFalse()
+        ->and($brandB->run(fn (): bool => app(FeatureFlags::class)->enabled('no-such-flag')))->toBeFalse();
+});
+
+it('publishes the flags in the storefront config', function (): void {
+    TestSettings::feature(TestPlatform::brand(TestPlatform::BRAND_B), 'wishlist', true);
 
     $this->getJson('http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/api/v1/storefront/config')
-        ->assertJsonPath('data.features.wishlist', true);
-    $this->getJson('http://'.TestPlatform::apiHost(TestPlatform::BRAND_C).'/api/v1/storefront/config')
-        ->assertJsonPath('data.features.wishlist', false);
+        ->assertJsonPath('data.features.wishlist', true)
+        ->assertJsonPath('data.features.blog', false);
 });
 
 it('answers 403 feature_disabled on a gated route', function (): void {
     Route::middleware(['tenant:api', 'api', 'feature:wishlist'])
         ->get('api/v1/test-wishlist', fn () => ['ok' => true]);
 
-    $this->getJson('http://'.TestPlatform::apiHost(TestPlatform::BRAND_C).'/api/v1/test-wishlist')
+    $this->getJson('http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/api/v1/test-wishlist')
         ->assertForbidden()
         ->assertJsonPath('error.code', 'feature_disabled');
 
-    $brandB = TestPlatform::brand(TestPlatform::BRAND_B);
-    TenantFeatureFlag::query()->create(['tenant_id' => $brandB->id, 'key' => 'wishlist', 'enabled' => true]);
-    app(FeatureFlags::class)->forget($brandB->id);
+    TestSettings::feature(TestPlatform::brand(TestPlatform::BRAND_B), 'wishlist', true);
 
     $this->getJson('http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/api/v1/test-wishlist')->assertOk();
 });

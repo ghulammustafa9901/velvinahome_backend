@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Modules\Settings\Http\Controllers\V1;
 
 use Illuminate\Http\JsonResponse;
-use Modules\Platform\Contracts\FeatureFlags;
+use Modules\Settings\Contracts\FeatureFlags;
 use Modules\Settings\Contracts\TenantSettings;
+use Modules\Settings\Support\StoreLogo;
 use Modules\Support\ValueObjects\StringMap;
 
 /**
- * GET /api/v1/storefront/config — what the Next.js storefront needs before rendering any page
- * for this brand: theme, tokens, flags, locale, currency (spec §7.1). Public and cacheable;
+ * GET /api/v1/storefront/config — what the Next.js storefront needs before rendering any page:
+ * store identity, theme, tokens, flags, locale, currency (spec §7.1). Public and cacheable;
  * nothing here is sensitive.
  */
 final class StorefrontConfigController
@@ -23,6 +24,8 @@ final class StorefrontConfigController
                 'data' => [
                     'store' => [
                         'name' => $settings->string('store.name'),
+                        'url' => $settings->storefrontUrl(),
+                        'logo_url' => StoreLogo::url($settings->string('store.logo')),
                         'currency' => $settings->string('store.currency', 'PKR'),
                         'locale' => $settings->string('store.locale', 'en'),
                         'timezone' => $settings->string('store.timezone', 'Asia/Karachi'),

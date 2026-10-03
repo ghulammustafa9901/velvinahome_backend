@@ -11,11 +11,10 @@ use Modules\Catalog\Data\ProductDetailsData;
 use Modules\Orders\Actions\ConfirmCodOrder;
 use Modules\Orders\Actions\CreateShipment;
 use Modules\Orders\Actions\UpdateShipment;
-use Modules\Platform\Contracts\FeatureFlags;
-use Modules\Platform\Models\TenantFeatureFlag;
 use Tests\Support\Contract;
 use Tests\Support\TestCommerce;
 use Tests\Support\TestPlatform;
+use Tests\Support\TestSettings;
 
 /*
 | Contract tests (api-conventions §10): every endpoint's real responses — success and error —
@@ -31,8 +30,8 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
-    app('db')->connection('landlord')->table('tenant_feature_flags')->where('tenant_id', $this->brand->id)->whereIn('key', ['reviews', 'wishlist'])->delete();
-    app(FeatureFlags::class)->forget($this->brand->id);
+    TestSettings::feature($this->brand, 'reviews', false);
+    TestSettings::feature($this->brand, 'wishlist', false);
 });
 
 /**
@@ -174,9 +173,8 @@ it('matches the contract for flag-gated reviews and wishlist', function (): void
     Contract::assert($this->getJson($this->api.'/wishlist/items')->assertForbidden(), 'GET /v1/wishlist/items');
 
     foreach (['reviews', 'wishlist'] as $flag) {
-        TenantFeatureFlag::query()->create(['tenant_id' => $this->brand->id, 'key' => $flag, 'enabled' => true]);
+        TestSettings::feature($this->brand, $flag, true);
     }
-    app(FeatureFlags::class)->forget($this->brand->id);
 
     [, $token] = contractCustomer($this);
     [$variant, $productUlid] = $this->brand->run(fn (): array => [$v = TestCommerce::stockedVariant(100_000, 3), $v->product->ulid]);

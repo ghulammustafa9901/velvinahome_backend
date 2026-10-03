@@ -8,10 +8,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Modules\Integrations\Contracts\StorefrontCache;
 use Modules\Platform\Contracts\OnboardingChecks;
+use Modules\Settings\Contracts\FeatureFlags;
 use Modules\Settings\Contracts\TenantSettings;
 use Modules\Settings\Models\Setting;
 use Modules\Settings\Seeders\DefaultSettingsSeeder;
 use Modules\Settings\Support\DatabaseTenantSettings;
+use Modules\Settings\Support\SettingsFeatureFlags;
 use Modules\Settings\Support\StoreEmailCheck;
 use Modules\Support\Events\StoredSecretsReencrypted;
 use Modules\Support\Providers\ModuleServiceProvider;
@@ -27,6 +29,7 @@ final class SettingsServiceProvider extends ModuleServiceProvider
     protected function registerModule(): void
     {
         $this->app->bind(TenantSettings::class, DatabaseTenantSettings::class);
+        $this->app->bind(FeatureFlags::class, SettingsFeatureFlags::class);
     }
 
     protected function bootModule(): void

@@ -9,30 +9,26 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Modules\Identity\Mail\CustomerPasswordResetMail;
 use Modules\Identity\Models\Customer;
-use Modules\Platform\Contracts\TenantDirectory;
 use Modules\Settings\Contracts\TenantSettings;
 use Modules\Support\Contracts\Action;
 
 /**
  * "Forgot password". Always behaves the same whether or not the email has an account, so the
  * endpoint cannot be used to discover customers. The token is random, single-use, valid for an
- * hour, stored only as a hash, and the link points at the brand's own storefront domain from
- * the landlord records — never at a URL taken from the request.
+ * hour, stored only as a hash, and the link points at the store URL setting — never at a URL
+ * taken from the request.
  */
 final class RequestCustomerPasswordReset implements Action
 {
     public const TTL_MINUTES = 60;
 
-    public function __construct(
-        private readonly TenantDirectory $tenants,
-        private readonly TenantSettings $settings,
-    ) {}
+    public function __construct(private readonly TenantSettings $settings) {}
 
     public function handle(string $email): void
     {
         $email = mb_strtolower(trim($email));
         $customer = Customer::query()->whereRaw('lower(email) = ?', [$email])->whereNotNull('password')->first();
-        $storefront = $this->tenants->storefrontUrl();
+        $storefront = $this->settings->storefrontUrl();
 
         if ($customer === null || $storefront === null) {
             return;

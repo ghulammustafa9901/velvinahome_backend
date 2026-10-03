@@ -11,20 +11,18 @@ use Modules\Integrations\Contracts\OutboxHandler;
 use Modules\Notifications\Mail\CartReminderMail;
 use Modules\Notifications\Models\NotificationTemplate;
 use Modules\Notifications\Support\EmailPreferences;
-use Modules\Platform\Contracts\TenantDirectory;
 use Modules\Settings\Contracts\TenantSettings;
 
 /**
  * `cart.abandoned`: the one reminder for a cart. Re-checks everything at send time — the cart
  * may have been bought, emptied or recovered since, or the address unsubscribed — and links
- * only to the brand's own storefront (from landlord records, never request input).
+ * only to the store URL setting (never request input).
  */
 final class CartAbandonedEmail implements OutboxHandler
 {
     public function __construct(
         private readonly Carts $carts,
         private readonly TenantSettings $settings,
-        private readonly TenantDirectory $tenants,
         private readonly Mailer $mailer,
     ) {}
 
@@ -37,7 +35,7 @@ final class CartAbandonedEmail implements OutboxHandler
         $template = NotificationTemplate::query()->where('key', 'cart.abandoned')->first();
         $cartUlid = $payload['cart_ulid'] ?? null;
         $reminder = is_string($cartUlid) ? $this->carts->reminder($cartUlid) : null;
-        $storefront = $this->tenants->storefrontUrl();
+        $storefront = $this->settings->storefrontUrl();
 
         if ($template === null || ! $template->is_enabled || $reminder === null || $storefront === null || EmailPreferences::suppressed($reminder->email)) {
             return;

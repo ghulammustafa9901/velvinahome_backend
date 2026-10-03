@@ -6,23 +6,27 @@ namespace Modules\Settings\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
+use Modules\Platform\Contracts\TenantDirectory;
 use Modules\Settings\Models\Setting;
 use Modules\Settings\Support\DatabaseTenantSettings;
+use Modules\Settings\Support\SettingsFeatureFlags;
 
 /**
- * Store defaults for a new brand, taken from the tenant's provisioning record. Idempotent:
- * existing values are never overwritten, so re-running provisioning cannot undo a change a
- * brand has made since.
+ * Store defaults for a new store. Idempotent: existing values are never overwritten, so
+ * re-running it cannot undo a change made in the admin since.
  */
 final class DefaultSettingsSeeder extends Seeder
 {
     public function run(): void
     {
         $tenant = tenant();
+        $name = $tenant?->getAttribute('name') ?? config('app.name');
 
         $defaults = [
             'store' => [
-                'name' => $tenant?->getAttribute('name') ?? 'Store',
+                'name' => $name,
+                'url' => $this->storefrontUrl(),
+                'logo' => null,
                 'currency' => $tenant?->getAttribute('default_currency') ?? 'PKR',
                 'timezone' => $tenant?->getAttribute('default_timezone') ?? 'Asia/Karachi',
                 'locale' => $tenant?->getAttribute('default_locale') ?? 'en',
@@ -40,12 +44,13 @@ final class DefaultSettingsSeeder extends Seeder
             ],
             'seo' => [
                 'robots_allow_indexing' => true,
-                'title_suffix' => $tenant?->getAttribute('name'),
+                'title_suffix' => $name,
             ],
             'mail' => [
-                'from_name' => $tenant?->getAttribute('name'),
+                'from_name' => $name,
                 'from_address' => null,
             ],
+            'features' => SettingsFeatureFlags::DEFAULTS,
         ];
 
         foreach ($defaults as $group => $values) {
@@ -58,5 +63,19 @@ final class DefaultSettingsSeeder extends Seeder
         }
 
         Cache::forget(DatabaseTenantSettings::CACHE_KEY);
+    }
+
+    /**
+     * STOREFRONT_URL is the install-time default; afterwards the admin owns `store.url`.
+     */
+    private function storefrontUrl(): ?string
+    {
+        $configured = config('platform.storefront.url');
+
+        if (is_string($configured) && $configured !== '') {
+            return rtrim($configured, '/');
+        }
+
+        return app(TenantDirectory::class)->storefrontUrl();
     }
 }

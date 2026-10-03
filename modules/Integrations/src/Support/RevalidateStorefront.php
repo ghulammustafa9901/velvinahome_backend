@@ -6,23 +6,23 @@ namespace Modules\Integrations\Support;
 
 use Illuminate\Support\Facades\Http;
 use Modules\Integrations\Contracts\OutboxHandler;
-use Modules\Platform\Contracts\TenantDirectory;
+use Modules\Settings\Contracts\TenantSettings;
 use RuntimeException;
 
 /**
- * Outbox handler for `storefront.revalidate`: POSTs the tags to the brand storefront's
- * `/api/revalidate`, signed with STOREFRONT_REVALIDATE_SECRET (HMAC over timestamp and body).
- * The storefront scopes every tag to the brand named in the signed body. Idempotent by nature:
- * purging a tag twice is harmless. Without a secret configured nothing is sent.
+ * Outbox handler for `storefront.revalidate`: POSTs the tags to the storefront's
+ * `/api/revalidate` (from the store URL setting), signed with STOREFRONT_REVALIDATE_SECRET
+ * (HMAC over timestamp and body). Idempotent by nature: purging a tag twice is harmless.
+ * Without a secret or a store URL nothing is sent.
  */
 final class RevalidateStorefront implements OutboxHandler
 {
-    public function __construct(private readonly TenantDirectory $tenants) {}
+    public function __construct(private readonly TenantSettings $settings) {}
 
     public function handle(string $messageUlid, array $payload): void
     {
         $secret = config('platform.storefront.revalidate_secret');
-        $origin = $this->tenants->storefrontUrl();
+        $origin = $this->settings->storefrontUrl();
 
         if (! is_string($secret) || strlen($secret) < 32 || $origin === null) {
             return;
