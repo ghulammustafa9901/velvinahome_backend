@@ -39,3 +39,8 @@ Schedule::job(new SendCartRemindersJob)->everyFifteenMinutes()->name('cart-remin
 
 // Courier tracking: deliveries and returns from couriers with an integration.
 Schedule::job(new SyncShipmentTrackingJob)->hourly()->name('shipment-tracking')->withoutOverlapping()->onOneServer();
+
+// Backups (spec §9): a nightly dump; on Sundays it is also restored into the scratch database
+// and compared with the live one (docs/runbooks/restore-database.md).
+Schedule::command('db:backup')->dailyAt('01:30')->days([1, 2, 3, 4, 5, 6])->withoutOverlapping()->onOneServer();
+Schedule::command('db:backup --drill')->sundays()->at('01:30')->withoutOverlapping()->onOneServer();

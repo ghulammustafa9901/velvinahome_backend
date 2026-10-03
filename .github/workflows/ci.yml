@@ -116,13 +116,15 @@ jobs:
           echo "PG_DUMP_BINARY=/usr/lib/postgresql/17/bin/pg_dump" >> "$GITHUB_ENV"
           echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
       - run: composer install --no-interaction --prefer-dist --no-progress
-      - name: Bootstrap the roles and the test database
+      - name: Bootstrap the roles, the test database and its restore-drill scratch database
         run: |
-          psql -h 127.0.0.1 -U postgres -f database/setup/bootstrap-database.sql \
-            -v db=store_test \
-            -v app_password="$DB_PASSWORD" \
-            -v migrator_password="$DB_MIGRATOR_PASSWORD" \
-            -v backup_password=ci-backup
+          for db in store_test store_test_restore_drill; do
+            psql -h 127.0.0.1 -U postgres -f database/setup/bootstrap-database.sql \
+              -v db="$db" \
+              -v app_password="$DB_PASSWORD" \
+              -v migrator_password="$DB_MIGRATOR_PASSWORD" \
+              -v backup_password=ci-backup
+          done
       - name: Prepare environment
         run: |
           cp .env.example .env

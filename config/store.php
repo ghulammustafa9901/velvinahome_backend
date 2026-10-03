@@ -30,7 +30,9 @@ return [
         'pg_restore_binary' => env('PG_RESTORE_BINARY', 'pg_restore'),
         // How many nightly dumps stay on disk (older ones are pruned).
         'retention' => (int) env('BACKUP_RETENTION', 14),
-        'disk' => env('BACKUP_DISK', 'local'),
+        'path' => env('BACKUP_PATH') ?: storage_path('app/backups'),
+        // The restore drill's scratch database, created once by bootstrap-database.sql.
+        'drill_database' => env('BACKUP_DRILL_DATABASE') ?: env('DB_DATABASE', 'store').'_restore_drill',
     ],
 
     /*

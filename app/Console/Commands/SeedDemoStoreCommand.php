@@ -17,17 +17,31 @@ use Modules\Inventory\Actions\ReceiveStock;
 use Modules\Inventory\Data\StockDocumentData;
 use Modules\Inventory\Models\Location;
 use Modules\Inventory\Models\StockLevel;
+use Modules\Settings\Actions\UpdateSetting;
 
 /**
- * Local demo only: a small, believable catalog with stock, so the admin, the storefront API
- * and search have something to show. Composes several modules, which is why it lives in the
- * application layer rather than in any one module. Idempotent.
+ * Local demo only: the demo store's identity (Velvina Home on the velvina-home theme, optional
+ * features on) and a small, believable catalog with stock, so the admin, the storefront and
+ * search have something to show. Composes several modules, which is why it lives in the
+ * application layer rather than in any one module. Idempotent: settings are only written on
+ * the first run, so changes made in the admin afterwards survive.
  */
-final class SeedDemoCatalogCommand extends Command
+final class SeedDemoStoreCommand extends Command
 {
-    protected $signature = 'platform:seed-demo-catalog {--restock : Top demo stock back up to its opening level (for repeatable storefront E2E runs)}';
+    protected $signature = 'store:seed-demo {--restock : Top demo stock back up to its opening level (for repeatable storefront E2E runs)}';
 
-    protected $description = 'Add a sample catalog with stock (local only)';
+    protected $description = 'Seed the demo store: identity, theme, features and a sample catalog with stock (local only)';
+
+    /** @var array<string, mixed> */
+    private const SETTINGS = [
+        'store.name' => 'Velvina Home',
+        'theme.id' => 'velvina-home',
+        'seo.title_suffix' => 'Velvina Home',
+        'mail.from_name' => 'Velvina Home',
+        'features.wishlist' => true,
+        'features.reviews' => true,
+        'features.blog' => true,
+    ];
 
     /**
      * @var list<array{title: string, category: string, price: int, compare: int|null, options: array<string, list<string>>, stock: int}>
@@ -54,7 +68,16 @@ final class SeedDemoCatalogCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->components->info($this->seed().' products added.');
+        $added = $this->seed();
+
+        if ($added > 0) {
+            foreach (self::SETTINGS as $key => $value) {
+                [$group, $name] = explode('.', $key, 2);
+                app(UpdateSetting::class)->handle($group, $name, $value);
+            }
+        }
+
+        $this->components->info($added.' products added.');
 
         return self::SUCCESS;
     }

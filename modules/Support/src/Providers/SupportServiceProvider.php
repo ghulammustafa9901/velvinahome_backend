@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Support\Providers;
 
 use Modules\Support\Actions\ReencryptStoredSecrets;
+use Modules\Support\Console\BackupDatabaseCommand;
 use Modules\Support\Console\MigrateDatabaseCommand;
 use Modules\Support\Console\SecretsReencryptCommand;
 use Modules\Support\Contracts\ReencryptsStoredSecrets;
@@ -28,6 +29,7 @@ final class SupportServiceProvider extends ModuleServiceProvider
     protected function consoleCommands(): array
     {
         return [
+            BackupDatabaseCommand::class,
             MigrateDatabaseCommand::class,
             SecretsReencryptCommand::class,
         ];

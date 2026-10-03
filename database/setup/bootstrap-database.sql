@@ -6,7 +6,8 @@
 --        -v app_password="'...'" -v migrator_password="'...'" -v backup_password="'...'"
 --
 -- Optional: -v db=store_test for the test database (default: store). Run it again with another
--- db name to add a database; the roles are shared and never re-created.
+-- db name to add a database; the roles are shared and never re-created. Run it once more with
+-- -v db=<db>_restore_drill for the scratch database of the weekly restore drill (db:backup --drill).
 --
 -- Idempotent: safe to re-run. Re-running rotates nothing, so password rotation is a separate
 -- documented procedure (docs/runbooks/rotate-secrets.md).
