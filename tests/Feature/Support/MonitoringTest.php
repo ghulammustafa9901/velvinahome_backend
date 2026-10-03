@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Modules\Support\Monitoring\PostHogErrors;
-use Tests\Support\TestPlatform;
 
 /*
 | Monitoring (spec §9, PostHog per owner decision): errors are reported scrubbed and
@@ -22,7 +21,6 @@ beforeEach(function (): void {
 });
 
 it('reports an error to PostHog without personal data', function (): void {
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
     $unique = Str::random(8);
 
     app(PostHogErrors::class)->report(new RuntimeException("Order for ayesha.{$unique}@example.test failed, phone 03001234567"));
@@ -34,7 +32,7 @@ it('reports an error to PostHog without personal data', function (): void {
         return $request->url() === 'https://posthog.test/i/v0/e/'
             && $body['api_key'] === 'phc_test_only_key'
             && $body['event'] === '$exception'
-            && $body['distinct_id'] === 'platform-api:tenant:'.tenant()?->getTenantKey()
+            && $body['distinct_id'] === 'platform-api'
             && $exception['type'] === RuntimeException::class
             && ! str_contains($exception['value'], $unique) && str_contains($exception['value'], '[email]') && str_contains($exception['value'], '[number]')
             && $exception['stacktrace']['frames'][0]['filename'] === 'tests/Feature/Support/MonitoringTest.php'
@@ -74,27 +72,27 @@ it('reports unhandled exceptions through the framework handler', function (): vo
 });
 
 it('tells monitors the platform is healthy, with detail only for the token', function (): void {
-    $failed = DB::connection('landlord')->table('failed_jobs');
+    $failed = DB::table('failed_jobs');
     $failed->where('failed_at', '>=', now()->subHour())->update(['failed_at' => now()->subDay()]);
 
-    $this->get('http://platform.test/health')->assertOk()->assertExactJson(['status' => 'ok']);
+    $this->get('http://localhost/health')->assertOk()->assertExactJson(['status' => 'ok']);
 
-    $this->get('http://platform.test/health', ['X-Health-Token' => config('platform.monitoring.health_token')])
+    $this->get('http://localhost/health', ['X-Health-Token' => config('platform.monitoring.health_token')])
         ->assertOk()
         ->assertJsonPath('checks.database', true)
         ->assertJsonPath('checks.redis', true)
         ->assertJsonPath('checks.search', true);
 
     // Any host the application answers on; the details still need the token.
-    $this->get('http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/health')->assertOk()->assertExactJson(['status' => 'ok']);
+    $this->get('http://localhost/health')->assertOk()->assertExactJson(['status' => 'ok']);
 });
 
 it('answers 503 when jobs failed in the last hour', function (): void {
-    DB::connection('landlord')->table('failed_jobs')->insert([
+    DB::table('failed_jobs')->insert([
         'uuid' => (string) Str::uuid(), 'connection' => 'redis', 'queue' => 'default', 'payload' => '{}', 'exception' => 'test', 'failed_at' => now(),
     ]);
 
-    $this->get('http://platform.test/health')->assertStatus(503)->assertExactJson(['status' => 'degraded']);
+    $this->get('http://localhost/health')->assertStatus(503)->assertExactJson(['status' => 'degraded']);
 
-    DB::connection('landlord')->table('failed_jobs')->where('exception', 'test')->delete();
+    DB::table('failed_jobs')->where('exception', 'test')->delete();
 });

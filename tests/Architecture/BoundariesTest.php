@@ -82,33 +82,6 @@ it('keeps the Support kernel free of domain dependencies', function (): void {
     );
 });
 
-it('touches the landlord connection only from the Platform module', function (): void {
-    $violations = [];
-
-    foreach (ModuleInspector::modules() as $module) {
-        if ($module === 'Platform') {
-            continue;
-        }
-
-        foreach (ModuleInspector::sourceFiles($module) as $file) {
-            $contents = (string) file_get_contents($file->getPathname());
-
-            $mentionsLandlord = str_contains($contents, "'landlord'")
-                || str_contains($contents, '"landlord"')
-                || str_contains($contents, 'connection(\'landlord\')');
-
-            if ($mentionsLandlord) {
-                $violations[] = ModuleInspector::relativePath($file);
-            }
-        }
-    }
-
-    expect($violations)->toBe(
-        [],
-        'Only Modules\Platform may reach the landlord database (spec §4.1); every other module is tenant-only.',
-    );
-});
-
 it('declares a service provider for every module', function (): void {
     $missing = [];
 

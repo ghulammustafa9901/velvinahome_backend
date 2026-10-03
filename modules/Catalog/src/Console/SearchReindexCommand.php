@@ -9,18 +9,13 @@ use Modules\Catalog\Actions\ReindexSearch;
 
 final class SearchReindexCommand extends Command
 {
-    protected $signature = 'search:reindex {--tenant=* : Tenant ids (default: every active tenant)}';
+    protected $signature = 'search:reindex';
 
-    protected $description = 'Rebuild tenants\' Typesense collections from PostgreSQL';
+    protected $description = 'Rebuild the Typesense product collection and synonyms from PostgreSQL';
 
     public function handle(ReindexSearch $reindex): int
     {
-        /** @var list<string> $only */
-        $only = $this->option('tenant');
-
-        foreach ($reindex->handle($only === [] ? null : $only) as $tenant => $count) {
-            $this->components->twoColumnDetail($tenant, is_int($count) ? "{$count} products" : "<fg=red>{$count}</>");
-        }
+        $this->components->info($reindex->handle().' products indexed.');
 
         return self::SUCCESS;
     }

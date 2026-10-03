@@ -17,18 +17,17 @@ use Modules\Inventory\Actions\ReceiveStock;
 use Modules\Inventory\Data\StockDocumentData;
 use Modules\Inventory\Models\Location;
 use Modules\Inventory\Models\StockLevel;
-use Modules\Platform\Contracts\TenantDirectory;
 
 /**
- * Local demo only: a small, believable catalog with stock in every demo brand, so the admin,
- * the storefront API and search have something to show. Composes several modules, which is
- * why it lives in the application layer rather than in any one module. Idempotent per brand.
+ * Local demo only: a small, believable catalog with stock, so the admin, the storefront API
+ * and search have something to show. Composes several modules, which is why it lives in the
+ * application layer rather than in any one module. Idempotent.
  */
 final class SeedDemoCatalogCommand extends Command
 {
     protected $signature = 'platform:seed-demo-catalog {--restock : Top demo stock back up to its opening level (for repeatable storefront E2E runs)}';
 
-    protected $description = 'Add a sample catalog with stock to every active demo brand (local only)';
+    protected $description = 'Add a sample catalog with stock (local only)';
 
     /**
      * @var list<array{title: string, category: string, price: int, compare: int|null, options: array<string, list<string>>, stock: int}>
@@ -41,7 +40,7 @@ final class SeedDemoCatalogCommand extends Command
         ['title' => 'Ceramic Serving Bowl', 'category' => 'Dining', 'price' => 99900, 'compare' => null, 'options' => [], 'stock' => 0],
     ];
 
-    public function handle(TenantDirectory $tenants): int
+    public function handle(): int
     {
         if (app()->isProduction()) {
             $this->components->error('Demo data is never written in production.');
@@ -49,17 +48,13 @@ final class SeedDemoCatalogCommand extends Command
             return self::FAILURE;
         }
 
-        foreach ($tenants->activeTenantIds() as $tenantId) {
-            if ($this->option('restock')) {
-                $count = $tenants->runIn($tenantId, fn (): int => $this->restockBrand());
-                $this->components->twoColumnDetail($tenantId, "{$count} variants restocked");
+        if ($this->option('restock')) {
+            $this->components->info($this->restock().' variants restocked.');
 
-                continue;
-            }
-
-            $count = $tenants->runIn($tenantId, fn (): int => $this->seedBrand());
-            $this->components->twoColumnDetail($tenantId, "{$count} products added");
+            return self::SUCCESS;
         }
+
+        $this->components->info($this->seed().' products added.');
 
         return self::SUCCESS;
     }
@@ -68,7 +63,7 @@ final class SeedDemoCatalogCommand extends Command
      * Receive (through the ledger, like any delivery) whatever each demo variant has sold since
      * the opening stock, so orders placed by test runs never exhaust the demo catalog.
      */
-    private function restockBrand(): int
+    private function restock(): int
     {
         $location = Location::query()->where('is_default', true)->firstOrFail();
         $lines = [];
@@ -101,7 +96,7 @@ final class SeedDemoCatalogCommand extends Command
         return count($lines);
     }
 
-    private function seedBrand(): int
+    private function seed(): int
     {
         if (Product::query()->exists()) {
             return 0;
@@ -115,7 +110,7 @@ final class SeedDemoCatalogCommand extends Command
 
         $brand = app(SaveBrand::class)->handle(null, 'House Label');
         $location = Location::query()->where('is_default', true)->firstOrFail();
-        $prefix = strtoupper(substr((string) tenant()?->getAttribute('slug'), 0, 3));
+        $prefix = 'DEMO';
 
         foreach (self::PRODUCTS as $index => $item) {
             $options = [];

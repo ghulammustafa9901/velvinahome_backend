@@ -42,4 +42,7 @@ enum StaffPermission: string
     case SeoManage = 'seo.manage';
     case ReviewsModerate = 'reviews.moderate';
     case ReportsView = 'reports.view';
+
+    // Operations tooling: Horizon and the API documentation.
+    case SystemMonitor = 'system.monitor';
 }

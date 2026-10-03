@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Actions\AttachProductImage;
 use Tests\Support\TestCatalog;
-use Tests\Support\TestPlatform;
 
 /*
 | Spec §6.9: MIME by content, size limits, re-encoding (strips EXIF and embedded payloads),
@@ -13,7 +12,6 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
     $this->product = TestCatalog::simpleProduct(publish: true);
     $this->files = [];
 });
@@ -56,7 +54,6 @@ it('re-encodes uploads to WebP, dropping EXIF and payloads, under a random name'
         ->and($media->file_name)->toMatch('/^[0-9a-z]{26}\.webp$/')
         ->and($stored)->not->toContain('GPSLatitude')
         ->and($stored)->not->toContain('<?php')
-        ->and($media->getPath())->toContain(TestPlatform::brand(TestPlatform::BRAND_B)->id)
         ->and($media->getCustomProperty('alt'))->toBe('Terracotta cushion');
 });
 
@@ -80,9 +77,8 @@ it('rejects anything that is not a raster image, whatever its name says', functi
 
 it('shows images with their sizes in the storefront API', function (): void {
     app(AttachProductImage::class)->handle($this->product, tempFile($this, jpegWithExif(), 'jpg'), 'Front view');
-    tenancy()->end();
 
-    $this->getJson('http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/api/v1/products/'.$this->product->ulid)
+    $this->getJson('http://localhost/api/v1/products/'.$this->product->ulid)
         ->assertOk()
         ->assertJsonPath('data.images.0.alt', 'Front view')
         ->assertJsonPath('data.images.0.width', 1200)

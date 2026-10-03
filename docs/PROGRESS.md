@@ -145,10 +145,10 @@ Plan: [docs/plans/remove-multi-tenancy.md](plans/remove-multi-tenancy.md). Owner
 | R0 | Baseline and safety net | done | Phase 7 work committed to `main` first. Baseline: Pest 394 passed, Larastan 8 and Pint clean; web lint, typecheck, Vitest 11, `next build`, Playwright 22 passed. All 8 local databases dumped to `%USERPROFILE%\devtools\backups\pre-single-store-20261003` |
 | R1 | Store identity and feature flags in settings | done | Flags = `features.*` settings (Settings `FeatureFlags` contract); `store.url` drives reset links, cart reminders and revalidation; logo upload via `SafeImage`; admin **Settings → Store** page; config gains `store.url`, `store.logo_url` (additive). Pest 407 |
 | R2 | Shared services out of Platform | done | Launch checklist → Settings (`OnboardingChecks::items()`, admin **Settings → Launch checklist**); `/health` → Support, any host. `secrets:reencrypt` moves in R3 instead: while tenants exist it must loop over them, which Support cannot do |
-| R3 | Switch to one database | not started | |
-| R4 | Delete tenancy, add guard test | not started | |
+| R3 | Switch to one database | done | One database (`pgsql` app role + `pgsql_migrator`), `bootstrap-database.sql`; module migrations loaded from `modules/*/database/migrations` (same filenames); `app:migrate` (one transaction + ledger lockdown) and `SeedDefaults`; `secrets:reencrypt` in Support. **Moved in from R4** because Larastan analyses every module: Platform module, platform panel, `platform` guard and the tenant queue classes deleted; Horizon and API docs behind `auth:staff` + new `system.monitor` (Owner only). **Moved in from R6** because the old commands no longer exist: `deploy/release.sh` (and its test) and CI use `app:migrate` and the new bootstrap SQL; Docker Compose uses the `store` database. Test harness `TestStore` replaces `TestPlatform`; isolation suite and platform tests removed, their store-relevant checks converted (search, privileges, transactional migrations, secrets rotation, request id, staff admin) |
+| R4 | Delete tenancy, add guard test | not started | Remaining: remove `stancl/tenancy` and `config/tenancy.php`, `PermissionCacheBootstrapper`, `EncryptedColumn` scopes, hand-off-only `StaffDirectory` methods and the `landlord_owner_identity_ulid` column; guard test |
 | R5 | Per-installation naming | not started | |
-| R6 | Install, backup and deploy tooling | not started | |
+| R6 | Install, backup and deploy tooling | not started | Remaining: `store:install`, `store:seed-demo`, `db:backup [--drill]` |
 | R7 | Storefront | not started | |
 | R8 | Documentation | not started | |
 | R9 | Root CLAUDE.md | not started | |

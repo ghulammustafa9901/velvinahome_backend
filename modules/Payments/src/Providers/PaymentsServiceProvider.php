@@ -34,7 +34,7 @@ final class PaymentsServiceProvider extends ModuleServiceProvider
         return ['payment_transactions', 'webhook_events'];
     }
 
-    protected function tenantSeeders(): array
+    protected function defaultSeeders(): array
     {
         return [DefaultPaymentMethodsSeeder::class];
     }

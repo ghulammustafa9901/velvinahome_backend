@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Modules\Identity\Models\Customer;
 use Modules\Identity\Models\LoginAudit;
-use Tests\Support\TestPlatform;
 
 /*
 | Spec §6.2: customers authenticate with Sanctum tokens (held by the BFF); every attempt is
@@ -14,7 +13,7 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    $this->api = 'http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/api/v1';
+    $this->api = 'http://localhost/api/v1';
     $this->email = 'cust-'.Str::lower(Str::random(10)).'@example.test';
 });
 
@@ -50,9 +49,7 @@ it('registers, signs in, reads the profile and signs out', function (): void {
 it('hashes customer passwords with Argon2id', function (): void {
     registerCustomer($this);
 
-    $hash = TestPlatform::brand(TestPlatform::BRAND_B)->run(
-        fn (): ?string => Customer::query()->where('email', $this->email)->value('password'),
-    );
+    $hash = Customer::query()->where('email', $this->email)->value('password');
 
     expect($hash)->toStartWith('$argon2id$')
         ->and(Hash::info((string) $hash)['algoName'])->toBe('argon2id');
@@ -83,11 +80,11 @@ it('gives the same answer for a wrong password and an unknown account, and audit
 
     expect($wrongPassword->json('error.details.email'))->toBe($unknown->json('error.details.email'));
 
-    $reasons = TestPlatform::brand(TestPlatform::BRAND_B)->run(fn () => LoginAudit::query()
+    $reasons = LoginAudit::query()
         ->whereIn('email_attempted', [$this->email, 'nobody-'.$this->email])
         ->orderBy('id')
         ->pluck('failure_reason')
-        ->all());
+        ->all();
 
     expect($reasons)->toBe(['invalid_password', 'unknown_account']);
 });
@@ -105,19 +102,6 @@ it('locks an account after repeated failures, even with the right password', fun
 
     $this->postJson($this->api.'/auth/login', ['email' => $this->email, 'password' => 'Sufficiently-long-9'])
         ->assertStatus(429);
-});
-
-it('does not lock the same email out of a sibling brand', function (): void {
-    registerCustomer($this);
-
-    foreach (range(1, (int) config('platform.staff.max_login_attempts') + 1) as $attempt) {
-        $this->postJson($this->api.'/auth/login', ['email' => $this->email, 'password' => 'Wrong-password-99']);
-    }
-
-    $siblingApi = 'http://'.TestPlatform::apiHost(TestPlatform::BRAND_C).'/api/v1';
-
-    $this->postJson($siblingApi.'/auth/register', ['email' => $this->email, 'password' => 'Sufficiently-long-9'])->assertCreated();
-    $this->postJson($siblingApi.'/auth/login', ['email' => $this->email, 'password' => 'Sufficiently-long-9'])->assertOk();
 });
 
 it('requires authentication for the profile', function (): void {

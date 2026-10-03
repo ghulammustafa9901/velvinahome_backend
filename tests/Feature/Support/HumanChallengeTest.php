@@ -7,7 +7,6 @@ use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use Tests\Support\TestPlatform;
 
 /*
 | Spec §8: Cloudflare Turnstile on customer sign-in, registration and checkout — off until a
@@ -15,7 +14,7 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    $this->api = 'http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/api/v1';
+    $this->api = 'http://localhost/api/v1';
     $this->email = 'human-'.Str::lower(Str::random(10)).'@example.test';
     Cache::flush();
 });

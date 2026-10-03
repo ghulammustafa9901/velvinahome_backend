@@ -10,7 +10,6 @@ use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Modules\Integrations\Actions\PublishPendingOutboxMessages;
-use Modules\Support\Queue\TenantAware;
 
 /**
  * After-commit by contract, not only by queue configuration: whatever connection it is
@@ -21,7 +20,6 @@ final class PublishOutboxMessages implements ShouldBeUnique, ShouldQueueAfterCom
     use Dispatchable;
     use InteractsWithQueue;
     use Queueable;
-    use TenantAware;
 
     public int $tries = 5;
 
@@ -41,12 +39,11 @@ final class PublishOutboxMessages implements ShouldBeUnique, ShouldQueueAfterCom
     }
 
     /**
-     * One pending publish per tenant at a time; ShouldBeUnique keys are cache keys, which are
-     * tenant-tagged.
+     * One pending publish at a time.
      */
     public function uniqueId(): string
     {
-        return 'outbox:'.(string) tenant()?->getTenantKey();
+        return 'outbox';
     }
 
     public function handle(PublishPendingOutboxMessages $publish): void

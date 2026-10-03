@@ -7,9 +7,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use Modules\Platform\Http\Middleware\EnsurePlatformHost;
-use Modules\Platform\Http\Middleware\InitializeTenancyByHost;
-use Modules\Platform\Http\Middleware\InitializeTenancyForPanelRequest;
 use Modules\Settings\Http\Middleware\EnsureFeatureEnabled;
 use Modules\Support\Http\ApiCachePolicy;
 use Modules\Support\Http\ApiErrorRenderer;
@@ -27,8 +24,6 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'tenant' => InitializeTenancyByHost::class,
-            'platform.host' => EnsurePlatformHost::class,
             'feature' => EnsureFeatureEnabled::class,
             'human' => VerifyHumanChallenge::class,
         ]);
@@ -36,32 +31,25 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(AssignRequestId::class);
         $middleware->append(SecurityHeaders::class);
 
-        // Tenancy must be initialised before sessions, authentication and route-model
-        // binding run, or they would all read the landlord database.
-        $middleware->prependToPriorityList(
-            before: EncryptCookies::class,
-            prepend: InitializeTenancyByHost::class,
-        );
-        $middleware->prependToPriorityList(
-            before: EncryptCookies::class,
-            prepend: InitializeTenancyForPanelRequest::class,
-        );
         // A flag-gated endpoint answers 403 feature_disabled before asking anyone to sign in.
         $middleware->prependToPriorityList(
             before: EncryptCookies::class,
             prepend: EnsureFeatureEnabled::class,
         );
-        // Outermost on API routes, so every response â€” including 401s and 429s produced by
-        // later middleware â€” gets the cache policy.
+        // Outermost on API routes, so every response — including 401s and 429s produced by
+        // later middleware — gets the cache policy.
         $middleware->prependToPriorityList(
-            before: InitializeTenancyByHost::class,
+            before: EnsureFeatureEnabled::class,
             prepend: ApiCachePolicy::class,
         );
         // Before any rate limiter reads the client IP.
         $middleware->prependToPriorityList(
-            before: InitializeTenancyByHost::class,
+            before: EnsureFeatureEnabled::class,
             prepend: TrustStorefrontService::class,
         );
+
+        // Staff tooling outside the panel (Horizon, API docs) sends guests to the admin login.
+        $middleware->redirectGuestsTo(fn (): string => route('filament.admin.auth.login'));
 
         $middleware->trustProxies(at: env('TRUSTED_PROXIES', '127.0.0.1'));
     })
@@ -70,7 +58,7 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
-        // Storefront API errors use one envelope everywhere (api-conventions Â§3).
+        // Storefront API errors use one envelope everywhere (api-conventions §3).
         $exceptions->render(fn (Throwable $exception, Request $request) => (new ApiErrorRenderer)($exception, $request));
 
         // Unhandled errors also go to PostHog error tracking (scrubbed; ADR-0019).

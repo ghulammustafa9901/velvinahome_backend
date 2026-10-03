@@ -33,7 +33,7 @@ cat >"$WORK/bin/php" <<'EOF'
 echo "php $*" >>"$STUB_LOG"
 case "$2" in
   config:cache) echo "$APP_RELEASE" >.stub-release ;;
-  tenants:migrate) [[ "${FAIL_MIGRATE:-0}" == 1 ]] && exit 1 ;;
+  app:migrate) [[ "${FAIL_MIGRATE:-0}" == 1 ]] && exit 1 ;;
 esac
 exit 0
 EOF
@@ -61,10 +61,10 @@ echo "release.sh"
 commit v1; deploy; status=$?
 expect "first release succeeds" '[[ $status == 0 && "$(live)" == v1 ]]'
 expect "shared .env and storage are linked" '[[ -L "$DEPLOY_BASE/current/.env" && -L "$DEPLOY_BASE/current/storage" ]]'
-expect "migrations ran before the switch" 'grep -q "artisan landlord:migrate" "$STUB_LOG" && grep -q "artisan tenants:migrate" "$STUB_LOG"'
+expect "migrations ran before the switch" 'grep -q "artisan app:migrate" "$STUB_LOG"'
 
 commit v2; FAIL_MIGRATE=1 deploy; status=$?
-expect "failed tenant migration blocks the release" '[[ $status != 0 && "$(live)" == v1 ]]'
+expect "failed migration blocks the release" '[[ $status != 0 && "$(live)" == v1 ]]'
 expect "blocked release is removed" '[[ $(count) == 1 ]]'
 
 commit v3; deploy; status=$?

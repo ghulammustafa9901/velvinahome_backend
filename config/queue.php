@@ -4,16 +4,11 @@ declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
-| Queues (spec §6.11, docs/architecture/tenancy.md §3)
+| Queues (spec §6.11)
 |--------------------------------------------------------------------------
 |
-| One Redis queue connection shared by every tenant. Correctness does not come from
-| separate queues per tenant but from the tenant id that QueueTenancyBootstrapper stamps
-| into every payload dispatched in tenant context, and from TenantAware jobs refusing to
-| run without it.
-|
-| Named queues by priority: critical (payments, webhooks), default, notifications, search,
-| media, reports.
+| One Redis queue connection. Named queues by priority: critical (payments, webhooks),
+| default, notifications, search, media, reports.
 |
 */
 
@@ -38,28 +33,16 @@ return [
             'after_commit' => true,
         ],
 
-        // Landlord-only work (e.g. the cross-tenant scheduler fan-out). Payloads dispatched
-        // on this connection deliberately carry no tenant id.
-        'central' => [
-            'driver' => 'redis',
-            'connection' => env('REDIS_QUEUE_CONNECTION', 'default'),
-            'queue' => 'central',
-            'retry_after' => 120,
-            'block_for' => null,
-            'after_commit' => true,
-            'central' => true,
-        ],
-
     ],
 
     'batching' => [
-        'database' => 'landlord',
+        'database' => env('DB_CONNECTION', 'pgsql'),
         'table' => 'job_batches',
     ],
 
     'failed' => [
         'driver' => env('QUEUE_FAILED_DRIVER', 'database-uuids'),
-        'database' => 'landlord',
+        'database' => env('DB_CONNECTION', 'pgsql'),
         'table' => 'failed_jobs',
     ],
 

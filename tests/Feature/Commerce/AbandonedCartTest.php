@@ -16,7 +16,6 @@ use Modules\Integrations\Jobs\PublishOutboxMessages;
 use Modules\Notifications\Mail\CartReminderMail;
 use Modules\Notifications\Support\EmailPreferences;
 use Tests\Support\TestCommerce;
-use Tests\Support\TestPlatform;
 use Tests\Support\TestSettings;
 
 /*
@@ -27,18 +26,16 @@ use Tests\Support\TestSettings;
 
 beforeEach(function (): void {
     Mail::fake();
-    $this->brand = TestPlatform::brand(TestPlatform::BRAND_B);
-    $this->api = 'http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/api/v1';
-    tenancy()->initialize($this->brand);
+    $this->api = 'http://localhost/api/v1';
 });
 
 afterEach(function (): void {
-    TestSettings::feature($this->brand, 'abandoned_cart', false);
+    TestSettings::feature('abandoned_cart', false);
 });
 
 function remindersOn(object $test): void
 {
-    TestSettings::feature($test->brand, 'abandoned_cart', true);
+    TestSettings::feature('abandoned_cart', true);
 }
 
 /**
@@ -86,7 +83,7 @@ it('reminds once, with a link that reopens the cart in the clicking browser', fu
         return true;
     });
 
-    expect($mail->recoverUrl)->toContain('://'.TestPlatform::BRAND_B.'.test/cart/recover?cart='.$cart['cart']->ulid.'&token=')
+    expect($mail->recoverUrl)->toContain('://store.test/cart/recover?cart='.$cart['cart']->ulid.'&token=')
         ->and($mail->lines)->toHaveCount(1);
 
     // A second run does not chase the same cart again.
@@ -95,7 +92,6 @@ it('reminds once, with a link that reopens the cart in the clicking browser', fu
 
     // The link's secret opens the cart with a new token; the old browser's token stops working.
     parse_str((string) parse_url($mail->recoverUrl, PHP_URL_QUERY), $query);
-    tenancy()->end();
 
     $recovered = $this->postJson($this->api.'/carts/'.$cart['cart']->ulid.'/recover', ['token' => $query['token']])->assertOk();
     $newToken = (string) $recovered->json('data.token');
@@ -119,11 +115,8 @@ it('does not email a cart that was bought or an address that unsubscribed', func
 
     // Between the reminder being queued and sent: one cart is bought, one address opts out.
     Cart::query()->whereKey($bought['cart']->id)->toBase()->update(['status' => 'converted']);
-    tenancy()->end();
     $this->postJson($this->api.'/email-preferences/unsubscribe', ['email' => $unsubscribed['email'], 'signature' => str_repeat('a', 64)])->assertUnprocessable();
     $this->postJson($this->api.'/email-preferences/unsubscribe', ['email' => $unsubscribed['email'], 'signature' => EmailPreferences::signature($unsubscribed['email'])])->assertNoContent();
-
-    tenancy()->initialize($this->brand);
     app(PublishPendingOutboxMessages::class)->handle();
 
     Mail::assertNotSent(CartReminderMail::class, fn (CartReminderMail $mail): bool => $mail->hasTo($bought['email']) || $mail->hasTo($unsubscribed['email']));
@@ -132,10 +125,7 @@ it('does not email a cart that was bought or an address that unsubscribed', func
 it('keeps the email a guest types at checkout on the cart', function (): void {
     $created = app(CreateCart::class)->handle(null);
     app(SetCartItem::class)->handle($created['cart'], TestCommerce::stockedVariant(90_000, 5)->ulid, 1);
-    tenancy()->end();
 
     $this->postJson($this->api.'/checkout/quote', ['cart_id' => $created['cart']->ulid, 'email' => 'Typed@Example.test'], ['X-Cart-Token' => $created['token']])->assertOk();
-
-    tenancy()->initialize($this->brand);
     expect($created['cart']->refresh()->email)->toBe('typed@example.test');
 });

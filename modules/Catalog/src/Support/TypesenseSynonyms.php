@@ -7,10 +7,9 @@ namespace Modules\Catalog\Support;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Modules\Catalog\Models\SearchSynonym;
-use RuntimeException;
 
 /**
- * Pushes the tenant's synonyms to its own Typesense synonym set.
+ * Pushes the store's synonyms to its Typesense synonym set.
  *
  * Typesense 30 replaced per-collection synonyms with named synonym sets that collections
  * reference; the PHP client does not cover them yet, so this talks to the REST API directly.
@@ -20,9 +19,7 @@ final class TypesenseSynonyms
 {
     public static function setName(): string
     {
-        $tenant = tenant() ?? throw new RuntimeException('Synonyms are tenant-scoped; no tenant is initialised.');
-
-        return config('scout.prefix').$tenant->getTenantKey().'_synonyms';
+        return config('scout.prefix').'synonyms';
     }
 
     public function sync(): void

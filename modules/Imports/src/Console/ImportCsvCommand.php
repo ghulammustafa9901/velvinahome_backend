@@ -10,23 +10,22 @@ use Illuminate\Support\Str;
 use Modules\Imports\Actions\RunImport;
 use Modules\Imports\Actions\StartCsvImport;
 use Modules\Imports\Models\ImportRun;
-use Modules\Platform\Contracts\TenantDirectory;
 use RuntimeException;
 
 /**
- * The admin's CSV import from the command line, for operators onboarding a brand (spec §13
+ * The admin's CSV import from the command line, for operators onboarding a store (spec §13
  * Phase 8) and for loading test catalogs. Same Actions, same checks, same report; the run is
  * executed here and waits for nothing (the queued job then finds it finished).
  */
 final class ImportCsvCommand extends Command
 {
-    protected $signature = 'imports:csv {tenant : Tenant id} {file : Path to the CSV file}
+    protected $signature = 'imports:csv {file : Path to the CSV file}
         {--stock : The file holds stock counts (sku, quantity) instead of products}
         {--dry-run : Check every row, write nothing}';
 
-    protected $description = 'Import products or stock counts from a CSV into one brand';
+    protected $description = 'Import products or stock counts from a CSV';
 
-    public function handle(TenantDirectory $tenants, StartCsvImport $start, RunImport $runImport): int
+    public function handle(StartCsvImport $start, RunImport $runImport): int
     {
         $file = (string) $this->argument('file');
 
@@ -37,25 +36,20 @@ final class ImportCsvCommand extends Command
         }
 
         $source = $this->option('stock') ? ImportRun::SOURCE_CSV_STOCK : ImportRun::SOURCE_CSV_PRODUCTS;
+        $path = 'imports/'.Str::lower(Str::random(24)).'.csv';
+        $stream = fopen($file, 'rb');
 
-        $run = $tenants->runIn((string) $this->argument('tenant'), function () use ($file, $source, $start, $runImport): ImportRun {
-            $path = 'imports/'.Str::lower(Str::random(24)).'.csv';
-            $stream = fopen($file, 'rb');
+        if ($stream === false) {
+            throw new RuntimeException("Cannot open {$file}.");
+        }
 
-            if ($stream === false) {
-                throw new RuntimeException("Cannot open {$file}.");
-            }
+        try {
+            Storage::disk(StartCsvImport::DISK)->writeStream($path, $stream);
+        } finally {
+            fclose($stream);
+        }
 
-            try {
-                Storage::disk(StartCsvImport::DISK)->writeStream($path, $stream);
-            } finally {
-                fclose($stream);
-            }
-
-            $run = $start->handle($source, $path, (bool) $this->option('dry-run'));
-
-            return $runImport->handle($run->ulid)->refresh();
-        });
+        $run = $runImport->handle($start->handle($source, $path, (bool) $this->option('dry-run'))->ulid)->refresh();
 
         foreach ($run->counts as $entity => $counts) {
             $this->components->twoColumnDetail($entity, collect($counts)->map(fn (int $n, string $what): string => "{$what} {$n}")->implode(', '));

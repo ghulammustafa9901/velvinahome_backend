@@ -7,7 +7,6 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\Identity\Actions\ResetCustomerPassword;
 use Modules\Identity\Mail\CustomerPasswordResetMail;
-use Tests\Support\TestPlatform;
 
 /*
 | Customer account (spec §6.2): profile, password change, password recovery without account
@@ -15,7 +14,7 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    $this->api = 'http://'.TestPlatform::apiHost(TestPlatform::BRAND_A).'/api/v1';
+    $this->api = 'http://localhost/api/v1';
     $this->email = 'acct-'.Str::lower(Str::random(8)).'@example.test';
 
     $this->postJson($this->api.'/auth/register', ['email' => $this->email, 'password' => 'Sufficiently-long-9', 'first_name' => 'Zara'])->assertCreated();
@@ -62,7 +61,7 @@ it('recovers a password with an emailed single-use link to the brand storefront'
     });
     Mail::assertQueuedCount(1);
 
-    expect($link)->toStartWith('http://'.TestPlatform::BRAND_A.'.test/account/reset-password?');
+    expect($link)->toStartWith('http://store.test/account/reset-password?');
     parse_str((string) parse_url((string) $link, PHP_URL_QUERY), $query);
 
     // The auth limiter allows 5 requests a minute per IP; continue from another address.
@@ -76,9 +75,7 @@ it('recovers a password with an emailed single-use link to the brand storefront'
 
     // Single use (checked through the Action: this account has used its 5 auth requests for
     // the minute), and every old sign-in is gone.
-    expect(fn () => TestPlatform::brand(TestPlatform::BRAND_A)->run(
-        fn () => app(ResetCustomerPassword::class)->handle($this->email, (string) $query['token'], 'Brand-new-pass-56'),
-    ))->toThrow(ValidationException::class);
+    expect(fn () => app(ResetCustomerPassword::class)->handle($this->email, (string) $query['token'], 'Brand-new-pass-56'))->toThrow(ValidationException::class);
     app('auth')->forgetGuards();
     $this->withToken($this->token)->getJson($this->api.'/account/profile')->assertUnauthorized();
 });

@@ -16,8 +16,7 @@ use Throwable;
  * Sentry from spec §9).
  *
  * What leaves the server is deliberately small: exception class, a scrubbed message, the
- * in-app stack frames (paths relative to the app), tenant id, request id, release and the
- * route path. Never request bodies, query strings, headers, cookies, emails or SQL bindings.
+ * in-app stack frames (paths relative to the app), request id, release and the route path. Never request bodies, query strings, headers, cookies, emails or SQL bindings.
  * The same error is reported at most once a minute, and sending happens after the response.
  */
 final class PostHogErrors
@@ -63,15 +62,14 @@ final class PostHogErrors
      */
     public function payload(Throwable $e): array
     {
-        $tenant = tenant()?->getTenantKey();
         $request = app()->runningInConsole() ? null : request();
         $frames = $this->frames($e);
 
         return [
             'api_key' => (string) config('platform.monitoring.posthog.key'),
             'event' => '$exception',
-            // Errors are not tied to people: one technical id per brand (or the platform).
-            'distinct_id' => 'platform-api:'.($tenant === null ? 'central' : 'tenant:'.$tenant),
+            // Errors are not tied to people: one technical id for the service.
+            'distinct_id' => 'platform-api',
             'properties' => [
                 '$exception_list' => [[
                     'type' => $e::class,
@@ -84,7 +82,6 @@ final class PostHogErrors
                 'service' => 'platform-api',
                 'environment' => (string) config('app.env'),
                 'release' => (string) config('platform.release'),
-                'tenant_id' => $tenant === null ? null : (string) $tenant,
                 'request_id' => Context::get('request_id'),
                 'http_method' => $request?->method(),
                 'route' => $request?->route()?->uri(),

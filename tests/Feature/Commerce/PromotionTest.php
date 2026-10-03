@@ -23,16 +23,15 @@ use Modules\Pricing\Data\PricedLine;
 use Modules\Pricing\Data\PricingRequest;
 use Modules\Pricing\Models\Promotion;
 use Tests\Support\TestCommerce;
-use Tests\Support\TestPlatform;
+use Tests\Support\TestStore;
 
 /*
 | Automatic promotions (spec §13 phase 6): priced before coupons, one per item, spread over
 | lines with exact allocation, recorded on the order. Every promotion here is limited to the
-| test's own new products, because the fixture brand is shared.
+| test's own new products, because the test store is shared.
 */
 
 beforeEach(function (): void {
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
     Mail::fake();
 });
 
@@ -196,6 +195,6 @@ it('checks the configuration and who may save a promotion', function (): void {
         ->and(fn () => $save('spend_tier', ['tiers' => []]))->toThrow(ValidationException::class)
         ->and(fn () => $save('spend_tier', ['tiers' => [['min_spend' => 100, 'type' => 'percentage', 'value' => 20000]]]))->toThrow(ValidationException::class)
         ->and(fn () => $save('free_gift', []))->toThrow(ValidationException::class)
-        ->and(fn () => $save('percentage_sale', ['percent_bps' => 1000], TestPlatform::staff(TestPlatform::brand(TestPlatform::BRAND_B), role: 'Order Handler')))
+        ->and(fn () => $save('percentage_sale', ['percent_bps' => 1000], TestStore::staff(role: 'Order Handler')))
         ->toThrow(AuthorizationException::class);
 });

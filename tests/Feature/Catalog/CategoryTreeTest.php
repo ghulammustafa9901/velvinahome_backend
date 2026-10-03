@@ -6,14 +6,12 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\Catalog\Actions\SaveCategory;
 use Modules\Catalog\Models\Category;
-use Tests\Support\TestPlatform;
 
 /*
 | ADR-0006: unlimited depth through a closure table, maintained on create and move.
 */
 
 beforeEach(function (): void {
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
     $this->save = app(SaveCategory::class);
     $this->tag = Str::random(5);
 });

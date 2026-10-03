@@ -9,7 +9,6 @@ use Modules\Inventory\Models\StockReservation;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
 use Tests\Support\TestCatalog;
-use Tests\Support\TestPlatform;
 
 /*
 | Spec §6.5 rule 2, §12.2: concurrency tests for stock reservation — no overselling.
@@ -17,18 +16,12 @@ use Tests\Support\TestPlatform;
 */
 
 it('sells the last units exactly once when many buyers race for them', function (int $stock, int $buyers): void {
-    $tenant = TestPlatform::brand(TestPlatform::BRAND_B);
+    $variant = TestCatalog::simpleProduct()->variants()->firstOrFail();
 
-    $variant = $tenant->run(function () use ($stock) {
-        $variant = TestCatalog::simpleProduct()->variants()->firstOrFail();
-
-        app(ReceiveStock::class)->handle(StockDocumentData::from([
-            'locationUlid' => TestCatalog::defaultLocation()->ulid,
-            'lines' => [['variantUlid' => $variant->ulid, 'quantity' => $stock]],
-        ]));
-
-        return $variant;
-    });
+    app(ReceiveStock::class)->handle(StockDocumentData::from([
+        'locationUlid' => TestCatalog::defaultLocation()->ulid,
+        'lines' => [['variantUlid' => $variant->ulid, 'quantity' => $stock]],
+    ]));
 
     $php = (string) (new PhpExecutableFinder)->find(false);
     $startAt = microtime(true) + 4;
@@ -36,13 +29,11 @@ it('sells the last units exactly once when many buyers race for them', function 
 
     for ($i = 0; $i < $buyers; $i++) {
         $process = new Process(
-            [$php, base_path('tests/Support/Concurrency/reserve.php'), $tenant->id, $variant->ulid, (string) $startAt],
+            [$php, base_path('tests/Support/Concurrency/reserve.php'), $variant->ulid, (string) $startAt],
             base_path(),
             [
                 'APP_ENV' => 'testing',
-                'DB_LANDLORD_DATABASE' => 'platform_landlord_test',
-                'TENANT_DB_NAME_PREFIX' => 'ptest_',
-                'TENANT_DB_ROLE_PREFIX' => 'ptest_',
+                'DB_DATABASE' => (string) config('database.connections.pgsql.database'),
                 'CACHE_STORE' => 'array',
                 'QUEUE_CONNECTION' => 'sync',
                 'SCOUT_PREFIX' => 'test_',
@@ -64,13 +55,11 @@ it('sells the last units exactly once when many buyers race for them', function 
     expect($counts['OK'] ?? 0)->toBe($stock, implode(' | ', $outcomes))
         ->and($counts['NO'] ?? 0)->toBe($buyers - $stock);
 
-    $tenant->run(function () use ($variant, $stock): void {
-        $level = StockLevel::query()->where('variant_id', $variant->id)->firstOrFail();
+    $level = StockLevel::query()->where('variant_id', $variant->id)->firstOrFail();
 
-        expect($level->reserved)->toBe($stock)
-            ->and($level->on_hand - $level->reserved)->toBe(0)
-            ->and(StockReservation::query()->where('variant_id', $variant->id)->where('status', 'active')->count())->toBe($stock);
-    });
+    expect($level->reserved)->toBe($stock)
+        ->and($level->on_hand - $level->reserved)->toBe(0)
+        ->and(StockReservation::query()->where('variant_id', $variant->id)->where('status', 'active')->count())->toBe($stock);
 })->with([
     'one unit, ten buyers' => [1, 10],
     'three units, twelve buyers' => [3, 12],

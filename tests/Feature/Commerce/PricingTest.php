@@ -16,7 +16,6 @@ use Modules\Shipping\Actions\SaveShippingZone;
 use Modules\Support\ValueObjects\Money;
 use Modules\Tax\Actions\SaveTaxRate;
 use Tests\Support\TestCommerce;
-use Tests\Support\TestPlatform;
 
 /*
 | Spec §6.4: lines → coupon → shipping → tax → totals, integer minor units, recomputed
@@ -24,7 +23,6 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
     // Fixture tenants are shared across runs: rates and zones are scoped to a unique place.
     $this->province = 'Prov-'.Str::random(6);
     $this->city = 'City-'.Str::random(6);

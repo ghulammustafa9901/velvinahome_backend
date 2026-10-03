@@ -15,7 +15,7 @@ use Modules\Imports\Models\ImportedOrder;
 use Modules\Imports\Models\ImportRun;
 use Modules\Inventory\Contracts\StockReader;
 use Modules\Seo\Contracts\Seo;
-use Tests\Support\TestPlatform;
+use Tests\Support\TestStore;
 
 /*
 | Phase 6 exit criterion: a WooCommerce store can be imported with redirects. The store is
@@ -23,9 +23,8 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
-    $this->owner = TestPlatform::staff(TestPlatform::brand(TestPlatform::BRAND_B), role: 'Owner');
-    // A fresh store per test: the fixture brand is shared across tests and runs.
+    $this->owner = TestStore::staff(role: 'Owner');
+    // A fresh store per test: the test store is shared across tests and runs.
     $this->id = Str::lower(Str::random(8));
     $this->store = "http://shop-{$this->id}.example.test";
     $this->sku = strtoupper($this->id);
@@ -217,7 +216,7 @@ it('only reaches public https stores, with well-formed keys, one run at a time',
 
 it('lets only staff who manage settings start a WooCommerce import', function (): void {
     fakeStore($this);
-    $manager = TestPlatform::staff(TestPlatform::brand(TestPlatform::BRAND_B), role: 'Manager');
+    $manager = TestStore::staff(role: 'Manager');
 
     expect(fn () => app(StartWooCommerceImport::class)->handle($this->store, 'ck_'.str_repeat('a', 40), 'cs_'.str_repeat('b', 40), true, ['products'], $manager))
         ->toThrow(Illuminate\Auth\Access\AuthorizationException::class);

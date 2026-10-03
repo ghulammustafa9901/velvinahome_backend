@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
-use Tests\Support\TestPlatform;
+use Tests\Support\TestStore;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -13,7 +13,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        TestPlatform::prepare();
+        TestStore::prepare();
     }
 
     /**
@@ -23,15 +23,5 @@ abstract class TestCase extends BaseTestCase
     public function rebootApplication(): void
     {
         $this->refreshApplication();
-    }
-
-    protected function tearDown(): void
-    {
-        // A test that fails mid-way must not leave the next one inside a tenant.
-        if (tenancy()->initialized) {
-            tenancy()->end();
-        }
-
-        parent::tearDown();
     }
 }

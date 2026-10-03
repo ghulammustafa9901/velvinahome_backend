@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Providers\AppServiceProvider;
 use App\Providers\Filament\AdminPanelProvider;
-use App\Providers\Filament\PlatformPanelProvider;
 use Modules\Cart\Providers\CartServiceProvider;
 use Modules\Catalog\Providers\CatalogServiceProvider;
 use Modules\Checkout\Providers\CheckoutServiceProvider;
@@ -17,7 +16,6 @@ use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Notifications\Providers\NotificationsServiceProvider;
 use Modules\Orders\Providers\OrdersServiceProvider;
 use Modules\Payments\Providers\PaymentsServiceProvider;
-use Modules\Platform\Providers\PlatformServiceProvider;
 use Modules\Pricing\Providers\PricingServiceProvider;
 use Modules\Reporting\Providers\ReportingServiceProvider;
 use Modules\Reviews\Providers\ReviewsServiceProvider;
@@ -29,13 +27,11 @@ use Modules\Tax\Providers\TaxServiceProvider;
 
 /*
 | Modules are registered here explicitly (ADR-0011). Order matters only for Support, the
-| shared kernel, which comes first. The platform panel is registered before the tenant
-| admin panel so its host-bound routes are matched first.
+| shared kernel, which comes first.
 */
 
 return [
     SupportServiceProvider::class,
-    PlatformServiceProvider::class,
     IdentityServiceProvider::class,
     SettingsServiceProvider::class,
     IntegrationsServiceProvider::class,
@@ -56,6 +52,5 @@ return [
     ReportingServiceProvider::class,
     ImportsServiceProvider::class,
     AppServiceProvider::class,
-    PlatformPanelProvider::class,
     AdminPanelProvider::class,
 ];

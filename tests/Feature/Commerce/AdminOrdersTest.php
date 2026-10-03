@@ -17,7 +17,7 @@ use Modules\Payments\Models\Payment;
 use Modules\Pricing\Filament\Resources\Coupons\ListCouponsPage;
 use Modules\Pricing\Models\Coupon;
 use Tests\Support\TestCommerce;
-use Tests\Support\TestPlatform;
+use Tests\Support\TestStore;
 
 /*
 | Staff can confirm, fulfil, cancel and refund orders from the admin (phase 3 exit criteria),
@@ -26,14 +26,12 @@ use Tests\Support\TestPlatform;
 
 beforeEach(function (): void {
     Mail::fake();
-    $this->brand = TestPlatform::brand(TestPlatform::BRAND_B);
-    $this->owner = TestPlatform::staff($this->brand, role: 'Owner');
-    $this->adminUrl = 'http://'.TestPlatform::adminHost(TestPlatform::BRAND_B);
+    $this->owner = TestStore::staff(role: 'Owner');
+    $this->adminUrl = 'http://localhost';
 });
 
 function adminAs(object $test, $staff): void
 {
-    tenancy()->initialize($test->brand);
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $test->actingAs($staff, 'staff');
 }
@@ -67,7 +65,7 @@ it('renders the commerce screens for an owner', function (string $path): void {
 })->with(['/orders', '/coupons', '/shipping-methods', '/tax-rates', '/payment-methods', '/notification-templates']);
 
 it('shows an order page with its items and timeline', function (): void {
-    $order = $this->brand->run(fn () => adminOrder());
+    $order = adminOrder();
 
     // Admin URLs carry the ULID, never the internal id.
     $this->actingAs($this->owner, 'staff')->get($this->adminUrl.'/orders/'.$order->ulid)
@@ -103,7 +101,7 @@ it('takes a COD order from confirmation call to delivery and a refund in the adm
 });
 
 it('hides the refund and COD buttons from staff without those permissions', function (): void {
-    $inventory = TestPlatform::staff($this->brand, role: 'Inventory Staff');
+    $inventory = TestStore::staff(role: 'Inventory Staff');
     adminAs($this, $inventory);
     $order = adminOrder();
 
@@ -114,7 +112,7 @@ it('hides the refund and COD buttons from staff without those permissions', func
 });
 
 it('keeps an order handler out of coupons and settings screens', function (): void {
-    $handler = TestPlatform::staff($this->brand, role: 'Order Handler');
+    $handler = TestStore::staff(role: 'Order Handler');
 
     $this->actingAs($handler, 'staff')->get($this->adminUrl.'/orders')->assertOk();
     $this->actingAs($handler, 'staff')->get($this->adminUrl.'/coupons')->assertForbidden();

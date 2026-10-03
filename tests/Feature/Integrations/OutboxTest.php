@@ -9,7 +9,6 @@ use Modules\Integrations\Contracts\Outbox;
 use Modules\Integrations\Contracts\OutboxHandler;
 use Modules\Integrations\Models\OutboxMessage;
 use Modules\Integrations\Support\OutboxHandlerRegistry;
-use Tests\Support\TestPlatform;
 
 /*
 | Spec §6.11: nothing is published for a rolled-back transaction; nothing committed is lost;
@@ -45,86 +44,64 @@ beforeEach(function (): void {
     RecordingOutboxHandler::$delivered = [];
     RecordingOutboxHandler::$fail = false;
     app(OutboxHandlerRegistry::class)->register('test.event', RecordingOutboxHandler::class);
-    $this->tenant = TestPlatform::brand(TestPlatform::BRAND_B);
 });
 
 afterEach(function (): void {
-    // Fixture tenants are reused across runs; leave no probe message behind to be picked
-    // up by a later run's publisher.
-    $this->tenant->run(function (): void {
-        OutboxMessage::query()->where('event_type', 'test.event')->delete();
-    });
+    OutboxMessage::query()->where('event_type', 'test.event')->delete();
 });
 
 it('records nothing and publishes nothing for a rolled-back transaction', function (): void {
-    $ulid = $this->tenant->run(function (): ?string {
-        $ulid = null;
+    $ulid = null;
+    try {
+        DB::transaction(function () use (&$ulid): void {
+            $ulid = app(Outbox::class)->record('test.event', ['n' => 1]);
 
-        try {
-            DB::transaction(function () use (&$ulid): void {
-                $ulid = app(Outbox::class)->record('test.event', ['n' => 1]);
-
-                throw new RuntimeException('business rule failed');
-            });
-        } catch (RuntimeException) {
-        }
-
-        return $ulid;
-    });
-
+            throw new RuntimeException('business rule failed');
+        });
+    } catch (RuntimeException) {
+    }
     expect($ulid)->toBeString()
-        ->and($this->tenant->run(fn (): bool => OutboxMessage::query()->where('ulid', $ulid)->exists()))->toBeFalse()
+        ->and(OutboxMessage::query()->where('ulid', $ulid)->exists())->toBeFalse()
         ->and(RecordingOutboxHandler::$delivered)->toBe([]);
 });
 
 it('publishes a committed message exactly once', function (): void {
-    $ulid = $this->tenant->run(fn (): string => DB::transaction(fn (): string => app(Outbox::class)->record('test.event', ['n' => 2])));
+    $ulid = DB::transaction(fn (): string => app(Outbox::class)->record('test.event', ['n' => 2]));
 
-    // The sync queue already ran the after-commit publish job; a second sweep is a no-op.
-    $this->tenant->run(function (): void {
-        app(PublishPendingOutboxMessages::class)->handle();
-    });
+    app(PublishPendingOutboxMessages::class)->handle();
 
     expect(array_count_values(RecordingOutboxHandler::$delivered)[$ulid] ?? 0)->toBe(1)
-        ->and($this->tenant->run(fn () => OutboxMessage::query()->where('ulid', $ulid)->value('published_at')))->not->toBeNull();
+        ->and(OutboxMessage::query()->where('ulid', $ulid)->value('published_at'))->not->toBeNull();
 });
 
 it('never lets a backlog of failing retries starve a new message', function (): void {
     // A storefront that is down leaves revalidations failing; an order email must still go out.
     app(OutboxHandlerRegistry::class)->register('test.retry', FailingOutboxHandler::class);
-
-    $ulid = $this->tenant->run(function (): string {
-        $now = now();
-        OutboxMessage::query()->insert(array_map(fn (int $i): array => [
-            'ulid' => (string) Str::ulid(),
-            'event_type' => 'test.retry',
-            'payload' => json_encode(['n' => $i], JSON_THROW_ON_ERROR),
-            'available_at' => $now->copy()->subMinute(),
-            'attempts' => 3,
-            'created_at' => $now->copy()->subHour(),
-        ], range(1, 120)));
-
-        return app(Outbox::class)->record('test.event', ['n' => 4]);
-    });
+    $now = now();
+    OutboxMessage::query()->insert(array_map(fn (int $i): array => [
+        'ulid' => (string) Str::ulid(),
+        'event_type' => 'test.retry',
+        'payload' => json_encode(['n' => $i], JSON_THROW_ON_ERROR),
+        'available_at' => $now->copy()->subMinute(),
+        'attempts' => 3,
+        'created_at' => $now->copy()->subHour(),
+    ], range(1, 120)));
+    $ulid = app(Outbox::class)->record('test.event', ['n' => 4]);
 
     try {
         expect(RecordingOutboxHandler::$delivered)->toContain($ulid);
     } finally {
-        $this->tenant->run(fn () => OutboxMessage::query()->where('event_type', 'test.retry')->delete());
+        OutboxMessage::query()->where('event_type', 'test.retry')->delete();
     }
 });
 
 it('keeps a failed message pending with backoff instead of losing it', function (): void {
     RecordingOutboxHandler::$fail = true;
 
-    $ulid = $this->tenant->run(fn (): string => app(Outbox::class)->record('test.event', ['n' => 3]));
-
-    $this->tenant->run(function () use ($ulid): void {
-        $message = OutboxMessage::query()->where('ulid', $ulid)->firstOrFail();
-
-        expect($message->published_at)->toBeNull()
-            ->and($message->attempts)->toBe(1)
-            ->and($message->last_error)->toContain('downstream is down')
-            ->and($message->available_at->isFuture())->toBeTrue();
-    });
+    $ulid = app(Outbox::class)->record('test.event', ['n' => 3]);
+    $message = OutboxMessage::query()->where('ulid', $ulid)->firstOrFail();
+    expect($message->published_at)->toBeNull()
+        ->and($message->attempts)->toBe(1)
+        ->and($message->last_error)->toContain('downstream is down')
+        ->and($message->available_at->isFuture())->toBeTrue();
 });

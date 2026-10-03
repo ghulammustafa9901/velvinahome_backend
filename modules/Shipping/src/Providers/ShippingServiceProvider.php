@@ -29,7 +29,7 @@ final class ShippingServiceProvider extends ModuleServiceProvider
         $this->app->singleton(CourierAdapters::class);
     }
 
-    protected function tenantSeeders(): array
+    protected function defaultSeeders(): array
     {
         return [DefaultShippingSeeder::class];
     }

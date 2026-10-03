@@ -10,7 +10,6 @@ use Modules\Orders\Actions\UpdateShipment;
 use Modules\Reviews\Actions\ModerateReview;
 use Modules\Reviews\Models\Review;
 use Tests\Support\TestCommerce;
-use Tests\Support\TestPlatform;
 use Tests\Support\TestSettings;
 
 /*
@@ -20,18 +19,17 @@ use Tests\Support\TestSettings;
 
 beforeEach(function (): void {
     Mail::fake();
-    $this->brand = TestPlatform::brand(TestPlatform::BRAND_A);
-    $this->api = 'http://'.TestPlatform::apiHost(TestPlatform::BRAND_A).'/api/v1';
+    $this->api = 'http://localhost/api/v1';
 });
 
 afterEach(function (): void {
-    TestSettings::feature($this->brand, 'reviews', false);
-    TestSettings::feature($this->brand, 'wishlist', false);
+    TestSettings::feature('reviews', false);
+    TestSettings::feature('wishlist', false);
 });
 
 function enableFlag(object $test, string $key): void
 {
-    TestSettings::feature($test->brand, $key, true);
+    TestSettings::feature($key, true);
 }
 
 /**
@@ -55,11 +53,8 @@ it('answers 403 feature_disabled while the flags are off', function (): void {
 it('accepts a review only from a customer who received the product, public after approval', function (): void {
     enableFlag($this, 'reviews');
     [, $token] = signedInCustomer($this);
-    [$variant, $productUlid] = $this->brand->run(function (): array {
-        $variant = TestCommerce::stockedVariant(100_000, 5);
-
-        return [$variant, $variant->product->ulid];
-    });
+    $variant = TestCommerce::stockedVariant(100_000, 5);
+    [$variant, $productUlid] = [$variant, $variant->product->ulid];
     $body = ['rating' => 4, 'title' => 'Lovely', 'body' => 'Soft fabric and quick delivery.'];
 
     $this->withToken($token)->postJson($this->api.'/products/'.$productUlid.'/reviews', $body)->assertUnprocessable();
@@ -72,12 +67,9 @@ it('accepts a review only from a customer who received the product, public after
             'cart_id' => $cart, 'shipping_address' => TestCommerce::address(), 'shipping_method' => 'standard',
             'payment_method' => 'cod', 'expected_total' => 125_000,
         ])->assertCreated()->json('data.order_id');
-
-    $this->brand->run(function () use ($orderId): void {
-        app(ConfirmCodOrder::class)->handle($orderId, 'confirmed');
-        $shipment = app(CreateShipment::class)->handle($orderId, null, null, null);
-        app(UpdateShipment::class)->handle($shipment->ulid, 'delivered');
-    });
+    app(ConfirmCodOrder::class)->handle($orderId, 'confirmed');
+    $shipment = app(CreateShipment::class)->handle($orderId, null, null, null);
+    app(UpdateShipment::class)->handle($shipment->ulid, 'delivered');
 
     $this->withToken($token)->postJson($this->api.'/products/'.$productUlid.'/reviews', $body)
         ->assertCreated()
@@ -87,7 +79,7 @@ it('accepts a review only from a customer who received the product, public after
 
     $this->flushHeaders()->getJson($this->api.'/products/'.$productUlid.'/reviews')->assertOk()->assertJsonCount(0, 'data');
 
-    $this->brand->run(fn () => app(ModerateReview::class)->handle(Review::query()->where('product_ulid', $productUlid)->firstOrFail(), 'approved'));
+    app(ModerateReview::class)->handle(Review::query()->where('product_ulid', $productUlid)->firstOrFail(), 'approved');
 
     $this->getJson($this->api.'/products/'.$productUlid.'/reviews')
         ->assertOk()
@@ -101,7 +93,7 @@ it('keeps a private wishlist per customer, idempotent to add', function (): void
     enableFlag($this, 'wishlist');
     [, $owner] = signedInCustomer($this);
     [, $other] = signedInCustomer($this);
-    $product = $this->brand->run(fn () => TestCommerce::stockedVariant(100_000, 1)->product);
+    $product = TestCommerce::stockedVariant(100_000, 1)->product;
 
     $first = $this->withToken($owner)->postJson($this->api.'/wishlist/items', ['product_id' => $product->ulid])->assertCreated();
     $this->withToken($owner)->postJson($this->api.'/wishlist/items', ['product_id' => $product->ulid])->assertOk()->assertJsonPath('data.id', $first->json('data.id'));

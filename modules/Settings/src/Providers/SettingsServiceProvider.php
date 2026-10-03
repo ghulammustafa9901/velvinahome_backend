@@ -47,7 +47,7 @@ final class SettingsServiceProvider extends ModuleServiceProvider
         });
     }
 
-    protected function tenantSeeders(): array
+    protected function defaultSeeders(): array
     {
         return [DefaultSettingsSeeder::class];
     }

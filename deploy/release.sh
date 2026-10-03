@@ -10,15 +10,15 @@
 #   current -> releases/...   what PHP-FPM, Horizon and cron run
 #
 # Order (runbook: docs/runbooks/deploy.md):
-#   build → cache config → landlord:migrate → tenants:migrate (any tenant failing blocks the
-#   release; the old code keeps serving) → atomic switch → reload PHP-FPM, restart Horizon →
-#   health check against the new release → on failure, switch back automatically.
+#   build → cache config → app:migrate (one transaction; a failure blocks the release and the
+#   old code keeps serving) → atomic switch → reload PHP-FPM, restart Horizon → health check
+#   against the new release → on failure, switch back automatically.
 #
 # Migrations run while the previous release is still serving, so they must be expand-only
 # (add tables/columns/indexes; drop or rename only in a later release). See the runbook.
 #
 #   DEPLOY_BASE=/srv/platform-api REPO_URL=git@github.com:org/platform-api.git \
-#   HEALTH_URL=https://platform.example.com/health HEALTH_TOKEN=... \
+#   HEALTH_URL=https://api.example.com/health HEALTH_TOKEN=... \
 #   deploy/release.sh <git ref>
 
 set -Eeuo pipefail
@@ -79,13 +79,11 @@ mkdir -p "$DEPLOY_BASE"/shared/storage/{app,logs,framework/{cache,sessions,views
   && "$PHP_BIN" artisan view:cache && "$PHP_BIN" artisan filament:optimize)
 
 # 3. Migration gate --------------------------------------------------------------------------
-log "landlord migrations"
-(cd "$NEW" && "$PHP_BIN" artisan landlord:migrate)
-log "tenant migrations (one transaction per tenant; any failure blocks the release)"
-if ! (cd "$NEW" && "$PHP_BIN" artisan tenants:migrate); then
+log "migrations (one transaction; a failure blocks the release)"
+if ! (cd "$NEW" && "$PHP_BIN" artisan app:migrate); then
   trap - ERR
   cleanup_failed_build
-  die "tenant migrations failed — release blocked, ${PREVIOUS:+$(basename "$PREVIOUS") }still live"
+  die "migrations failed — release blocked, ${PREVIOUS:+$(basename "$PREVIOUS") }still live"
 fi
 
 trap - ERR

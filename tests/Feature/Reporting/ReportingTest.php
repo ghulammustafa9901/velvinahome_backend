@@ -31,7 +31,7 @@ use Modules\Reporting\Queries\SalesReport;
 use Modules\Settings\Contracts\TenantSettings;
 use Modules\Support\ValueObjects\Money;
 use Tests\Support\TestCommerce;
-use Tests\Support\TestPlatform;
+use Tests\Support\TestStore;
 
 /*
 | Phase 6 exit criterion: reports match raw data. Aggregates are rebuilt per brand-local day
@@ -39,9 +39,8 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
     Mail::fake();
-    // The fixture brand is shared across tests and runs: start each test from a full rebuild.
+    // The test store is shared across tests and runs: start each test from a full rebuild.
     ReportCursor::query()->delete();
 });
 
@@ -142,7 +141,7 @@ it('counts an order on the brand-local day it was placed', function (): void {
     $order = reportOrder(TestCommerce::stockedVariant(80_000, 5), 1);
 
     // 21:30 UTC on 1 March is already 2 March in Karachi (UTC+5). A past year with no orders
-    // around those days keeps them to this test in the shared fixture brand.
+    // around those days keeps them to this test in the shared test store.
     do {
         $year = random_int(1901, 1999);
     } while (Order::query()->whereBetween('placed_at', ["{$year}-02-28", "{$year}-03-04"])->exists());
@@ -166,37 +165,28 @@ it('reports a tampered or stale aggregate, and the verify command fails on it', 
         ->toHaveCount(1)
         ->and(app(ReportDiscrepancies::class)->between($today, $today)[0])->toContain('total_amount');
 
-    $tenant = (string) tenant()?->getTenantKey();
-    tenancy()->end();
-
-    $this->artisan('reports:verify', ['--tenant' => [$tenant], '--from' => $today, '--to' => $today])->assertFailed();
-    $this->artisan('reports:refresh', ['--tenant' => [$tenant], '--full' => true])->assertSuccessful();
-    $this->artisan('reports:verify', ['--tenant' => [$tenant], '--from' => $today, '--to' => $today])->assertSuccessful();
+    $this->artisan('reports:verify', ['--from' => $today, '--to' => $today])->assertFailed();
+    $this->artisan('reports:refresh', ['--full' => true])->assertSuccessful();
+    $this->artisan('reports:verify', ['--from' => $today, '--to' => $today])->assertSuccessful();
 });
 
 it('shows the sales report and dashboard to staff with reports access only', function (): void {
-    $brand = TestPlatform::brand(TestPlatform::BRAND_B);
-    $admin = 'http://'.TestPlatform::adminHost(TestPlatform::BRAND_B);
-    tenancy()->end();
+    $admin = 'http://localhost';
 
-    $this->actingAs(TestPlatform::staff($brand, role: 'Accountant'), 'staff')->get($admin.'/reports/sales')->assertOk()->assertSee('Sales report');
-    tenancy()->initialize($brand);
+    $this->actingAs(TestStore::staff(role: 'Accountant'), 'staff')->get($admin.'/reports/sales')->assertOk()->assertSee('Sales report');
     Filament::setCurrentPanel(Filament::getPanel('admin'));
-    $this->actingAs(TestPlatform::staff($brand, role: 'Owner'), 'staff');
+    $this->actingAs(TestStore::staff(role: 'Owner'), 'staff');
 
     Livewire::test(SalesOverviewWidget::class)->assertSee('Sales, last 30 days');
     Livewire::test(TopProductsWidget::class)->assertSee('Best sellers, last 30 days');
     Livewire::test(SalesChartWidget::class)->assertOk();
     expect(SalesChartWidget::canView())->toBeTrue();
 
-    $this->actingAs(TestPlatform::staff($brand, role: 'Order Handler'), 'staff');
+    $this->actingAs(TestStore::staff(role: 'Order Handler'), 'staff');
     expect(SalesOverviewWidget::canView())->toBeFalse()->and(TopProductsWidget::canView())->toBeFalse();
 });
 
 it('keeps the sales report from staff without reports access', function (): void {
-    $brand = TestPlatform::brand(TestPlatform::BRAND_B);
-    tenancy()->end();
-
-    $this->actingAs(TestPlatform::staff($brand, role: 'Order Handler'), 'staff')
-        ->get('http://'.TestPlatform::adminHost(TestPlatform::BRAND_B).'/reports/sales')->assertForbidden();
+    $this->actingAs(TestStore::staff(role: 'Order Handler'), 'staff')
+        ->get('http://localhost/reports/sales')->assertForbidden();
 });

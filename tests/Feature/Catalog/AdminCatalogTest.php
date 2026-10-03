@@ -10,7 +10,7 @@ use Modules\Catalog\Models\Product;
 use Modules\Inventory\Filament\Resources\Stock\ListStockPage;
 use Modules\Inventory\Models\StockLevel;
 use Tests\Support\TestCatalog;
-use Tests\Support\TestPlatform;
+use Tests\Support\TestStore;
 
 /*
 | Plan 2.5: catalog and inventory screens in the tenant admin call the Actions, and follow
@@ -18,14 +18,12 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    $this->brand = TestPlatform::brand(TestPlatform::BRAND_B);
-    $this->owner = TestPlatform::staff($this->brand, role: 'Owner');
-    $this->admin = 'http://'.TestPlatform::adminHost(TestPlatform::BRAND_B);
+    $this->owner = TestStore::staff(role: 'Owner');
+    $this->admin = 'http://localhost';
 });
 
 function inAdmin(object $test, $staff): void
 {
-    tenancy()->initialize($test->brand);
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $test->actingAs($staff, 'staff');
 }
@@ -35,7 +33,7 @@ it('renders every catalog and inventory screen for an owner', function (string $
 })->with(['/products', '/products/create', '/categories', '/brands', '/stock', '/movements', '/locations']);
 
 it('keeps an order handler out of catalog management', function (): void {
-    $handler = TestPlatform::staff($this->brand, role: 'Order Handler');
+    $handler = TestStore::staff(role: 'Order Handler');
 
     $this->actingAs($handler, 'staff')->get($this->admin.'/products/create')->assertForbidden();
     $this->actingAs($handler, 'staff')->get($this->admin.'/products')->assertOk();

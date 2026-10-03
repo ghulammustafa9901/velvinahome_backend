@@ -10,17 +10,15 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Modules\Reporting\Actions\RefreshReports;
-use Modules\Support\Queue\TenantAware;
 
 /**
- * Scheduled per active tenant: rebuild the report days whose orders or refunds changed.
+ * Scheduled: rebuild the report days whose orders or refunds changed.
  */
 final class RefreshReportsJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;
     use Queueable;
-    use TenantAware;
 
     public int $tries = 3;
 
@@ -33,7 +31,7 @@ final class RefreshReportsJob implements ShouldBeUnique, ShouldQueue
 
     public function uniqueId(): string
     {
-        return 'reports-refresh:'.(string) tenant()?->getTenantKey();
+        return 'reports-refresh';
     }
 
     public function handle(RefreshReports $refresh): void

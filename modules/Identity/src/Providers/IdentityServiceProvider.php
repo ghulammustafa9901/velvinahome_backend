@@ -44,7 +44,7 @@ final class IdentityServiceProvider extends ModuleServiceProvider
         return ['login_audits', 'activity_log'];
     }
 
-    protected function tenantSeeders(): array
+    protected function defaultSeeders(): array
     {
         return [StaffRolesSeeder::class];
     }

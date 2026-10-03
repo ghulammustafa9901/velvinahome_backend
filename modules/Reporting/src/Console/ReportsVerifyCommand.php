@@ -6,7 +6,6 @@ namespace Modules\Reporting\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
-use Modules\Platform\Contracts\TenantDirectory;
 use Modules\Reporting\Queries\ReportDiscrepancies;
 
 /**
@@ -16,16 +15,13 @@ use Modules\Reporting\Queries\ReportDiscrepancies;
 final class ReportsVerifyCommand extends Command
 {
     protected $signature = 'reports:verify
-        {--tenant=* : Tenant ids (default: every active tenant)}
         {--from= : First day, Y-m-d (default: 30 days ago)}
         {--to= : Last day, Y-m-d (default: today)}';
 
     protected $description = 'Compare report aggregates with the order and payment records';
 
-    public function handle(TenantDirectory $tenants): int
+    public function handle(ReportDiscrepancies $discrepancies): int
     {
-        /** @var list<string> $only */
-        $only = $this->option('tenant');
         $to = (string) ($this->option('to') ?: Carbon::now()->format('Y-m-d'));
         $from = (string) ($this->option('from') ?: Carbon::parse($to)->subDays(30)->format('Y-m-d'));
 
@@ -35,25 +31,20 @@ final class ReportsVerifyCommand extends Command
             return self::INVALID;
         }
 
-        $failed = false;
+        $problems = $discrepancies->between($from, $to);
 
-        foreach ($only === [] ? $tenants->activeTenantIds() : $only as $tenantId) {
-            $problems = $tenants->runIn($tenantId, fn (): array => app(ReportDiscrepancies::class)->between($from, $to));
+        if ($problems === []) {
+            $this->components->info("Reports match the records ({$from} … {$to}).");
 
-            if ($problems === []) {
-                $this->components->twoColumnDetail($tenantId, "<fg=green>matches</> ({$from} … {$to})");
-
-                continue;
-            }
-
-            $failed = true;
-            $this->components->twoColumnDetail($tenantId, '<fg=red>'.count($problems).' differences</>');
-            foreach (array_slice($problems, 0, 50) as $problem) {
-                $this->line('  '.$problem);
-            }
+            return self::SUCCESS;
         }
 
-        return $failed ? self::FAILURE : self::SUCCESS;
+        $this->components->error(count($problems).' differences');
+        foreach (array_slice($problems, 0, 50) as $problem) {
+            $this->line('  '.$problem);
+        }
+
+        return self::FAILURE;
     }
 
     private function isDate(string $value): bool

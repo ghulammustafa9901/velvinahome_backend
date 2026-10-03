@@ -75,10 +75,6 @@ final class AuditStaffAuthentication
 
     private function audit(string $email, ?int $userId, bool $successful, ?string $reason): void
     {
-        if (! tenancy()->initialized) {
-            return;
-        }
-
         LoginAudit::query()->create([
             'subject_type' => 'staff',
             'email_attempted' => mb_substr(strtolower($email), 0, 255),

@@ -18,12 +18,8 @@ use RuntimeException;
 
 /**
  * Base provider every module extends, so wiring a module is identical across all of them
- * (ADR-0007).
- *
- * Deliberately does NOT load migrations into the default migrator. Landlord and tenant
- * migrations are separate (spec §4.7) and are registered with the tenancy layer in Phase 1
- * Milestone 1.2. Auto-loading them here would be the quiet beginning of tenant tables
- * appearing in the landlord database.
+ * (ADR-0007): its migrations, routes, policies, listeners, commands, default seeders,
+ * append-only tables and encrypted columns.
  */
 abstract class ModuleServiceProvider extends ServiceProvider
 {
@@ -34,6 +30,7 @@ abstract class ModuleServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->loadModuleMigrations();
         $this->registerApiRoutes();
         $this->registerPolicies();
         $this->registerEventListeners();
@@ -47,10 +44,8 @@ abstract class ModuleServiceProvider extends ServiceProvider
 
         $this->app->make(ModuleRegistry::class)->register(
             $this->moduleName(),
-            $this->tenantMigrationPath(),
-            $this->landlordMigrationPath(),
             $this->appendOnlyTables(),
-            $this->tenantSeeders(),
+            $this->defaultSeeders(),
             $this->encryptedColumns(),
         );
 
@@ -58,8 +53,8 @@ abstract class ModuleServiceProvider extends ServiceProvider
     }
 
     /**
-     * Tenant tables this module owns that are append-only ledgers. The application role
-     * loses UPDATE, DELETE and TRUNCATE on them after every migration run (spec §6.3).
+     * Tables this module owns that are append-only ledgers. The application role loses
+     * UPDATE, DELETE and TRUNCATE on them after every migration run (spec §6.3).
      *
      * @return list<string>
      */
@@ -81,11 +76,12 @@ abstract class ModuleServiceProvider extends ServiceProvider
     }
 
     /**
-     * Idempotent seeders that give a newly provisioned tenant this module's defaults.
+     * Idempotent seeders that give a new store this module's defaults. They run after every
+     * migration run too, so new defaults reach existing stores.
      *
      * @return list<class-string>
      */
-    protected function tenantSeeders(): array
+    protected function defaultSeeders(): array
     {
         return [];
     }
@@ -138,29 +134,20 @@ abstract class ModuleServiceProvider extends ServiceProvider
     }
 
     /**
-     * Absolute path to the module's landlord migrations, if it has any. Only the Platform
-     * module should return a path here.
+     * The module's migrations join the application's migrator, so `app:migrate` (and the
+     * framework's own migrate command) see every module.
      */
-    public function landlordMigrationPath(): ?string
+    protected function loadModuleMigrations(): void
     {
-        $path = $this->modulePath().'/database/migrations/landlord';
+        $path = $this->modulePath().'/database/migrations';
 
-        return is_dir($path) ? $path : null;
+        if (is_dir($path)) {
+            $this->loadMigrationsFrom($path);
+        }
     }
 
     /**
-     * Absolute path to the module's tenant migrations, if it has any.
-     */
-    public function tenantMigrationPath(): ?string
-    {
-        $path = $this->modulePath().'/database/migrations/tenant';
-
-        return is_dir($path) ? $path : null;
-    }
-
-    /**
-     * Storefront API routes. Every one of them is tenant API: the `tenant:api` middleware
-     * resolves the tenant from the host (and 404s otherwise) before anything else runs.
+     * Storefront API routes, under /api/v1 with the API middleware stack.
      */
     protected function registerApiRoutes(): void
     {
@@ -170,7 +157,7 @@ abstract class ModuleServiceProvider extends ServiceProvider
             return;
         }
 
-        Route::middleware(['tenant:api', 'api', ApiCachePolicy::class, TrustStorefrontService::class])
+        Route::middleware(['api', ApiCachePolicy::class, TrustStorefrontService::class])
             ->prefix('api/v1')
             ->name('api.v1.')
             ->group($routes);
@@ -178,8 +165,7 @@ abstract class ModuleServiceProvider extends ServiceProvider
 
     /**
      * Commands are registered once the whole application has booted, so a module command
-     * deliberately named like a package command (our `tenants:migrate` versus
-     * stancl/tenancy's) is the one Artisan keeps.
+     * deliberately named like a package command is the one Artisan keeps.
      */
     protected function registerConsoleCommands(): void
     {

@@ -25,9 +25,7 @@ use Modules\Inventory\Exceptions\InventoryRuleViolation;
 use Modules\Inventory\Models\InventoryMovement;
 use Modules\Inventory\Models\StockLevel;
 use Modules\Inventory\Models\StockReservation;
-use Modules\Platform\Tenancy\TenantDatabaseConfig;
 use Tests\Support\TestCatalog;
-use Tests\Support\TestPlatform;
 
 /*
 | Spec §6.5: on_hand changes only through Inventory Actions, always with a movement; overselling
@@ -35,7 +33,6 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
     $this->product = TestCatalog::simpleProduct();
     $this->variant = $this->product->variants()->firstOrFail();
     $this->main = TestCatalog::defaultLocation();
@@ -173,16 +170,12 @@ it('reconciles the balance against the ledger and reports drift', function (): v
 
     expect(app(ReconcileInventory::class)->handle())->toBe(0);
 
-    // Simulate a write that bypassed the Ledger (only possible with owner rights).
-    /** @var TenantDatabaseConfig $database */
-    $database = TestPlatform::brand(TestPlatform::BRAND_B)->database();
-    config(['database.connections.tamper' => $database->migratorConnection()]);
-    DB::connection('tamper')->table('stock_levels')->where('variant_id', $this->variant->id)->update(['on_hand' => 99]);
-    DB::purge('tamper');
+    // Simulate a write that bypassed the Ledger, as the schema owner.
+    DB::connection('pgsql_migrator')->table('stock_levels')->where('variant_id', $this->variant->id)->update(['on_hand' => 99]);
 
     expect(app(ReconcileInventory::class)->handle())->toBeGreaterThanOrEqual(1);
 
-    DB::connection('tamper')->table('stock_levels')->where('variant_id', $this->variant->id)->update(['on_hand' => 4]);
+    DB::connection('pgsql_migrator')->table('stock_levels')->where('variant_id', $this->variant->id)->update(['on_hand' => 4]);
 });
 
 it('snapshots stock and valuation idempotently', function (): void {

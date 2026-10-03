@@ -106,9 +106,7 @@ final class VerifyHumanChallenge
 
     private function passKey(Request $request): string
     {
-        $tenant = tenancy()->initialized ? (string) tenant()?->getTenantKey() : 'central';
-
-        return 'turnstile-pass:'.$tenant.':'.hash('sha256', (string) $request->ip());
+        return 'turnstile-pass:'.hash('sha256', (string) $request->ip());
     }
 
     /**

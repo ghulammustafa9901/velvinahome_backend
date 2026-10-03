@@ -13,7 +13,6 @@ use Modules\Orders\Actions\CreateShipment;
 use Modules\Orders\Actions\UpdateShipment;
 use Tests\Support\Contract;
 use Tests\Support\TestCommerce;
-use Tests\Support\TestPlatform;
 use Tests\Support\TestSettings;
 
 /*
@@ -25,13 +24,12 @@ use Tests\Support\TestSettings;
 
 beforeEach(function (): void {
     Mail::fake();
-    $this->brand = TestPlatform::brand(TestPlatform::BRAND_A);
-    $this->api = 'http://'.TestPlatform::apiHost(TestPlatform::BRAND_A).'/api/v1';
+    $this->api = 'http://localhost/api/v1';
 });
 
 afterEach(function (): void {
-    TestSettings::feature($this->brand, 'reviews', false);
-    TestSettings::feature($this->brand, 'wishlist', false);
+    TestSettings::feature('reviews', false);
+    TestSettings::feature('wishlist', false);
 });
 
 /**
@@ -50,16 +48,12 @@ function contractCustomer(object $test): array
 }
 
 it('matches the contract for catalog, content and discovery endpoints', function (): void {
-    [$product, $category, $collection] = $this->brand->run(function (): array {
-        $variant = TestCommerce::stockedVariant(150_000, 4);
-        $product = $variant->product;
-        $category = app(Modules\Catalog\Actions\SaveCategory::class)->handle(null, 'Contract '.Str::random(5));
-        app(UpdateProductDetails::class)->handle($product, new ProductDetailsData(title: $product->title, slug: $product->slug, categoryUlids: [$category->ulid]));
-        $collection = app(SaveCollection::class)->handle(null, 'Picks '.Str::random(5), [$product->ulid]);
-
-        return [$product->refresh(), $category, $collection];
-    });
-
+    $variant = TestCommerce::stockedVariant(150_000, 4);
+    $product = $variant->product;
+    $category = app(Modules\Catalog\Actions\SaveCategory::class)->handle(null, 'Contract '.Str::random(5));
+    app(UpdateProductDetails::class)->handle($product, new ProductDetailsData(title: $product->title, slug: $product->slug, categoryUlids: [$category->ulid]));
+    $collection = app(SaveCollection::class)->handle(null, 'Picks '.Str::random(5), [$product->ulid]);
+    [$product, $category, $collection] = [$product->refresh(), $category, $collection];
     Contract::assert($this->getJson($this->api.'/storefront/config')->assertOk(), 'GET /v1/storefront/config');
     Contract::assert($this->getJson($this->api.'/products?per_page=2')->assertOk(), 'GET /v1/products');
     Contract::assert($this->getJson($this->api.'/products?filter[colour]=red')->assertUnprocessable(), 'GET /v1/products');
@@ -68,7 +62,7 @@ it('matches the contract for catalog, content and discovery endpoints', function
     Contract::assert($this->getJson($this->api.'/products/by-slug/'.$product->slug)->assertOk(), 'GET /v1/products/by-slug/{slug}');
 
     $old = $product->slug;
-    $this->brand->run(fn () => app(UpdateProductDetails::class)->handle($product, new ProductDetailsData(title: $product->title, slug: $old.'-v2', categoryUlids: [$category->ulid])));
+    app(UpdateProductDetails::class)->handle($product, new ProductDetailsData(title: $product->title, slug: $old.'-v2', categoryUlids: [$category->ulid]));
     Contract::assert($this->getJson($this->api.'/products/by-slug/'.$old)->assertStatus(301), 'GET /v1/products/by-slug/{slug}');
     Contract::assert($this->getJson($this->api.'/redirects/resolve?path=/products/'.$old)->assertOk(), 'GET /v1/redirects/resolve');
 
@@ -85,7 +79,7 @@ it('matches the contract for catalog, content and discovery endpoints', function
 });
 
 it('matches the contract for carts and checkout, including conflicts and replays', function (): void {
-    $variant = $this->brand->run(fn () => TestCommerce::stockedVariant(100_000, 3));
+    $variant = TestCommerce::stockedVariant(100_000, 3);
     $created = $this->postJson($this->api.'/carts')->assertCreated();
     Contract::assert($created, 'POST /v1/carts');
     $cart = (string) $created->json('data.id');
@@ -121,11 +115,8 @@ it('matches the contract for carts and checkout, including conflicts and replays
 });
 
 it('matches the contract for a transfer receipt upload', function (): void {
-    $variant = $this->brand->run(function () {
-        TestCommerce::enableTransfers();
-
-        return TestCommerce::stockedVariant(100_000, 3);
-    });
+    TestCommerce::enableTransfers();
+    $variant = TestCommerce::stockedVariant(100_000, 3);
     $created = $this->postJson($this->api.'/carts')->assertCreated();
     $cart = (string) $created->json('data.id');
     $this->withHeader('X-Cart-Token', (string) $created->json('data.token'));
@@ -173,11 +164,11 @@ it('matches the contract for flag-gated reviews and wishlist', function (): void
     Contract::assert($this->getJson($this->api.'/wishlist/items')->assertForbidden(), 'GET /v1/wishlist/items');
 
     foreach (['reviews', 'wishlist'] as $flag) {
-        TestSettings::feature($this->brand, $flag, true);
+        TestSettings::feature($flag, true);
     }
 
     [, $token] = contractCustomer($this);
-    [$variant, $productUlid] = $this->brand->run(fn (): array => [$v = TestCommerce::stockedVariant(100_000, 3), $v->product->ulid]);
+    [$variant, $productUlid] = [$v = TestCommerce::stockedVariant(100_000, 3), $v->product->ulid];
 
     $this->withToken($token);
     Contract::assert($this->postJson($this->api.'/wishlist/items', ['product_id' => $productUlid])->assertCreated(), 'POST /v1/wishlist/items');
@@ -195,11 +186,8 @@ it('matches the contract for flag-gated reviews and wishlist', function (): void
     ])->assertCreated()->json('data.order_id');
 
     Contract::assert($this->getJson($this->api.'/account/orders/'.$order)->assertOk(), 'GET /v1/account/orders/{ulid}');
-
-    $this->brand->run(function () use ($order): void {
-        app(ConfirmCodOrder::class)->handle($order, 'confirmed');
-        app(UpdateShipment::class)->handle(app(CreateShipment::class)->handle($order, null, 'TCS', 'T-9')->ulid, 'delivered');
-    });
+    app(ConfirmCodOrder::class)->handle($order, 'confirmed');
+    app(UpdateShipment::class)->handle(app(CreateShipment::class)->handle($order, null, 'TCS', 'T-9')->ulid, 'delivered');
 
     Contract::assert($this->postJson($this->api.'/products/'.$productUlid.'/reviews', ['rating' => 5, 'title' => 'Great', 'body' => 'Exactly as described.'])->assertCreated(), 'POST /v1/products/{product}/reviews');
     Contract::assert($this->flushHeaders()->getJson($this->api.'/products/'.$productUlid.'/reviews')->assertOk(), 'GET /v1/products/{product}/reviews');

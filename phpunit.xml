@@ -17,11 +17,6 @@
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
-        <!-- Tenant isolation: the release blocker (spec §4.8). Its own suite so an isolation
-             failure is never mistaken for an ordinary one. -->
-        <testsuite name="Isolation">
-            <directory>tests/Isolation</directory>
-        </testsuite>
     </testsuites>
     <source>
         <include>
@@ -42,23 +37,17 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
 
-        <!-- Real PostgreSQL, never SQLite: Phase 1 exists to prove per-database isolation,
-             and proving it against anything else would prove nothing (ADR-0009). A separate
-             landlord database and a separate prefix keep test tenants apart from the local
-             demo tenants on the same server. -->
-        <env name="DB_CONNECTION" value="landlord"/>
-        <env name="DB_LANDLORD_DATABASE" value="platform_landlord_test"/>
-        <env name="TENANT_DB_NAME_PREFIX" value="ptest_"/>
-        <env name="TENANT_DB_ROLE_PREFIX" value="ptest_"/>
-        <env name="PLATFORM_HOST" value="platform.test"/>
-        <env name="TENANCY_TOPOLOGY" value="shared"/>
-        <env name="TENANCY_PINNED_TENANT" value=""/>
+        <!-- Real PostgreSQL, never SQLite: transactional DDL, jsonb, partial indexes and the
+             append-only grants are PostgreSQL behaviour (ADR-0009). A separate database keeps
+             test data apart from the local store on the same server. -->
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_DATABASE" value="store_test"/>
+        <env name="STOREFRONT_URL" value="http://store.test"/>
         <env name="OBJECT_STORAGE_DRIVER" value="local"/>
         <!-- Real Typesense; test collections are prefixed so they never touch dev ones. -->
         <env name="SCOUT_DRIVER" value="typesense"/>
         <env name="SCOUT_PREFIX" value="test_"/>
 
-        <!-- The array store supports tags, which tenant cache scoping relies on. -->
         <env name="CACHE_STORE" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="POSTHOG_PROJECT_KEY" value=""/>

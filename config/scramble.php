@@ -52,7 +52,7 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'Storefront API v1. Every request is scoped to the brand of the API host it is sent to (api.<brand>); there is no tenant parameter. Customer endpoints take a Sanctum bearer token held by the storefront BFF.',
+        'description' => 'Storefront API v1 of the store. Customer endpoints take a Sanctum bearer token held by the storefront BFF.',
     ],
 
     'ui' => [
@@ -150,10 +150,11 @@ return [
      */
     'flatten_deep_query_parameters' => true,
 
-    // Docs UI only on the platform host, never on a brand's host.
+    // Docs UI for signed-in staff only; outside local development the viewApiDocs gate
+    // (AppServiceProvider) also requires system.monitor.
     'middleware' => [
         'web',
-        Modules\Platform\Http\Middleware\EnsurePlatformHost::class,
+        'auth:staff',
         RestrictedDocsAccess::class,
     ],
 

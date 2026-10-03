@@ -16,9 +16,8 @@ use SensitiveParameter;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
- * A member of a brand's staff. Lives in that brand's database only, signs in only to that
- * brand's admin through the `staff` guard, and must enrol two-factor authentication before
- * reaching any admin page (spec §6.2).
+ * A member of the store's staff. Signs in to the admin through the `staff` guard and must
+ * enrol two-factor authentication before reaching any admin page (spec §6.2).
  *
  * @property int $id
  * @property string $ulid
@@ -74,7 +73,7 @@ final class StaffUser extends Authenticatable implements FilamentUser, HasAppAut
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $panel->getId() === 'admin' && $this->status === 'active' && tenancy()->initialized;
+        return $panel->getId() === 'admin' && $this->status === 'active';
     }
 
     public function getAppAuthenticationSecret(): ?string

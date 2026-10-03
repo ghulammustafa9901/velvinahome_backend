@@ -9,29 +9,22 @@ use Modules\Catalog\Data\ProductDetailsData;
 use Modules\Inventory\Actions\ReceiveStock;
 use Modules\Inventory\Data\StockDocumentData;
 use Tests\Support\TestCatalog;
-use Tests\Support\TestPlatform;
 
 /*
 | Storefront API v1 catalog endpoints (api-conventions §2, §4, §5, §11).
 */
 
 beforeEach(function (): void {
-    $this->api = 'http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/api/v1';
-    $this->brand = TestPlatform::brand(TestPlatform::BRAND_B);
+    $this->api = 'http://localhost/api/v1';
     $this->word = 'quillon'.strtolower(Str::random(4));
 });
 
 it('serves a product with ULIDs, money objects and live stock, never internal ids', function (): void {
-    $product = $this->brand->run(function () {
-        $product = TestCatalog::simpleProduct(['title' => 'Linen '.$this->word, 'priceAmount' => 249900], publish: true);
-        app(ReceiveStock::class)->handle(StockDocumentData::from([
-            'locationUlid' => TestCatalog::defaultLocation()->ulid,
-            'lines' => [['variantUlid' => $product->variants()->firstOrFail()->ulid, 'quantity' => 5]],
-        ]));
-
-        return $product;
-    });
-
+    $product = TestCatalog::simpleProduct(['title' => 'Linen '.$this->word, 'priceAmount' => 249900], publish: true);
+    app(ReceiveStock::class)->handle(StockDocumentData::from([
+        'locationUlid' => TestCatalog::defaultLocation()->ulid,
+        'lines' => [['variantUlid' => $product->variants()->firstOrFail()->ulid, 'quantity' => 5]],
+    ]));
     $response = $this->getJson($this->api.'/products/'.$product->ulid)
         ->assertOk()
         ->assertJsonPath('data.id', $product->ulid)
@@ -46,7 +39,7 @@ it('serves a product with ULIDs, money objects and live stock, never internal id
 });
 
 it('hides drafts and answers not_found in the standard error envelope', function (): void {
-    $draft = $this->brand->run(fn () => TestCatalog::simpleProduct());
+    $draft = TestCatalog::simpleProduct();
 
     $this->getJson($this->api.'/products/'.$draft->ulid)
         ->assertNotFound()
@@ -55,10 +48,10 @@ it('hides drafts and answers not_found in the standard error envelope', function
 });
 
 it('follows a changed slug with a 301 to the current one', function (): void {
-    $product = $this->brand->run(fn () => TestCatalog::simpleProduct(['title' => 'Moved '.$this->word], publish: true));
+    $product = TestCatalog::simpleProduct(['title' => 'Moved '.$this->word], publish: true);
     $old = $product->slug;
 
-    $this->brand->run(fn () => app(UpdateProductDetails::class)->handle($product, new ProductDetailsData(title: $product->title, slug: $old.'-new')));
+    app(UpdateProductDetails::class)->handle($product, new ProductDetailsData(title: $product->title, slug: $old.'-new'));
 
     $this->getJson($this->api.'/products/by-slug/'.$old)
         ->assertStatus(301)
@@ -73,16 +66,12 @@ it('follows a changed slug with a 301 to the current one', function (): void {
 });
 
 it('lists products with cursor pagination and a category filter including subcategories', function (): void {
-    [$parent, $products] = $this->brand->run(function () {
-        $parent = app(SaveCategory::class)->handle(null, 'Parent '.$this->word);
-        $child = app(SaveCategory::class)->handle(null, 'Child '.$this->word, $parent->ulid);
-        $products = [];
-        foreach (range(1, 3) as $i) {
-            $products[] = TestCatalog::simpleProduct(['title' => "Item {$i} ".$this->word, 'categoryUlids' => [$child->ulid]], publish: true);
-        }
-
-        return [$parent, $products];
-    });
+    $parent = app(SaveCategory::class)->handle(null, 'Parent '.$this->word);
+    $child = app(SaveCategory::class)->handle(null, 'Child '.$this->word, $parent->ulid);
+    $products = [];
+    foreach (range(1, 3) as $i) {
+        $products[] = TestCatalog::simpleProduct(['title' => "Item {$i} ".$this->word, 'categoryUlids' => [$child->ulid]], publish: true);
+    }
 
     $first = $this->getJson($this->api.'/products?per_page=2&filter[category]='.$parent->slug)
         ->assertOk()
@@ -102,7 +91,7 @@ it('rejects unknown filters and sorts instead of ignoring them', function (): vo
 });
 
 it('searches with facets and suggests as you type', function (): void {
-    $product = $this->brand->run(fn () => TestCatalog::simpleProduct(['title' => 'Embroidered '.$this->word.' runner'], publish: true));
+    $product = TestCatalog::simpleProduct(['title' => 'Embroidered '.$this->word.' runner'], publish: true);
 
     $this->getJson($this->api.'/search?q='.$this->word.'&filter[in_stock]=false')
         ->assertOk()
@@ -113,21 +102,12 @@ it('searches with facets and suggests as you type', function (): void {
     $this->getJson($this->api.'/search/suggest?q='.substr($this->word, 0, 6))
         ->assertOk()
         ->assertJsonFragment(['id' => $product->ulid]);
-
-    // The sibling brand's API knows nothing about it.
-    $this->getJson('http://'.TestPlatform::apiHost(TestPlatform::BRAND_C).'/api/v1/search?q='.$this->word)
-        ->assertOk()
-        ->assertJsonPath('meta.total', 0);
 });
 
 it('serves the category tree with breadcrumbs', function (): void {
-    $grandchild = $this->brand->run(function () {
-        $a = app(SaveCategory::class)->handle(null, 'Tree A '.$this->word);
-        $b = app(SaveCategory::class)->handle(null, 'Tree B '.$this->word, $a->ulid);
-
-        return app(SaveCategory::class)->handle(null, 'Tree C '.$this->word, $b->ulid);
-    });
-
+    $a = app(SaveCategory::class)->handle(null, 'Tree A '.$this->word);
+    $b = app(SaveCategory::class)->handle(null, 'Tree B '.$this->word, $a->ulid);
+    $grandchild = app(SaveCategory::class)->handle(null, 'Tree C '.$this->word, $b->ulid);
     $this->getJson($this->api.'/categories/'.$grandchild->slug)
         ->assertOk()
         ->assertJsonPath('data.breadcrumbs.0.name', 'Tree A '.$this->word)

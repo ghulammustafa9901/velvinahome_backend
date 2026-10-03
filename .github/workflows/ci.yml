@@ -64,7 +64,7 @@ jobs:
       - run: vendor/bin/phpstan analyse --no-progress
 
   tests:
-    name: Pest (unit, feature, architecture, isolation)
+    name: Pest (unit, feature, architecture)
     needs: detect
     if: needs.detect.outputs.scaffolded == 'true'
     runs-on: ubuntu-latest
@@ -96,9 +96,8 @@ jobs:
     # Throwaway CI-only credentials for the service containers above.
     env:
       TYPESENSE_API_KEY: ci-typesense-key
-      DB_LANDLORD_PASSWORD: ci-landlord-app
-      DB_LANDLORD_MIGRATOR_PASSWORD: ci-landlord-migrator
-      DB_PROVISIONER_PASSWORD: ci-provisioner
+      DB_PASSWORD: ci-store-app
+      DB_MIGRATOR_PASSWORD: ci-store-migrator
       PGPASSWORD: postgres
 
     steps:
@@ -108,7 +107,7 @@ jobs:
           php-version: ${{ env.PHP_VERSION }}
           extensions: pdo_pgsql, pgsql, intl, bcmath, gd, exif
           coverage: xdebug
-      # pg_dump must match the server's major version for tenant:export.
+      # pg_dump must match the server's major version for backups.
       - name: PostgreSQL 17 client
         run: |
           sudo apt-get install -y postgresql-common
@@ -117,24 +116,20 @@ jobs:
           echo "PG_DUMP_BINARY=/usr/lib/postgresql/17/bin/pg_dump" >> "$GITHUB_ENV"
           echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
       - run: composer install --no-interaction --prefer-dist --no-progress
-      - name: Bootstrap landlord roles and the test landlord database
+      - name: Bootstrap the roles and the test database
         run: |
-          psql -h 127.0.0.1 -U postgres -f database/setup/bootstrap-landlord.sql \
-            -v landlord_db=platform_landlord_test \
-            -v app_password="$DB_LANDLORD_PASSWORD" \
-            -v migrator_password="$DB_LANDLORD_MIGRATOR_PASSWORD" \
-            -v provisioner_password="$DB_PROVISIONER_PASSWORD" \
+          psql -h 127.0.0.1 -U postgres -f database/setup/bootstrap-database.sql \
+            -v db=store_test \
+            -v app_password="$DB_PASSWORD" \
+            -v migrator_password="$DB_MIGRATOR_PASSWORD" \
             -v backup_password=ci-backup
       - name: Prepare environment
         run: |
           cp .env.example .env
           php artisan key:generate
-      # Tenant isolation tests (spec §4.8) are a release blocker, so they run as their own
-      # required check rather than being buried in the rest of the suite.
+      # Architecture tests (module boundaries, no tenancy) are their own required check.
       - name: Architecture tests
         run: vendor/bin/pest --group=architecture
-      - name: Tenant isolation tests
-        run: vendor/bin/pest --group=isolation
       - name: Full suite with coverage
         run: vendor/bin/pest --coverage
 
@@ -144,23 +139,23 @@ jobs:
     if: needs.detect.outputs.scaffolded == 'true'
     runs-on: ubuntu-latest
 
-    # Scramble looks up model columns. An empty landlord database (no tenant tables) gives the
-    # same, deterministic document as a development machine. Throwaway CI-only credentials.
+    # Scramble looks up model columns. An empty database gives the same, deterministic document
+    # as a development machine. Throwaway CI-only credentials.
     services:
       postgres:
         image: postgres:17-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: platform_landlord
+          POSTGRES_DB: store
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DB_LANDLORD_USERNAME: postgres
-      DB_LANDLORD_PASSWORD: postgres
-      DB_LANDLORD_DATABASE: platform_landlord
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: store
 
     steps:
       - uses: actions/checkout@v4

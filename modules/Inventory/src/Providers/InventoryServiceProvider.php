@@ -32,7 +32,7 @@ final class InventoryServiceProvider extends ModuleServiceProvider
         return ['inventory_movements', 'stock_snapshots_daily'];
     }
 
-    protected function tenantSeeders(): array
+    protected function defaultSeeders(): array
     {
         return [DefaultLocationSeeder::class];
     }

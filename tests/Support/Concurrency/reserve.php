@@ -7,23 +7,21 @@ declare(strict_types=1);
 | start instant so every child hits the database together, then tries to reserve one unit.
 | Prints OK or NO.
 |
-| Usage: php reserve.php <tenant-id> <variant-ulid> <start-at-microtime>
+| Usage: php reserve.php <variant-ulid> <start-at-microtime>
 */
 
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Str;
 use Modules\Inventory\Actions\ReserveStock;
 use Modules\Inventory\Exceptions\InsufficientStock;
-use Modules\Platform\Models\Tenant;
 
 require __DIR__.'/../../../vendor/autoload.php';
 
 $app = require __DIR__.'/../../../bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
-[, $tenantId, $variantUlid, $startAt] = $argv;
+[, $variantUlid, $startAt] = $argv;
 
-tenancy()->initialize(Tenant::query()->whereKey($tenantId)->firstOrFail());
 app(ReserveStock::class); // resolve everything before the race
 
 while (microtime(true) < (float) $startAt) {

@@ -432,6 +432,18 @@ A root `C:\xampp\htdocs\velvinahome\CLAUDE.md` containing:
 
 ---
 
+### Changes made during execution
+
+- `secrets:reencrypt` moved in R3 instead of R2: while tenants existed it had to loop over them,
+  which the Support kernel cannot do.
+- R3 also deleted the Platform module, the platform panel, the `platform` guard and the tenant
+  queue classes (planned for R4): Larastan analyses every module, so dormant Platform code that
+  called removed APIs would have failed the R3 gate. Horizon and API-docs access moved with them.
+- R3 also switched `deploy/release.sh`, its test, CI and Docker Compose to `app:migrate` and the
+  single database (planned for R5/R6), because the commands and SQL they called were removed.
+
+---
+
 ## 6. Risks
 
 | Risk | Mitigation |

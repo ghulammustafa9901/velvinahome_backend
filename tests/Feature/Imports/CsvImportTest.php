@@ -11,7 +11,7 @@ use Modules\Catalog\Models\ProductVariant;
 use Modules\Imports\Actions\StartCsvImport;
 use Modules\Imports\Models\ImportRun;
 use Modules\Inventory\Contracts\StockReader;
-use Tests\Support\TestPlatform;
+use Tests\Support\TestStore;
 
 /*
 | Spreadsheet imports: products with variants, and stock counts. Bad rows are reported and
@@ -19,9 +19,7 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    $this->brand = TestPlatform::brand(TestPlatform::BRAND_B);
-    tenancy()->initialize($this->brand);
-    $this->owner = TestPlatform::staff($this->brand, role: 'Owner');
+    $this->owner = TestStore::staff(role: 'Owner');
     $this->sku = strtoupper(Str::random(8));
 });
 
@@ -80,25 +78,23 @@ it('rejects a file with missing columns and files outside the upload folder', fu
         ->toThrow(ValidationException::class);
 });
 
-it('imports a CSV from the command line into the named brand only', function (): void {
+it('imports a CSV from the command line', function (): void {
     $s = $this->sku;
     $file = tempnam(sys_get_temp_dir(), 'csvcli');
     file_put_contents($file, "handle,title,status,sku,price,stock\nlamp-{$s},Lamp,active,{$s}-LAMP,4500,7\n");
-    tenancy()->end();
 
     try {
-        $this->artisan('imports:csv', ['tenant' => $this->brand->getTenantKey(), 'file' => $file])
+        $this->artisan('imports:csv', ['file' => $file])
             ->expectsOutputToContain('created 1')->assertSuccessful();
-        $this->artisan('imports:csv', ['tenant' => $this->brand->getTenantKey(), 'file' => $file.'-missing'])->assertFailed();
+        $this->artisan('imports:csv', ['file' => $file.'-missing'])->assertFailed();
     } finally {
         @unlink($file);
     }
 
-    $variant = $this->brand->run(fn () => ProductVariant::query()->where('sku', "{$s}-LAMP")->firstOrFail());
+    $variant = ProductVariant::query()->where('sku', "{$s}-LAMP")->firstOrFail();
 
     expect($variant->price->amount)->toBe(450_000)
-        ->and($this->brand->run(fn () => app(StockReader::class)->available([$variant->id])[$variant->id]))->toBe(7)
-        ->and(TestPlatform::brand(TestPlatform::BRAND_C)->run(fn () => ProductVariant::query()->where('sku', "{$s}-LAMP")->exists()))->toBeFalse();
+        ->and(app(StockReader::class)->available([$variant->id])[$variant->id])->toBe(7);
 });
 
 it('indexes an import for search in bulk, not one job per product and stock change', function (): void {
@@ -118,22 +114,16 @@ it('indexes an import for search in bulk, not one job per product and stock chan
 });
 
 it('shows the imports screen to an owner', function (): void {
-    tenancy()->end();
-
-    $this->actingAs($this->owner, 'staff')->get('http://'.TestPlatform::adminHost(TestPlatform::BRAND_B).'/import-runs')
+    $this->actingAs($this->owner, 'staff')->get('http://localhost/import-runs')
         ->assertOk()->assertSee('Import from WooCommerce');
 });
 
 it('shows imported order history to staff who can see orders', function (): void {
-    tenancy()->end();
-
-    $this->actingAs(TestPlatform::staff($this->brand, role: 'Accountant'), 'staff')
-        ->get('http://'.TestPlatform::adminHost(TestPlatform::BRAND_B).'/imported-orders')->assertOk();
+    $this->actingAs(TestStore::staff(role: 'Accountant'), 'staff')
+        ->get('http://localhost/imported-orders')->assertOk();
 });
 
 it('keeps imports from staff who cannot change the catalog or stock', function (): void {
-    tenancy()->end();
-
-    $this->actingAs(TestPlatform::staff($this->brand, role: 'Accountant'), 'staff')
-        ->get('http://'.TestPlatform::adminHost(TestPlatform::BRAND_B).'/import-runs')->assertForbidden();
+    $this->actingAs(TestStore::staff(role: 'Accountant'), 'staff')
+        ->get('http://localhost/import-runs')->assertForbidden();
 });

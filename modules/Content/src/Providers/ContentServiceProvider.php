@@ -45,7 +45,7 @@ final class ContentServiceProvider extends ModuleServiceProvider
         ContentEntry::deleted($entry);
     }
 
-    protected function tenantSeeders(): array
+    protected function defaultSeeders(): array
     {
         return [DefaultContentSeeder::class];
     }

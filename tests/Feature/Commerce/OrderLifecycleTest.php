@@ -31,7 +31,7 @@ use Modules\Payments\Models\Payment;
 use Modules\Payments\Models\PaymentTransaction;
 use Modules\Support\ValueObjects\Money;
 use Tests\Support\TestCommerce;
-use Tests\Support\TestPlatform;
+use Tests\Support\TestStore;
 
 /*
 | Staff can confirm, fulfil, cancel and refund orders; the state machine refuses illegal
@@ -39,7 +39,6 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
     Mail::fake();
 });
 
@@ -223,13 +222,13 @@ it('records a partial customer return and refunds no more than was paid, once pe
 
 it('holds staff to their permissions', function (): void {
     $order = placeOrder(TestCommerce::stockedVariant(100_000, 5));
-    $staff = TestPlatform::staff(TestPlatform::brand(TestPlatform::BRAND_B), role: null);
+    $staff = TestStore::staff(role: null);
 
     expect(fn () => app(ConfirmCodOrder::class)->handle($order->ulid, 'confirmed', null, $staff))->toThrow(AuthorizationException::class)
         ->and(fn () => app(CancelOrder::class)->handle($order->ulid, 'x', $staff))->toThrow(AuthorizationException::class)
         ->and(fn () => app(RefundOrder::class)->handle($order->ulid, Money::of(1, 'PKR'), 'x', TestCommerce::idempotencyKey(), $staff))->toThrow(AuthorizationException::class);
 
-    $manager = TestPlatform::staff(TestPlatform::brand(TestPlatform::BRAND_B));
+    $manager = TestStore::staff();
     app(ConfirmCodOrder::class)->handle($order->ulid, 'confirmed', null, $manager);
 
     expect(OrderStateTransition::query()->where('order_id', $order->id)->where('to_status', 'confirmed')->value('actor_ulid'))->toBe($manager->ulid);

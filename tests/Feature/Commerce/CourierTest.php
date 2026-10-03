@@ -22,7 +22,7 @@ use Modules\Shipping\Data\CourierTracking;
 use Modules\Shipping\Models\Courier;
 use Modules\Shipping\Support\CourierAdapters;
 use Tests\Support\TestCommerce;
-use Tests\Support\TestPlatform;
+use Tests\Support\TestStore;
 
 /*
 | Courier framework (owner: no courier account yet): tracking links from staff-entered
@@ -56,7 +56,6 @@ final class FakeTrackingCourier implements CourierAdapter
 }
 
 beforeEach(function (): void {
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
     Mail::fake();
 });
 
@@ -123,8 +122,6 @@ it('records deliveries and returns reported by a courier integration', function 
 });
 
 it('shows the couriers screen to staff who manage settings', function (): void {
-    tenancy()->end();
-
-    $this->actingAs(TestPlatform::staff(TestPlatform::brand(TestPlatform::BRAND_B), role: 'Owner'), 'staff')
-        ->get('http://'.TestPlatform::adminHost(TestPlatform::BRAND_B).'/couriers')->assertOk()->assertSee('Leopards');
+    $this->actingAs(TestStore::staff(role: 'Owner'), 'staff')
+        ->get('http://localhost/couriers')->assertOk()->assertSee('Leopards');
 });

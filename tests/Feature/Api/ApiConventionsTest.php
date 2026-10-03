@@ -3,15 +3,14 @@
 declare(strict_types=1);
 
 use Tests\Support\TestCatalog;
-use Tests\Support\TestPlatform;
 
 /*
 | api-conventions §3, §7, §8 enforced by infrastructure: private by default, ETags on public
-| reads, rate limits per tenant with Retry-After, one error envelope.
+| reads, rate limits with Retry-After, one error envelope.
 */
 
 beforeEach(function (): void {
-    $this->api = 'http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/api/v1';
+    $this->api = 'http://localhost/api/v1';
 });
 
 it('never lets a cart, an error or an account response into a shared cache', function (): void {
@@ -21,7 +20,7 @@ it('never lets a cart, an error or an account response into a shared cache', fun
 });
 
 it('gives public reads an ETag and answers a matching If-None-Match with 304', function (): void {
-    $product = TestPlatform::brand(TestPlatform::BRAND_B)->run(fn () => TestCatalog::simpleProduct(publish: true));
+    $product = TestCatalog::simpleProduct(publish: true);
 
     $first = $this->getJson($this->api.'/products/'.$product->ulid)->assertOk();
     $etag = (string) $first->headers->get('ETag');
@@ -45,10 +44,6 @@ it('rate limits sign-in per account with Retry-After and the standard envelope',
         ->assertStatus(429)
         ->assertHeader('Retry-After')
         ->assertJsonPath('error.code', 'rate_limited');
-
-    // Another brand's budget is untouched.
-    $this->postJson('http://'.TestPlatform::apiHost(TestPlatform::BRAND_C).'/api/v1/auth/login', ['email' => $email, 'password' => 'x'])
-        ->assertStatus(422);
 });
 
 it('refuses unknown filters and sorts instead of ignoring them', function (): void {

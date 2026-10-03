@@ -14,16 +14,12 @@ use Modules\Catalog\Enums\ProductStatus;
 use Modules\Seo\Contracts\Seo;
 use Modules\Support\Enums\Currency;
 use Tests\Support\TestCatalog;
-use Tests\Support\TestPlatform;
+use Tests\Support\TestStore;
 
 /*
 | Spec §6.3/§6.4: every sellable item is a variant; SKUs unique; option combinations unique;
 | slug changes leave a 301; permissions enforced inside Actions.
 */
-
-beforeEach(function (): void {
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
-});
 
 it('gives a simple product exactly one default variant, priced in the store currency', function (): void {
     $product = TestCatalog::simpleProduct(['priceAmount' => 129900]);
@@ -101,8 +97,7 @@ it('leaves a 301 when a slug changes, without chains or loops', function (): voi
 });
 
 it('separates preparing a product from publishing it', function (): void {
-    $editor = TestPlatform::staff(TestPlatform::brand(TestPlatform::BRAND_B), role: 'Content Editor');
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
+    $editor = TestStore::staff(role: 'Content Editor');
 
     $product = app(CreateProduct::class)->handle(ProductData::from([
         'title' => 'Editor made '.Str::random(5),
@@ -114,8 +109,7 @@ it('separates preparing a product from publishing it', function (): void {
 });
 
 it('refuses catalog changes to roles without products.manage', function (): void {
-    $handler = TestPlatform::staff(TestPlatform::brand(TestPlatform::BRAND_B), role: 'Order Handler');
-    tenancy()->initialize(TestPlatform::brand(TestPlatform::BRAND_B));
+    $handler = TestStore::staff(role: 'Order Handler');
 
     app(CreateProduct::class)->handle(ProductData::from([
         'title' => 'Nope', 'variants' => [['sku' => 'NO-'.Str::random(8), 'priceAmount' => 100]],

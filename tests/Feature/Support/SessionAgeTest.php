@@ -3,18 +3,17 @@
 declare(strict_types=1);
 
 use Modules\Support\Http\EnforceSessionAge;
-use Tests\Support\TestPlatform;
+use Tests\Support\TestStore;
 
 /*
 | ASVS 3.3.2: panel sessions end after a fixed number of hours, however active they are.
 */
 
 beforeEach(function (): void {
-    $this->brand = TestPlatform::brand(TestPlatform::BRAND_B);
-    $this->staff = TestPlatform::staff($this->brand, role: 'Owner');
+    $this->staff = TestStore::staff(role: 'Owner');
     // As loaded from the database (the factory-made instance lacks the column).
     $this->staff->setRememberToken(null);
-    $this->admin = 'http://'.TestPlatform::adminHost(TestPlatform::BRAND_B);
+    $this->admin = 'http://localhost';
 });
 
 it('stamps the start of an authenticated panel session', function (): void {

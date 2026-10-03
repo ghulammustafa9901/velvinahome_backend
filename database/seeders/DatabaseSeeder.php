@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Modules\Support\Actions\SeedDefaults;
 
 /**
- * Intentionally empty. There is no single database to seed: the landlord is populated by
- * `platform:seed-demo`, and each tenant by the module seeders `tenant:create` runs.
+ * Every module's defaults (roles and permissions, settings, a stock location, shipping, payment
+ * methods, email templates, pages). Idempotent; `app:migrate` runs the same seeders.
  */
 final class DatabaseSeeder extends Seeder
 {
-    public function run(): void {}
+    public function run(SeedDefaults $defaults): void
+    {
+        $defaults->handle();
+    }
 }

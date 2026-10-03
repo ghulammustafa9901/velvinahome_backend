@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\Support\Providers;
 
 use Modules\Support\Actions\ReencryptStoredSecrets;
+use Modules\Support\Console\MigrateDatabaseCommand;
+use Modules\Support\Console\SecretsReencryptCommand;
 use Modules\Support\Contracts\ReencryptsStoredSecrets;
 
 /**
@@ -21,5 +23,13 @@ final class SupportServiceProvider extends ModuleServiceProvider
     protected function registerModule(): void
     {
         $this->app->bind(ReencryptsStoredSecrets::class, ReencryptStoredSecrets::class);
+    }
+
+    protected function consoleCommands(): array
+    {
+        return [
+            MigrateDatabaseCommand::class,
+            SecretsReencryptCommand::class,
+        ];
     }
 }

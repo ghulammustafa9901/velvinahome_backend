@@ -9,13 +9,12 @@ use Laravel\Scout\Searchable;
 use Modules\Catalog\Models\Category;
 use Modules\Catalog\Models\ProductVariant;
 use Modules\Inventory\Contracts\StockReader;
-use RuntimeException;
 
 /**
  * Search behaviour of Product (ADR-0005).
  *
- * - One collection per tenant: `{prefix}{tenant_id}_products`. There is no shared collection,
- *   so a query for brand C can never see a document of brand B.
+ * - One collection, `{SCOUT_PREFIX}products`; the prefix keeps two installations that share a
+ *   Typesense server apart.
  * - The document id is the product ULID — internal ids never leave the database.
  * - Only active, published products are indexed; anything else is removed from the index.
  * - Typo tolerance on title, brand, categories and tags; none on SKUs.
@@ -26,13 +25,7 @@ trait ProductSearch
 
     public function searchableAs(): string
     {
-        $tenant = tenant();
-
-        if ($tenant === null) {
-            throw new RuntimeException('Product search is tenant-scoped; no tenant is initialised.');
-        }
-
-        return config('scout.prefix').$tenant->getTenantKey().'_products';
+        return config('scout.prefix').'products';
     }
 
     public function getScoutKey(): mixed
@@ -120,7 +113,7 @@ trait ProductSearch
             // No custom token separators: a SKU such as "VH-CC-001" must stay one token, or
             // a partial SKU would match every product sharing its prefix.
             'default_sorting_field' => 'created_at',
-            // Per-tenant synonyms (Roman Urdu and local spellings), managed in the admin.
+            // Synonyms (Roman Urdu and local spellings), managed in the admin.
             'synonym_sets' => [TypesenseSynonyms::setName()],
         ];
     }

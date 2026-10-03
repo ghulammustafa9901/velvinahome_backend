@@ -45,7 +45,7 @@ final class NotificationsServiceProvider extends ModuleServiceProvider
         }
     }
 
-    protected function tenantSeeders(): array
+    protected function defaultSeeders(): array
     {
         return [DefaultNotificationTemplatesSeeder::class];
     }

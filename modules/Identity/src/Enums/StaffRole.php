@@ -7,8 +7,8 @@ namespace Modules\Identity\Enums;
 use Modules\Identity\Enums\StaffPermission as P;
 
 /**
- * The default roles seeded into every tenant (spec §6.2), and the permission matrix — the
- * documented, reviewable source of truth for who may do what.
+ * The default staff roles (spec §6.2), and the permission matrix — the documented, reviewable
+ * source of truth for who may do what.
  */
 enum StaffRole: string
 {
@@ -28,7 +28,7 @@ enum StaffRole: string
             self::Owner => P::cases(),
             self::Manager => array_values(array_filter(
                 P::cases(),
-                fn (P $permission): bool => ! in_array($permission, [P::RolesManage, P::SettingsManage], true),
+                fn (P $permission): bool => ! in_array($permission, [P::RolesManage, P::SettingsManage, P::SystemMonitor], true),
             )),
             self::OrderHandler => [
                 P::OrdersView, P::OrdersManage, P::OrdersConfirmCod,

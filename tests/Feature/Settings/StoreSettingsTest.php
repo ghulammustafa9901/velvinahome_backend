@@ -15,8 +15,8 @@ use Modules\Settings\Contracts\TenantSettings;
 use Modules\Settings\Data\StoreSettingsData;
 use Modules\Settings\Filament\Pages\StoreSettingsPage;
 use Modules\Settings\Support\StoreLogo;
-use Tests\Support\TestPlatform;
 use Tests\Support\TestSettings;
+use Tests\Support\TestStore;
 
 /*
 | Store identity is owned by the admin (single-store plan R1): name, storefront URL, logo,
@@ -31,20 +31,19 @@ const SNAPSHOT_KEYS = [
 
 beforeEach(function (): void {
     Mail::fake();
-    $this->brand = TestPlatform::brand(TestPlatform::BRAND_A);
-    $this->api = 'http://'.TestPlatform::apiHost(TestPlatform::BRAND_A).'/api/v1';
-    $this->admin = 'http://'.TestPlatform::adminHost(TestPlatform::BRAND_A);
-    $this->owner = TestPlatform::staff($this->brand, role: 'Owner');
-    $this->snapshot = $this->brand->run(fn (): array => collect(SNAPSHOT_KEYS)->mapWithKeys(fn (string $key): array => [$key => app(TenantSettings::class)->get($key)])->all());
+    $this->api = 'http://localhost/api/v1';
+    $this->admin = 'http://localhost';
+    $this->owner = TestStore::staff(role: 'Owner');
+    $this->snapshot = collect(SNAPSHOT_KEYS)->mapWithKeys(fn (string $key): array => [$key => app(TenantSettings::class)->get($key)])->all();
 });
 
 afterEach(function (): void {
     foreach ($this->snapshot as $key => $value) {
-        TestSettings::set($this->brand, $key, $value);
+        TestSettings::set($key, $value);
     }
 
     foreach (['wishlist', 'reviews', 'blog'] as $flag) {
-        TestSettings::feature($this->brand, $flag, false);
+        TestSettings::feature($flag, false);
     }
 });
 
@@ -90,13 +89,13 @@ it('shows the settings page to an owner', function (): void {
 });
 
 it('keeps the settings page from staff without settings.manage', function (): void {
-    $handler = TestPlatform::staff($this->brand, role: 'Order Handler');
+    $handler = TestStore::staff(role: 'Order Handler');
 
     $this->actingAs($handler, 'staff')->get($this->admin.'/settings/store')->assertForbidden();
 });
 
 it('saves identity, theme, SEO, mail and flags, and publishes them to the storefront', function (): void {
-    $this->brand->run(fn () => app(SaveStoreSettings::class)->handle(storeSettings(), $this->owner));
+    app(SaveStoreSettings::class)->handle(storeSettings(), $this->owner);
 
     $this->getJson($this->api.'/storefront/config')
         ->assertOk()
@@ -109,11 +108,10 @@ it('saves identity, theme, SEO, mail and flags, and publishes them to the storef
         ->assertJsonPath('data.features.reviews', false)
         ->assertJsonMissingPath('data.features.not-a-flag');
 
-    expect($this->brand->run(fn (): ?string => app(TenantSettings::class)->get('mail.from_address')))->toBe('orders@shop.example.test');
+    expect(app(TenantSettings::class)->get('mail.from_address'))->toBe('orders@shop.example.test');
 });
 
 it('saves through the admin page form', function (): void {
-    tenancy()->initialize($this->brand);
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs($this->owner, 'staff');
 
@@ -128,13 +126,13 @@ it('saves through the admin page form', function (): void {
 });
 
 it('refuses a caller without settings.manage, inside the Action', function (): void {
-    $handler = TestPlatform::staff($this->brand, role: 'Order Handler');
+    $handler = TestStore::staff(role: 'Order Handler');
 
-    $this->brand->run(fn () => app(SaveStoreSettings::class)->handle(storeSettings(), $handler));
+    app(SaveStoreSettings::class)->handle(storeSettings(), $handler);
 })->throws(AuthorizationException::class);
 
 it('rejects an invalid storefront URL and unsafe theme tokens', function (array $overrides): void {
-    $this->brand->run(fn () => app(SaveStoreSettings::class)->handle(storeSettings($overrides), $this->owner));
+    app(SaveStoreSettings::class)->handle(storeSettings($overrides), $this->owner);
 })->with([
     'not a URL' => [['url' => 'shop.example.test']],
     'javascript URL' => [['url' => 'javascript:alert(1)']],
@@ -143,7 +141,7 @@ it('rejects an invalid storefront URL and unsafe theme tokens', function (array 
 ])->throws(ValidationException::class);
 
 it('uses the store URL setting for the password reset link', function (): void {
-    TestSettings::set($this->brand, 'store.url', 'https://reset.example.test/');
+    TestSettings::set('store.url', 'https://reset.example.test/');
     $email = 'st-'.Str::lower(Str::random(8)).'@example.test';
     $this->postJson($this->api.'/auth/register', ['email' => $email, 'password' => 'Sufficiently-long-9', 'first_name' => 'Sana', 'last_name' => 'Iqbal'])->assertCreated();
 
@@ -153,21 +151,21 @@ it('uses the store URL setting for the password reset link', function (): void {
 });
 
 it('re-encodes an uploaded logo, publishes it, and replaces the previous file', function (): void {
-    $first = $this->brand->run(fn (): ?string => app(SaveStoreLogo::class)->handle(pngUpload(), $this->owner));
+    $first = app(SaveStoreLogo::class)->handle(pngUpload(), $this->owner);
 
     expect($first)->toStartWith(StoreLogo::DIRECTORY.'/logo-')->toEndWith('.webp')
-        ->and($this->brand->run(fn (): string => (string) StoreLogo::disk()->get((string) $first)))->toStartWith('RIFF');
+        ->and((string) StoreLogo::disk()->get((string) $first))->toStartWith('RIFF');
 
-    $this->getJson($this->api.'/storefront/config')->assertJsonPath('data.store.logo_url', $this->brand->run(fn (): ?string => StoreLogo::url((string) $first)));
+    $this->getJson($this->api.'/storefront/config')->assertJsonPath('data.store.logo_url', StoreLogo::url((string) $first));
 
-    $second = $this->brand->run(fn (): ?string => app(SaveStoreLogo::class)->handle(pngUpload(), $this->owner));
+    $second = app(SaveStoreLogo::class)->handle(pngUpload(), $this->owner);
 
-    expect($this->brand->run(fn (): bool => StoreLogo::disk()->exists((string) $first)))->toBeFalse()
-        ->and($this->brand->run(fn (): bool => StoreLogo::disk()->exists((string) $second)))->toBeTrue();
+    expect(StoreLogo::disk()->exists((string) $first))->toBeFalse()
+        ->and(StoreLogo::disk()->exists((string) $second))->toBeTrue();
 
-    $this->brand->run(fn () => app(SaveStoreLogo::class)->handle(null, $this->owner));
+    app(SaveStoreLogo::class)->handle(null, $this->owner);
 
-    expect($this->brand->run(fn (): bool => StoreLogo::disk()->exists((string) $second)))->toBeFalse();
+    expect(StoreLogo::disk()->exists((string) $second))->toBeFalse();
     $this->getJson($this->api.'/storefront/config')->assertJsonPath('data.store.logo_url', null);
 });
 
@@ -175,5 +173,5 @@ it('refuses an SVG logo', function (): void {
     $svg = tempnam(sys_get_temp_dir(), 'logo').'.svg';
     file_put_contents($svg, '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><rect width="10" height="10"/></svg>');
 
-    $this->brand->run(fn () => app(SaveStoreLogo::class)->handle($svg, $this->owner));
+    app(SaveStoreLogo::class)->handle($svg, $this->owner);
 })->throws(ValidationException::class);

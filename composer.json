@@ -40,7 +40,6 @@
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
             "Modules\\Support\\": "modules/Support/src/",
-            "Modules\\Platform\\": "modules/Platform/src/",
             "Modules\\Identity\\": "modules/Identity/src/",
             "Modules\\Settings\\": "modules/Settings/src/",
             "Modules\\Integrations\\": "modules/Integrations/src/",
@@ -77,7 +76,6 @@
         "stan": "phpstan analyse",
         "test": "pest",
         "test:arch": "pest --group=architecture",
-        "test:isolation": "pest --group=isolation",
         "test:coverage": "pest --coverage",
         "check": [
             "@lint:check",

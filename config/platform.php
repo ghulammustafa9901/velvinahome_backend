@@ -10,42 +10,23 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'name' => env('PLATFORM_NAME', 'Commerce Platform'),
-
-    // The landlord panel is served on this host only. Every other host must resolve to a
-    // tenant domain or 404.
-    'host' => env('PLATFORM_HOST', 'platform.localhost'),
+    // Hosts (ADR-0002). Empty = answer on any host. In production the admin and the API live on
+    // their own subdomains so each gets its own WAF rules.
+    'admin_domain' => env('ADMIN_DOMAIN'),
 
     /*
     |--------------------------------------------------------------------------
-    | Topology (spec §4.3)
-    |--------------------------------------------------------------------------
-    |
-    | shared:    one installation, many tenants, resolved per request by hostname.
-    | dedicated: this installation serves exactly one tenant, pinned by id. The same
-    |            bootstrappers run, so tenant-aware behaviour is identical by construction.
-    |
-    */
-
-    'topology' => env('TENANCY_TOPOLOGY', 'shared'),
-
-    'pinned_tenant' => env('TENANCY_PINNED_TENANT'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Tenant database provisioning (docs/architecture/database-roles.md)
+    | Backups (spec §9)
     |--------------------------------------------------------------------------
     */
 
-    'provisioning' => [
-        'database_prefix' => env('TENANT_DB_NAME_PREFIX', 'tenant_'),
-        'role_prefix' => env('TENANT_DB_ROLE_PREFIX', 'tenant_'),
-        'backup_role' => env('DB_BACKUP_ROLE', 'backup_reader'),
+    'backup' => [
+        'role' => env('DB_BACKUP_ROLE', 'backup_reader'),
         'pg_dump_binary' => env('PG_DUMP_BINARY', 'pg_dump'),
         'pg_restore_binary' => env('PG_RESTORE_BINARY', 'pg_restore'),
-        // How many nightly exports per brand stay on disk (tenants:backup prunes the rest).
-        'export_retention' => (int) env('TENANT_EXPORT_RETENTION', 14),
-        'export_disk' => env('TENANT_EXPORT_DISK', 'local'),
+        // How many nightly dumps stay on disk (older ones are pruned).
+        'retention' => (int) env('BACKUP_RETENTION', 14),
+        'disk' => env('BACKUP_DISK', 'local'),
     ],
 
     /*
@@ -76,14 +57,6 @@ return [
     'passwords' => [
         // Have I Been Pwned k-anonymity check. Disabled only in the test suite.
         'check_breached' => (bool) env('PASSWORD_BREACH_CHECK', true),
-    ],
-
-    'impersonation' => [
-        'ttl_minutes' => (int) env('IMPERSONATION_TTL_MINUTES', 30),
-    ],
-
-    'brand_switch' => [
-        'ttl_seconds' => (int) env('BRAND_SWITCH_TTL_SECONDS', 60),
     ],
 
     /*

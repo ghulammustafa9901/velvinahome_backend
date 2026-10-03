@@ -12,18 +12,15 @@ use InvalidArgumentException;
 use Modules\Inventory\Actions\ExpireReservations;
 use Modules\Inventory\Actions\ReconcileInventory;
 use Modules\Inventory\Actions\SnapshotInventory;
-use Modules\Support\Queue\TenantAware;
 
 /**
- * Scheduled inventory work for one tenant (spec §6.11), fanned out per active tenant by the
- * landlord scheduler. A thin caller: each task is an Action.
+ * Scheduled inventory work (spec §6.11). A thin caller: each task is an Action.
  */
 final class RunInventoryMaintenance implements ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;
     use Queueable;
-    use TenantAware;
 
     public const TASKS = ['expire-reservations', 'reconcile', 'snapshot'];
 

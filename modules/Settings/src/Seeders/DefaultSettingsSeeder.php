@@ -6,7 +6,6 @@ namespace Modules\Settings\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
-use Modules\Platform\Contracts\TenantDirectory;
 use Modules\Settings\Models\Setting;
 use Modules\Settings\Support\DatabaseTenantSettings;
 use Modules\Settings\Support\SettingsFeatureFlags;
@@ -19,23 +18,22 @@ final class DefaultSettingsSeeder extends Seeder
 {
     public function run(): void
     {
-        $tenant = tenant();
-        $name = $tenant?->getAttribute('name') ?? config('app.name');
+        $name = (string) config('app.name');
 
         $defaults = [
             'store' => [
                 'name' => $name,
                 'url' => $this->storefrontUrl(),
                 'logo' => null,
-                'currency' => $tenant?->getAttribute('default_currency') ?? 'PKR',
-                'timezone' => $tenant?->getAttribute('default_timezone') ?? 'Asia/Karachi',
-                'locale' => $tenant?->getAttribute('default_locale') ?? 'en',
+                'currency' => 'PKR',
+                'timezone' => 'Asia/Karachi',
+                'locale' => 'en',
                 'country' => 'PK',
                 'contact_email' => null,
                 'contact_phone' => null,
             ],
             'theme' => [
-                'id' => $tenant?->getAttribute('theme_id') ?? 'default',
+                'id' => 'default',
                 'tokens' => (object) [],
             ],
             'tax' => [
@@ -72,10 +70,6 @@ final class DefaultSettingsSeeder extends Seeder
     {
         $configured = config('platform.storefront.url');
 
-        if (is_string($configured) && $configured !== '') {
-            return rtrim($configured, '/');
-        }
-
-        return app(TenantDirectory::class)->storefrontUrl();
+        return is_string($configured) && $configured !== '' ? rtrim($configured, '/') : null;
     }
 }

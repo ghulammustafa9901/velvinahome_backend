@@ -6,87 +6,58 @@ use Illuminate\Support\Str;
 
 /*
 |--------------------------------------------------------------------------
-| Database connections (spec §4, §6.3, docs/architecture/database-roles.md)
+| Database connections (spec §6.3, docs/architecture/database-roles.md)
 |--------------------------------------------------------------------------
 |
-| PostgreSQL only. Every connection here maps to exactly one PostgreSQL role, because the
-| privilege model — not application discipline — is what makes tenant isolation real:
+| PostgreSQL only, one database per installation. Each connection maps to exactly one
+| PostgreSQL role, because the privilege model — not application discipline — is what keeps
+| ledgers append-only and the schema out of the application's reach:
 |
-|   landlord           landlord_app          DML on the landlord DB, the central default
-|   landlord_migrator  landlord_migrator     owns the landlord schema; deploys only
-|   provisioner        platform_provisioner  CREATEDB/CREATEROLE, never a superuser
-|   tenant_template    (none)                host/port/options every tenant connection copies
-|   tenant             tenant_<slug>_app     created at runtime once a tenant is resolved
-|   tenant_migrator    tenant_<slug>_migrator created at runtime by tenant migrations only
-|
-| `tenant` and `tenant_migrator` are never declared here: they are built from the encrypted
-| credentials in the landlord `tenant_databases` table, so a tenant connection cannot exist
-| before a tenant has been resolved.
+|   pgsql           store_app        DML only; serves every request, job and command
+|   pgsql_migrator  store_migrator   owns the schema; used by `app:migrate` during deploys
 |
 */
 
 $pgsql = static fn (array $overrides): array => array_merge([
     'driver' => 'pgsql',
     'url' => null,
-    'host' => env('DB_LANDLORD_HOST', '127.0.0.1'),
-    'port' => env('DB_LANDLORD_PORT', '5432'),
+    'host' => env('DB_HOST', '127.0.0.1'),
+    'port' => env('DB_PORT', '5432'),
+    'database' => env('DB_DATABASE', 'store'),
     'charset' => 'utf8',
     'prefix' => '',
     'prefix_indexes' => true,
     'search_path' => 'public',
-    'sslmode' => env('DB_LANDLORD_SSLMODE', 'prefer'),
+    'sslmode' => env('DB_SSLMODE', 'prefer'),
 ], $overrides);
 
-// Runtime connections — the landlord and tenant application roles — go through PgBouncer in
-// transaction mode when DB_POOLER_HOST is set (ADR-0001). Without it every request starts a
-// fresh PostgreSQL backend: a connect plus cold catalog caches on every query
-// (docs/performance/load-test.md). Migration and provisioning roles always connect directly:
-// transactional DDL needs a session.
+// Application traffic goes through PgBouncer in transaction mode when DB_POOLER_HOST is set.
+// Without it every request starts a fresh PostgreSQL backend: a connect plus cold catalog
+// caches on every query (docs/performance/load-test.md). The migration role always connects
+// directly: transactional DDL needs a session.
 $pooler = env('DB_POOLER_HOST') ? ['host' => env('DB_POOLER_HOST'), 'port' => env('DB_POOLER_PORT', '6432')] : [];
 
 return [
 
-    'default' => env('DB_CONNECTION', 'landlord'),
+    'default' => env('DB_CONNECTION', 'pgsql'),
 
     'pooler' => $pooler,
 
     'connections' => [
 
-        'landlord' => $pgsql([
+        'pgsql' => $pgsql([
             ...$pooler,
-            'database' => env('DB_LANDLORD_DATABASE', 'platform_landlord'),
-            'username' => env('DB_LANDLORD_USERNAME', 'landlord_app'),
-            'password' => env('DB_LANDLORD_PASSWORD', ''),
+            'username' => env('DB_USERNAME', 'store_app'),
+            'password' => env('DB_PASSWORD', ''),
         ]),
 
-        'landlord_migrator' => $pgsql([
-            'database' => env('DB_LANDLORD_DATABASE', 'platform_landlord'),
-            'username' => env('DB_LANDLORD_MIGRATOR_USERNAME', 'landlord_migrator'),
-            'password' => env('DB_LANDLORD_MIGRATOR_PASSWORD', ''),
-        ]),
-
-        // Connects to the maintenance database only; tenant databases are created from here.
-        'provisioner' => $pgsql([
-            'host' => env('DB_PROVISIONER_HOST', env('DB_LANDLORD_HOST', '127.0.0.1')),
-            'port' => env('DB_PROVISIONER_PORT', env('DB_LANDLORD_PORT', '5432')),
-            'database' => env('DB_PROVISIONER_DATABASE', 'postgres'),
-            'username' => env('DB_PROVISIONER_USERNAME', 'platform_provisioner'),
-            'password' => env('DB_PROVISIONER_PASSWORD', ''),
-        ]),
-
-        // Never connected to directly. Tenant connections are this plus the tenant's own
-        // database name and role credentials.
-        'tenant_template' => $pgsql([
-            'host' => env('DB_TENANT_HOST', env('DB_LANDLORD_HOST', '127.0.0.1')),
-            'port' => env('DB_TENANT_PORT', env('DB_LANDLORD_PORT', '5432')),
-            'database' => null,
-            'username' => null,
-            'password' => null,
-            'sslmode' => env('DB_TENANT_SSLMODE', env('DB_LANDLORD_SSLMODE', 'prefer')),
+        'pgsql_migrator' => $pgsql([
+            'username' => env('DB_MIGRATOR_USERNAME', 'store_migrator'),
+            'password' => env('DB_MIGRATOR_PASSWORD', ''),
         ]),
 
         // Only for the Support module's own test fixtures, which exercise pure model
-        // behaviour without any tenancy.
+        // behaviour without a database server.
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => null,
@@ -109,7 +80,8 @@ return [
     |
     | predis, not phpredis: it is pure PHP and so behaves the same on every developer
     | machine, including Windows (ADR-0009). Separate logical databases keep queues, cache
-    | and sessions from ever sharing a keyspace.
+    | and sessions from ever sharing a keyspace; REDIS_PREFIX keeps two installations that
+    | share a Redis server apart.
     |
     */
 
@@ -119,7 +91,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'platform')).':'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'store')).':'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Illuminate\Support\Str;
 use Tests\Support\TestCommerce;
-use Tests\Support\TestPlatform;
 
 /*
 | Carts (spec §5, §8): guest carts are reachable only with their secret token, customer carts
@@ -12,8 +11,7 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    $this->api = 'http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/api/v1';
-    $this->brand = TestPlatform::brand(TestPlatform::BRAND_B);
+    $this->api = 'http://localhost/api/v1';
 });
 
 function customerToken(object $test): string
@@ -27,7 +25,7 @@ function customerToken(object $test): string
 }
 
 it('creates a guest cart whose token is shown once and required afterwards', function (): void {
-    $variant = $this->brand->run(fn () => TestCommerce::stockedVariant(80_000, 3));
+    $variant = TestCommerce::stockedVariant(80_000, 3);
 
     $created = $this->postJson($this->api.'/carts')->assertCreated()->assertHeader('Cache-Control', 'no-store, private');
     $cart = (string) $created->json('data.id');
@@ -47,13 +45,10 @@ it('creates a guest cart whose token is shown once and required afterwards', fun
     // Default headers persist between requests in a test; start clean.
     $this->flushHeaders()->getJson($this->api.'/carts/'.$cart)->assertNotFound();
     $this->withHeader('X-Cart-Token', Str::random(48))->getJson($this->api.'/carts/'.$cart)->assertNotFound();
-    $this->withHeader('X-Cart-Token', $token)
-        ->getJson('http://'.TestPlatform::apiHost(TestPlatform::BRAND_C).'/api/v1/carts/'.$cart)
-        ->assertNotFound();
 });
 
 it('refuses more than is in stock and removes a line set to zero', function (): void {
-    $variant = $this->brand->run(fn () => TestCommerce::stockedVariant(80_000, 2));
+    $variant = TestCommerce::stockedVariant(80_000, 2);
     $created = $this->postJson($this->api.'/carts')->assertCreated();
     $cart = (string) $created->json('data.id');
     $this->withHeader('X-Cart-Token', (string) $created->json('data.token'));
@@ -72,7 +67,7 @@ it('refuses more than is in stock and removes a line set to zero', function (): 
 });
 
 it('keeps a customer cart private to that customer', function (): void {
-    $variant = $this->brand->run(fn () => TestCommerce::stockedVariant(80_000, 5));
+    $variant = TestCommerce::stockedVariant(80_000, 5);
     $owner = customerToken($this);
     $intruder = customerToken($this);
 
@@ -86,7 +81,7 @@ it('keeps a customer cart private to that customer', function (): void {
 });
 
 it('merges a guest cart into the customer cart on sign-in', function (): void {
-    [$a, $b] = $this->brand->run(fn () => [TestCommerce::stockedVariant(80_000, 9), TestCommerce::stockedVariant(40_000, 9)]);
+    [$a, $b] = [TestCommerce::stockedVariant(80_000, 9), TestCommerce::stockedVariant(40_000, 9)];
     $customer = customerToken($this);
 
     $mine = (string) $this->withToken($customer)->postJson($this->api.'/carts')->json('data.id');

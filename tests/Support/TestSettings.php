@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Support;
 
-use Modules\Platform\Models\Tenant;
 use Modules\Settings\Actions\UpdateSetting;
 
 /**
@@ -12,15 +11,15 @@ use Modules\Settings\Actions\UpdateSetting;
  */
 final class TestSettings
 {
-    public static function feature(Tenant $brand, string $flag, bool $enabled): void
+    public static function feature(string $flag, bool $enabled): void
     {
-        $brand->run(fn () => app(UpdateSetting::class)->handle('features', $flag, $enabled));
+        app(UpdateSetting::class)->handle('features', $flag, $enabled);
     }
 
-    public static function set(Tenant $brand, string $key, mixed $value): void
+    public static function set(string $key, mixed $value): void
     {
         [$group, $name] = explode('.', $key, 2);
 
-        $brand->run(fn () => app(UpdateSetting::class)->handle($group, $name, $value));
+        app(UpdateSetting::class)->handle($group, $name, $value);
     }
 }

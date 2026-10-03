@@ -17,7 +17,6 @@ use Modules\Payments\Models\Payment;
 use Modules\Pricing\Actions\SaveCoupon;
 use Modules\Pricing\Data\CouponData;
 use Tests\Support\TestCommerce;
-use Tests\Support\TestPlatform;
 
 /*
 | Phase 3 exit criteria: a customer checks out via COD and manual transfer through the API;
@@ -25,8 +24,7 @@ use Tests\Support\TestPlatform;
 */
 
 beforeEach(function (): void {
-    $this->api = 'http://'.TestPlatform::apiHost(TestPlatform::BRAND_B).'/api/v1';
-    $this->brand = TestPlatform::brand(TestPlatform::BRAND_B);
+    $this->api = 'http://localhost/api/v1';
 });
 
 /**
@@ -63,7 +61,7 @@ function orderBody(string $cart, int $expectedTotal, array $overrides = []): arr
 
 it('checks out a guest cart with Cash on Delivery end to end', function (): void {
     Mail::fake();
-    $variant = $this->brand->run(fn () => TestCommerce::stockedVariant(120_000, 5));
+    $variant = TestCommerce::stockedVariant(120_000, 5);
     [$cart, $token] = guestCart($this, $variant, 2);
 
     $quote = $this->withHeader('X-Cart-Token', $token)->postJson($this->api.'/checkout/quote', [
@@ -85,23 +83,18 @@ it('checks out a guest cart with Cash on Delivery end to end', function (): void
 
     $orderId = (string) $placed->json('data.order_id');
     $accessToken = (string) $placed->json('data.access_token');
-
-    $this->brand->run(function () use ($orderId, $variant, $cart): void {
-        $order = Order::query()->where('ulid', $orderId)->firstOrFail();
-
-        expect($order->status::getMorphClass())->toBe('awaiting_confirmation')
-            ->and($order->payment_status)->toBe('unpaid')
-            ->and($order->total->amount)->toBe(265_000)
-            ->and($order->items)->toHaveCount(1)
-            ->and($order->items->first()?->unit_price->amount)->toBe(120_000);
-
-        // ADR-0010: a COD sale is committed at placement.
-        expect(TestCommerce::stock($variant))->toBe(['on_hand' => 3, 'reserved' => 0])
-            ->and((int) InventoryMovement::query()->where('variant_id', $variant->id)->where('type', 'sale')->sum('quantity'))->toBe(-2)
-            ->and(Payment::query()->where('order_ulid', $orderId)->value('status'))->toBe('pending')
-            ->and(Cart::query()->where('ulid', $cart)->value('status'))->toBe('converted')
-            ->and(OutboxMessage::query()->where('event_type', 'order.placed')->where('payload->order_ulid', $orderId)->exists())->toBeTrue();
-    });
+    $order = Order::query()->where('ulid', $orderId)->firstOrFail();
+    expect($order->status::getMorphClass())->toBe('awaiting_confirmation')
+        ->and($order->payment_status)->toBe('unpaid')
+        ->and($order->total->amount)->toBe(265_000)
+        ->and($order->items)->toHaveCount(1)
+        ->and($order->items->first()?->unit_price->amount)->toBe(120_000);
+    // ADR-0010: a COD sale is committed at placement.
+    expect(TestCommerce::stock($variant))->toBe(['on_hand' => 3, 'reserved' => 0])
+        ->and((int) InventoryMovement::query()->where('variant_id', $variant->id)->where('type', 'sale')->sum('quantity'))->toBe(-2)
+        ->and(Payment::query()->where('order_ulid', $orderId)->value('status'))->toBe('pending')
+        ->and(Cart::query()->where('ulid', $cart)->value('status'))->toBe('converted')
+        ->and(OutboxMessage::query()->where('event_type', 'order.placed')->where('payload->order_ulid', $orderId)->exists())->toBeTrue();
 
     // The order confirmation email went out after commit.
     Mail::assertSent(OrderMail::class, fn (OrderMail $mail): bool => $mail->order['id'] === $orderId);
@@ -114,8 +107,8 @@ it('checks out a guest cart with Cash on Delivery end to end', function (): void
         ->assertJsonPath('data.timeline.0.status', 'awaiting_confirmation');
 });
 
-it('never shows an order without its token, or on another brand', function (): void {
-    $variant = $this->brand->run(fn () => TestCommerce::stockedVariant(50_000, 3));
+it('never shows an order without its token', function (): void {
+    $variant = TestCommerce::stockedVariant(50_000, 3);
     [$cart, $token] = guestCart($this, $variant);
 
     $placed = $this->withHeaders(['X-Cart-Token' => $token, 'Idempotency-Key' => TestCommerce::idempotencyKey()])
@@ -127,15 +120,11 @@ it('never shows an order without its token, or on another brand', function (): v
 
     $this->getJson($this->api.'/orders/'.$orderId)->assertNotFound()->assertJsonPath('error.code', 'not_found');
     $this->withHeader('X-Order-Token', 'wrong-'.$accessToken)->getJson($this->api.'/orders/'.$orderId)->assertNotFound();
-
-    // Sibling brand of the same company: the order does not exist there at all.
-    $this->withHeader('X-Order-Token', $accessToken)
-        ->getJson('http://'.TestPlatform::apiHost(TestPlatform::BRAND_C).'/api/v1/orders/'.$orderId)
-        ->assertNotFound();
+    $this->withHeader('X-Order-Token', $accessToken)->getJson($this->api.'/orders/'.$orderId)->assertOk();
 });
 
 it('replays the same order for a retried Idempotency-Key and refuses a different body', function (): void {
-    $variant = $this->brand->run(fn () => TestCommerce::stockedVariant(50_000, 3));
+    $variant = TestCommerce::stockedVariant(50_000, 3);
     [$cart, $token] = guestCart($this, $variant);
     $key = TestCommerce::idempotencyKey();
     $body = orderBody($cart, 75_000);
@@ -155,14 +144,12 @@ it('replays the same order for a retried Idempotency-Key and refuses a different
         ->assertStatus(409)
         ->assertJsonPath('error.code', 'idempotency_key_reused');
 
-    $this->brand->run(function () use ($variant, $first): void {
-        expect(Order::query()->where('ulid', $first->json('data.order_id'))->count())->toBe(1)
-            ->and(TestCommerce::stock($variant)['on_hand'])->toBe(2);
-    });
+    expect(Order::query()->where('ulid', $first->json('data.order_id'))->count())->toBe(1)
+        ->and(TestCommerce::stock($variant)['on_hand'])->toBe(2);
 });
 
 it('requires an Idempotency-Key to place an order', function (): void {
-    $variant = $this->brand->run(fn () => TestCommerce::stockedVariant(50_000, 3));
+    $variant = TestCommerce::stockedVariant(50_000, 3);
     [$cart, $token] = guestCart($this, $variant);
 
     $this->withHeader('X-Cart-Token', $token)
@@ -172,7 +159,7 @@ it('requires an Idempotency-Key to place an order', function (): void {
 });
 
 it('refuses a stale total with 409 price_changed and writes nothing', function (): void {
-    $variant = $this->brand->run(fn () => TestCommerce::stockedVariant(50_000, 3));
+    $variant = TestCommerce::stockedVariant(50_000, 3);
     [$cart, $token] = guestCart($this, $variant);
 
     $this->withHeaders(['X-Cart-Token' => $token, 'Idempotency-Key' => TestCommerce::idempotencyKey()])
@@ -181,14 +168,12 @@ it('refuses a stale total with 409 price_changed and writes nothing', function (
         ->assertJsonPath('error.code', 'price_changed')
         ->assertJsonPath('error.details.total.amount', 75_000);
 
-    $this->brand->run(function () use ($variant, $cart): void {
-        expect(TestCommerce::stock($variant))->toBe(['on_hand' => 3, 'reserved' => 0])
-            ->and(Cart::query()->where('ulid', $cart)->value('status'))->toBe('active');
-    });
+    expect(TestCommerce::stock($variant))->toBe(['on_hand' => 3, 'reserved' => 0])
+        ->and(Cart::query()->where('ulid', $cart)->value('status'))->toBe('active');
 });
 
 it('refuses with 409 stock_unavailable when stock ran out after the cart was filled, leaving nothing behind', function (): void {
-    $variant = $this->brand->run(fn () => TestCommerce::stockedVariant(50_000, 2));
+    $variant = TestCommerce::stockedVariant(50_000, 2);
     [$cartA, $tokenA] = guestCart($this, $variant, 2);
     [$cartB, $tokenB] = guestCart($this, $variant, 2);
 
@@ -200,15 +185,13 @@ it('refuses with 409 stock_unavailable when stock ran out after the cart was fil
         ->assertStatus(409)
         ->assertJsonPath('error.code', 'stock_unavailable');
 
-    $this->brand->run(function () use ($variant, $cartB): void {
-        expect(TestCommerce::stock($variant))->toBe(['on_hand' => 0, 'reserved' => 0])
-            ->and(StockReservation::query()->where('variant_id', $variant->id)->count())->toBe(1)
-            ->and(Cart::query()->where('ulid', $cartB)->value('status'))->toBe('active');
-    });
+    expect(TestCommerce::stock($variant))->toBe(['on_hand' => 0, 'reserved' => 0])
+        ->and(StockReservation::query()->where('variant_id', $variant->id)->count())->toBe(1)
+        ->and(Cart::query()->where('ulid', $cartB)->value('status'))->toBe('active');
 });
 
 it('refuses COD-only mistakes and unknown payment methods', function (): void {
-    $variant = $this->brand->run(fn () => TestCommerce::stockedVariant(50_000, 2));
+    $variant = TestCommerce::stockedVariant(50_000, 2);
     [$cart, $token] = guestCart($this, $variant);
 
     $this->withHeaders(['X-Cart-Token' => $token, 'Idempotency-Key' => TestCommerce::idempotencyKey()])
@@ -219,11 +202,8 @@ it('refuses COD-only mistakes and unknown payment methods', function (): void {
 
 it('applies a coupon, records its use, and gives it back on cancellation', function (): void {
     $code = 'SAVE'.strtoupper(Str::random(6));
-    $variant = $this->brand->run(function () use ($code) {
-        app(SaveCoupon::class)->handle(null, new CouponData(code: $code, discountType: 'percentage', value: 1000, usageLimit: 1));
-
-        return TestCommerce::stockedVariant(100_000, 5);
-    });
+    app(SaveCoupon::class)->handle(null, new CouponData(code: $code, discountType: 'percentage', value: 1000, usageLimit: 1));
+    $variant = TestCommerce::stockedVariant(100_000, 5);
 
     [$cart, $token] = guestCart($this, $variant, 2);
     $this->withHeader('X-Cart-Token', $token)->postJson($this->api.'/carts/'.$cart.'/coupon', ['code' => $code])
@@ -240,27 +220,18 @@ it('applies a coupon, records its use, and gives it back on cancellation', funct
     [$cart2, $token2] = guestCart($this, $variant);
     $this->withHeader('X-Cart-Token', $token2)->postJson($this->api.'/carts/'.$cart2.'/coupon', ['code' => $code])
         ->assertUnprocessable();
-
-    $this->brand->run(function () use ($placed, $code): void {
-        $orderId = (string) $placed->json('data.order_id');
-        $order = Order::query()->where('ulid', $orderId)->firstOrFail();
-
-        expect($order->discount->amount)->toBe(20_000)
-            ->and($order->items->sum(fn ($item): int => $item->total->amount) + $order->shipping->amount)->toBe($order->total->amount);
-
-        app(Modules\Orders\Actions\CancelOrder::class)->handle($orderId, 'Customer changed their mind');
-
-        expect(Modules\Pricing\Models\Coupon::query()->where('code', $code)->value('used_count'))->toBe(0);
-    });
+    $orderId = (string) $placed->json('data.order_id');
+    $order = Order::query()->where('ulid', $orderId)->firstOrFail();
+    expect($order->discount->amount)->toBe(20_000)
+        ->and($order->items->sum(fn ($item): int => $item->total->amount) + $order->shipping->amount)->toBe($order->total->amount);
+    app(Modules\Orders\Actions\CancelOrder::class)->handle($orderId, 'Customer changed their mind');
+    expect(Modules\Pricing\Models\Coupon::query()->where('code', $code)->value('used_count'))->toBe(0);
 });
 
 it('takes a manual transfer order through receipt upload and staff verification', function (): void {
     Mail::fake();
-    $variant = $this->brand->run(function () {
-        TestCommerce::enableTransfers();
-
-        return TestCommerce::stockedVariant(300_000, 4);
-    });
+    TestCommerce::enableTransfers();
+    $variant = TestCommerce::stockedVariant(300_000, 4);
     [$cart, $token] = guestCart($this, $variant);
 
     // Rs 3,000 + Rs 250 shipping.
@@ -272,7 +243,7 @@ it('takes a manual transfer order through receipt upload and staff verification'
     $accessToken = (string) $placed->json('data.access_token');
 
     // Prepaid: the stock is held, not yet sold.
-    $this->brand->run(fn () => expect(TestCommerce::stock($variant))->toBe(['on_hand' => 4, 'reserved' => 1]));
+    expect(TestCommerce::stock($variant))->toBe(['on_hand' => 4, 'reserved' => 1]);
 
     $this->withHeader('X-Order-Token', $accessToken)->getJson($this->api.'/orders/'.$orderId)
         ->assertOk()
@@ -285,46 +256,33 @@ it('takes a manual transfer order through receipt upload and staff verification'
         ->post($this->api.'/orders/'.$orderId.'/payment-proof', ['receipt' => $receipt, 'reference' => 'TRX-123'], ['Accept' => 'application/json'])
         ->assertOk()
         ->assertJsonPath('data.payment.status', 'awaiting_verification');
-
-    $this->brand->run(function () use ($orderId, $variant): void {
-        app(Payments::class)->reviewTransfer($orderId, true, 'BANK-REF-1', null, null);
-
-        $order = Order::query()->where('ulid', $orderId)->firstOrFail();
-
-        expect($order->status::getMorphClass())->toBe('confirmed')
-            ->and($order->payment_status)->toBe('paid')
-            ->and(TestCommerce::stock($variant))->toBe(['on_hand' => 3, 'reserved' => 0]);
-    });
+    app(Payments::class)->reviewTransfer($orderId, true, 'BANK-REF-1', null, null);
+    $order = Order::query()->where('ulid', $orderId)->firstOrFail();
+    expect($order->status::getMorphClass())->toBe('confirmed')
+        ->and($order->payment_status)->toBe('paid')
+        ->and(TestCommerce::stock($variant))->toBe(['on_hand' => 3, 'reserved' => 0]);
 
     Mail::assertSent(OrderMail::class, fn (OrderMail $mail): bool => $mail->order['id'] === $orderId && str_contains($mail->subjectLine, 'confirmed'));
 });
 
 it('cancels a transfer order whose receipt is rejected and frees its stock', function (): void {
-    $variant = $this->brand->run(function () {
-        TestCommerce::enableTransfers();
-
-        return TestCommerce::stockedVariant(100_000, 2);
-    });
+    TestCommerce::enableTransfers();
+    $variant = TestCommerce::stockedVariant(100_000, 2);
     [$cart, $token] = guestCart($this, $variant);
 
     $orderId = (string) $this->withHeaders(['X-Cart-Token' => $token, 'Idempotency-Key' => TestCommerce::idempotencyKey()])
         ->postJson($this->api.'/checkout/orders', orderBody($cart, 125_000, ['payment_method' => 'manual_transfer']))
         ->assertCreated()
         ->json('data.order_id');
-
-    $this->brand->run(function () use ($orderId, $variant): void {
-        app(Payments::class)->reviewTransfer($orderId, false, null, 'No money received', null);
-
-        $order = Order::query()->where('ulid', $orderId)->firstOrFail();
-
-        expect($order->status::getMorphClass())->toBe('cancelled')
-            ->and($order->payment_status)->toBe('voided')
-            ->and(TestCommerce::stock($variant))->toBe(['on_hand' => 2, 'reserved' => 0]);
-    });
+    app(Payments::class)->reviewTransfer($orderId, false, null, 'No money received', null);
+    $order = Order::query()->where('ulid', $orderId)->firstOrFail();
+    expect($order->status::getMorphClass())->toBe('cancelled')
+        ->and($order->payment_status)->toBe('voided')
+        ->and(TestCommerce::stock($variant))->toBe(['on_hand' => 2, 'reserved' => 0]);
 });
 
 it('lists a signed-in customer\'s orders and hides them from other customers', function (): void {
-    $variant = $this->brand->run(fn () => TestCommerce::stockedVariant(50_000, 3));
+    $variant = TestCommerce::stockedVariant(50_000, 3);
     $email = 'cust-'.Str::lower(Str::random(8)).'@example.test';
 
     $this->postJson($this->api.'/auth/register', ['email' => $email, 'password' => 'Sufficiently-long-9', 'first_name' => 'Sana'])->assertCreated();

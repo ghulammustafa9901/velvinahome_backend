@@ -30,8 +30,8 @@ return [
     |
     */
 
-    // Only on the platform host: without this Horizon would answer on every tenant host.
-    'domain' => env('HORIZON_DOMAIN', env('PLATFORM_HOST', 'platform.localhost')),
+    // The admin host (ADMIN_DOMAIN); empty = whichever host the application answers on.
+    'domain' => env('ADMIN_DOMAIN') ?: null,
 
     /*
     |--------------------------------------------------------------------------
@@ -86,7 +86,8 @@ return [
     |
     */
 
-    'middleware' => ['web', Modules\Platform\Http\Middleware\EnsurePlatformHost::class, 'auth:platform'],
+    // Signed-in staff only; the viewHorizon gate (AppServiceProvider) then requires system.monitor.
+    'middleware' => ['web', 'auth:staff'],
 
     /*
     |--------------------------------------------------------------------------
@@ -199,9 +200,8 @@ return [
     |
     */
 
-    // Shared workers for every tenant (spec §4.4): correctness comes from the tenant id in each
-    // payload, not from per-tenant workers. `critical` (payments, webhooks) gets its own
-    // supervisor so a flood of search or media work can never starve it.
+    // `critical` (payments, webhooks) gets its own supervisor so a flood of search or media
+    // work can never starve it.
     'defaults' => [
         'critical' => [
             'connection' => 'redis',
@@ -224,16 +224,6 @@ return [
             'memory' => 256,
             'tries' => 3,
             'timeout' => 120,
-            'nice' => 0,
-        ],
-        'central' => [
-            'connection' => 'central',
-            'queue' => ['central'],
-            'balance' => 'simple',
-            'maxProcesses' => 1,
-            'memory' => 128,
-            'tries' => 3,
-            'timeout' => 300,
             'nice' => 0,
         ],
     ],

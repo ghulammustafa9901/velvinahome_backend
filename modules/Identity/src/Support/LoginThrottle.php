@@ -7,9 +7,8 @@ namespace Modules\Identity\Support;
 use Illuminate\Cache\RateLimiter;
 
 /**
- * Per-account and per-IP sign-in throttling (spec §6.2, §8). Keys always include the tenant,
- * so failures on one brand never lock an account out of another, and one brand's attacker
- * traffic cannot exhaust another's budget.
+ * Per-account and per-IP sign-in throttling (spec §6.2, §8), per population (staff and
+ * customers never share a budget).
  */
 final class LoginThrottle
 {
@@ -42,17 +41,12 @@ final class LoginThrottle
 
     private function accountKey(string $population, string $email): string
     {
-        return sprintf('login:%s:%s:account:%s', $this->tenantKey(), $population, sha1(strtolower($email)));
+        return sprintf('login:%s:account:%s', $population, sha1(strtolower($email)));
     }
 
     private function ipKey(string $population, string $ip): string
     {
-        return sprintf('login:%s:%s:ip:%s', $this->tenantKey(), $population, $ip);
-    }
-
-    private function tenantKey(): string
-    {
-        return tenancy()->initialized ? (string) tenant()?->getTenantKey() : 'central';
+        return sprintf('login:%s:ip:%s', $population, $ip);
     }
 
     private function maxAttempts(): int
