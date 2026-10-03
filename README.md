@@ -1,43 +1,41 @@
 # platform-api
 
-Laravel modular monolith behind a multi-brand commerce platform: Storefront API, tenant admin
-panel, platform (landlord) control panel, queue workers and tenant lifecycle tooling.
+Laravel modular monolith behind one e-commerce store: Storefront API v1, Filament admin panel,
+queue workers, scheduler and install/backup tooling.
 
-**One tenant = one brand = one website = one PostgreSQL database.**
+**One installation = one store = one PostgreSQL database and one `.env`** (ADR-0020). The same
+codebase is installed separately for each client; store name, domain, logo, currency, timezone,
+theme and payment/courier credentials come from admin settings (secrets from `.env`), never from
+code. Multi-tenancy was removed on purpose and must not come back —
+`tests/Architecture/NoTenancyTest.php` enforces it.
 
-> **Current status: Phases 1–4 built; Storefront API v1 frozen. Phase 5 (Next.js storefront) next.**
-> Tenancy, identity, both admin panels, settings/flags and outbox (Phase 1); catalog,
-> inventory ledger, Typesense search, media and the storefront catalog API (Phase 2);
-> carts, pricing and coupons, shipping, tax, checkout, orders, COD + manual-transfer payments
-> and order emails (Phase 3); content pages and menus, reviews, wishlist, account recovery,
-> the committed OpenAPI contract with contract tests and a generated TypeScript client (Phase 4).
-> See [docs/phase-4-checkpoint.md](docs/phase-4-checkpoint.md) and [docs/PROGRESS.md](docs/PROGRESS.md).
+> **Status:** Phases 1–7 built; Storefront API v1 frozen; single-store conversion done.
+> Phase 7 waits for owner sign-off and the hosting decision. See [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Documentation
 
 | Document | Purpose |
 |---|---|
-| [docs/phase-1-checkpoint.md](docs/phase-1-checkpoint.md) | What Phase 1 delivered, deviations, open questions |
-| [docs/phase-2-checkpoint.md](docs/phase-2-checkpoint.md) | What Phase 2 delivered |
-| [docs/phase-3-checkpoint.md](docs/phase-3-checkpoint.md) | What Phase 3 delivered, deferred items |
-| [docs/phase-4-checkpoint.md](docs/phase-4-checkpoint.md) | What Phase 4 delivered; the v1 freeze |
-| [docs/api/openapi-v1.json](docs/api/openapi-v1.json) | **The Storefront API v1 contract** (`php artisan api:contract --check`) |
+| [docs/PROGRESS.md](docs/PROGRESS.md) | Phase and milestone status |
 | [docs/architecture/overview.md](docs/architecture/overview.md) | Components, request lifecycle, layering |
-| [docs/architecture/tenancy.md](docs/architecture/tenancy.md) | Tenant resolution, isolation of every concern, lifecycle, migrations |
+| [docs/architecture/installation.md](docs/architecture/installation.md) | What one installation is; settings vs `.env`; per-installation prefixes |
 | [docs/architecture/modules.md](docs/architecture/modules.md) | Module map and the internal layout every module follows |
-| [docs/architecture/data-model.md](docs/architecture/data-model.md) | Landlord and tenant ERDs, schema conventions, invariants |
+| [docs/architecture/data-model.md](docs/architecture/data-model.md) | ERD, schema conventions, invariants |
 | [docs/architecture/database-roles.md](docs/architecture/database-roles.md) | PostgreSQL roles, privileges, append-only ledger grants |
 | [docs/architecture/api-conventions.md](docs/architecture/api-conventions.md) | REST conventions |
-| [docs/adr/](docs/adr/) | Architecture Decision Records |
-| [docs/runbooks/](docs/runbooks/) | Operational procedures |
+| [docs/api/openapi-v1.json](docs/api/openapi-v1.json) | **The Storefront API v1 contract** (`php artisan api:contract --check`) |
+| [docs/adr/](docs/adr/) | Architecture Decision Records (ADR-0020 is the current baseline) |
+| [docs/runbooks/](docs/runbooks/) | Install, deploy, rollback, backup/restore, secrets, incidents |
+| [docs/go-live-checklist.md](docs/go-live-checklist.md) | What must be true before a store takes real orders |
 
-The requirements live in `Commerce_Platform_Master_Spec.md`. That document is the contract.
+The project brief is `../Ecommerce_Project_Blueprint.md`. Phase plans and checkpoint reports in
+`docs/` are history: their tenant/landlord parts no longer apply.
 
 ## Stack
 
-PHP 8.4 · Laravel 13 · PostgreSQL 17 (one database per tenant) · Redis · Horizon ·
-Filament 5 (two panels) · Sanctum · spatie/laravel-permission, -activitylog, -data ·
-stancl/tenancy 3 (multi-database) · Scramble (OpenAPI) · Pest 4 / Larastan / Pint.
+PHP 8.4 · Laravel 13 · PostgreSQL 17 (+ PgBouncer in production) · Redis · Horizon ·
+Scout + Typesense 30 · Filament 5 · Sanctum · spatie/laravel-permission, -activitylog, -data,
+-medialibrary, -model-states · Scramble (OpenAPI) · PostHog (errors) · Pest 4 / Larastan / Pint.
 
 ## Local setup
 
@@ -53,70 +51,58 @@ services run natively from a portable toolchain instead (ADR-0009):
 powershell -File $env:USERPROFILE\devtools\start-services.ps1
 ```
 
-First-time setup on any machine:
+First-time setup on any machine (details: [docs/runbooks/install-store.md](docs/runbooks/install-store.md)):
 
 ```bash
 composer install
 cp .env.example .env && php artisan key:generate
-# roles + landlord database (run as a PostgreSQL superuser; passwords go into .env)
-psql -U postgres -h 127.0.0.1 -f database/setup/bootstrap-landlord.sql \
-     -v app_password="'...'" -v migrator_password="'...'" \
-     -v provisioner_password="'...'" -v backup_password="'...'"
-php artisan landlord:migrate          # landlord schema, as the migration role
-php artisan platform:seed-demo        # 2 companies, 3 brands, all on *.localhost
-php artisan platform:user you@example.com "Your Name" --role=owner
+# roles + the store database (run as a PostgreSQL superuser; passwords go into .env)
+psql -U postgres -h 127.0.0.1 -f database/setup/bootstrap-database.sql -v db=store \
+     -v app_password="'...'" -v migrator_password="'...'" -v backup_password="'...'"
+php artisan store:install --name="My Store" --url=http://localhost:3000 \
+     --owner-email=you@example.com --owner-name="Your Name"
+php artisan store:seed-demo           # optional: Velvina Home demo catalog (not in production)
 php artisan filament:assets
 ```
 
-Serve locally (browsers resolve `*.localhost` to 127.0.0.1 without a hosts file):
-
-```powershell
-php artisan serve --host=127.0.0.1 --port=8000
-```
-
-| Surface | URL |
+| Surface | URL (with `ADMIN_DOMAIN` empty) |
 |---|---|
-| Platform (landlord) panel | http://platform.localhost:8000 |
-| Tenant admin, demo brands | http://admin.alpha.localhost:8000 · admin.bravo · admin.charlie |
-| Storefront API | http://api.alpha.localhost:8000/api/v1/storefront/config |
-| Horizon / API docs | http://platform.localhost:8000/horizon · /docs/api |
+| Admin panel | http://localhost:8000 |
+| Storefront API | http://localhost:8000/api/v1/storefront/config |
+| Horizon / API docs (Owner, `system.monitor`) | http://localhost:8000/horizon · /docs/api |
+| Health | http://localhost:8000/health |
 
-`bravo` and `charlie` belong to the same company: sign in to one as its owner and the brand
-switcher in the top bar moves you to the other.
+In production set `ADMIN_DOMAIN=admin.<domain>` and serve the API on `api.<domain>`.
 
 ## Commands
 
 | Command | Purpose |
 |---|---|
-| `landlord:migrate` | Landlord migrations as the migration role, plus audit-table lockdown |
-| `company:create {slug} {name}` | Company (landlord record only, no database) |
-| `tenant:create {company} {slug} {name} --storefront=` | Provision a brand end to end; idempotent, re-run to resume after a failure |
-| `tenant:suspend` / `tenant:activate {slug}` | Change a brand's status (suspended → 503) |
-| `tenant:export {slug}` | `pg_dump` + media manifest |
-| `tenant:delete {slug} --confirm={slug}` | Requires a successful backup from the last hour |
-| `tenants:migrate [--tenant=]` | Every tenant, one transaction each; non-zero exit on any failure |
-| `platform:user {email} {name} --role=` | Platform panel user (password shown once) |
-| `platform:seed-demo` | Local demo companies and brands |
-| `platform:seed-demo-catalog` | Sample catalog, stock and synonyms in every demo brand (not in production) |
-| `search:reindex [--tenant=]` | Rebuild brands' Typesense collections from PostgreSQL |
+| `app:migrate [--no-seed]` | All migrations in one transaction as the migration role, ledger lockdown, default seeders |
+| `store:install` | Idempotent first-time setup: migrate, store identity settings, owner account, search collections, launch checklist |
+| `store:seed-demo [--restock]` | Demo store (Velvina Home theme), sample catalog, stock and synonyms — local only |
+| `search:reindex` | Rebuild the Typesense collections from PostgreSQL |
+| `db:backup [--drill]` | `pg_dump` + checksum manifest; `--drill` restores into `<db>_restore_drill` and compares |
+| `secrets:reencrypt` | Re-encrypt every stored secret after an `APP_KEY` rotation |
+| `api:contract --check` / `--write` | Compare / update the committed OpenAPI contract |
 
 ## Quality gates
 
 ```bash
 vendor/bin/pint --test               # formatting
 vendor/bin/phpstan analyse           # Larastan level 8
-vendor/bin/pest --group=architecture # module boundaries and layering
-vendor/bin/pest --group=isolation    # tenant isolation — a release blocker
-vendor/bin/pest                      # full suite (real PostgreSQL + Redis)
+vendor/bin/pest --group=architecture # module boundaries, layering, no tenancy
+vendor/bin/pest                      # full suite (real PostgreSQL, Redis, Typesense)
+php artisan api:contract --check     # API v1 unchanged or additive
 composer audit
 ```
 
-Tests use a separate landlord database (`platform_landlord_test`) and `ptest_`-prefixed tenant
-databases; the three fixture brands are provisioned once and reused across runs.
+Tests use the `store_test` database (and `store_test_restore_drill` for the drill tests).
 
 ## Working rules
 
 - Business logic lives in **Actions**. Controllers, Filament pages, commands and jobs are thin callers.
 - A module never touches another module's tables or models — only its contracts and events.
-- Every feature ships with tests and is tenant-aware from its first line.
+- Nothing store-specific in code: settings for business values, `.env` for secrets and infrastructure.
+- Every feature ships with tests.
 - **Never commit a secret.** `.env.example` carries placeholders only.

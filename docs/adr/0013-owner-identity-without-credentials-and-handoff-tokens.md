@@ -1,6 +1,6 @@
 # ADR-0013: Company owner identity without credentials; hand-off tokens
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) (single-store application, 2026-10-03)
 - **Date:** 2026-09-26
 - **Spec reference:** §4.1a (DEFAULT: multi-brand owner access), §4.9 (FINAL: impersonation)
 

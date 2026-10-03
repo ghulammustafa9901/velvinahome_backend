@@ -1,6 +1,6 @@
 # ADR-0001: Multi-database tenancy with stancl/tenancy
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) (single-store application, 2026-10-03)
 - **Date:** 2026-09-26
 - **Spec reference:** §4 (FINAL), §4.5 (FINAL)
 

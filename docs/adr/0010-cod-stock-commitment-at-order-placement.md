@@ -1,6 +1,6 @@
 # ADR-0010: COD orders commit stock at order placement, not at COD confirmation
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history
 - **Date:** 2026-09-26
 - **Spec reference:** §6.5 rule 3 (FINAL design, but internally inconsistent for COD), §6.4, §1.3
 - **Decided by:** owner delegated the decision after it was raised at the Phase 0 checkpoint (§3.2)

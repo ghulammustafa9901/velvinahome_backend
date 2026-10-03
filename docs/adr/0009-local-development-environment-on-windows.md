@@ -1,6 +1,6 @@
 # ADR-0009: Local development environment on Windows, without Docker
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history
 - **Date:** 2026-09-26
 - **Spec reference:** §2 (FINAL: PHP 8.4+, Docker Compose / Sail), §10 (local environment)
 - **Decided by:** owner delegated environment and technical decisions after the Phase 0 checkpoint

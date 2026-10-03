@@ -8,7 +8,7 @@ use Tests\Support\TestSettings;
 use Tests\Support\TestStore;
 
 /*
-| The store's launch checklist (docs/tenant-onboarding.md): computed from the store's real
+| The store's launch checklist (docs/go-live-checklist.md): computed from the store's real
 | state — its own settings first, then each module's check. A failing check is "not done".
 */
 

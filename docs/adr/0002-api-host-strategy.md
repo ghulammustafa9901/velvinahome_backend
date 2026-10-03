@@ -1,6 +1,6 @@
 # ADR-0002: API host strategy — BFF on the brand domain, plus `api.<brand>`
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history
 - **Date:** 2026-09-26
 - **Spec reference:** §4.2 (**YOUR CALL**, ADR required), §6.1, §7.4
 

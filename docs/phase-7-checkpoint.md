@@ -1,5 +1,10 @@
 # Phase 7 Checkpoint — Hardening & Production Readiness
 
+> **Historical record. Superseded in part by [plans/remove-multi-tenancy.md](plans/remove-multi-tenancy.md) and
+> [ADR-0020](adr/0020-single-store-application-without-multi-tenancy.md) (2026-10-03):** the application is now single-store — tenants,
+> the landlord database, the platform panel and isolation tests described here no longer exist.
+
+
 **Date:** 2026-10-02 · **Status:** built — everything that does not need a server; the rest waits
 for the hosting decision
 Plan: [plans/phase-7.md](plans/phase-7.md) · Decisions: [ADR-0019](adr/0019-monitoring-with-posthog.md)

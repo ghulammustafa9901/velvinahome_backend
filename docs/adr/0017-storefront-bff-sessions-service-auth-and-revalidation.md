@@ -1,6 +1,6 @@
 # ADR-0017: Storefront BFF sessions, service authentication and ISR revalidation
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history
 - **Date:** 2026-09-30
 - **Spec reference:** §6.2 (FINAL), §6.13, §7.1–§7.5, ADR-0002, ADR-0003
 

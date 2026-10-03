@@ -1,6 +1,6 @@
 # ADR-0006: Category tree as a closure table rather than `ltree`
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history
 - **Date:** 2026-09-26
 - **Spec reference:** §6.3 (**YOUR CALL**, ADR required), §6.4
 

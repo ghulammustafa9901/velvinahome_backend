@@ -1,6 +1,6 @@
 # ADR-0016: API contract tooling and the v1 freeze
 
-- **Status:** accepted
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history
 - **Date:** 2026-09-27
 - **Spec reference:** §6.1 (FINAL: OpenAPI generated from code, generated TS client), §13 Phase 4
   (exit: API v1 contract frozen)

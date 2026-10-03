@@ -1,5 +1,10 @@
 # Phase 5 Checkpoint — Next.js Storefront
 
+> **Historical record. Superseded in part by [plans/remove-multi-tenancy.md](plans/remove-multi-tenancy.md) and
+> [ADR-0020](adr/0020-single-store-application-without-multi-tenancy.md) (2026-10-03):** the application is now single-store — tenants,
+> the landlord database, the platform panel and isolation tests described here no longer exist.
+
+
 **Date:** 2026-09-30 · **Status:** built
 Plan: [plans/phase-5.md](plans/phase-5.md) · Decisions: [ADR-0017](adr/0017-storefront-bff-sessions-service-auth-and-revalidation.md)
 Code: `platform-web` (`apps/storefront`, `packages/*`, `themes/*`)

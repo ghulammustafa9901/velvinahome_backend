@@ -424,7 +424,7 @@ A root `C:\xampp\htdocs\velvinahome\CLAUDE.md` containing:
 
 - **This is a single-store application.** Multi-tenancy (stancl/tenancy or any tenancy package, a landlord/central DB, tenant/domain/company models, host-based tenant resolution, tenant-prefixed cache/storage/queue/search, a platform panel, impersonation) **must not be re-added**. A second client means a **separate installation** (own DB, own `.env`). The architecture guard test enforces this.
 - Store identity comes from admin settings or `.env`, never hardcoded (the table at the top of this plan).
-- Which docs are current: master spec v2.0, ADR-0020 and the non-superseded ADRs, `docs/architecture/*`, `docs/runbooks/*`, PROGRESS.md. Which are history: phase plans/checkpoints before the conversion, ADRs 0001/0005/0012/0013.
+- Which docs are current: the project blueprint (see "Changes made during execution"), ADR-0020 and the non-superseded ADRs, `docs/architecture/*`, `docs/runbooks/*`, PROGRESS.md. Which are history: phase plans/checkpoints before the conversion, ADRs 0001/0005/0012/0013.
 - Project structure (`platform-api` modules, `platform-web` apps/packages/themes).
 - Main commands: local services (ADR-0009 devtools), `app:migrate`, `store:install`, `store:seed-demo`, `search:reindex`, `db:backup`, Pest groups, Larastan, Pint, pnpm scripts, E2E.
 - Conventions: Actions only, module boundaries via Contracts/Events, DTOs, money as integer minor units, ULIDs, append-only ledgers, API v1 additive-only, tests ship with features.
@@ -441,6 +441,15 @@ A root `C:\xampp\htdocs\velvinahome\CLAUDE.md` containing:
   called removed APIs would have failed the R3 gate. Horizon and API-docs access moved with them.
 - R3 also switched `deploy/release.sh`, its test, CI and Docker Compose to `app:migrate` and the
   single database (planned for R5/R6), because the commands and SQL they called were removed.
+- R7 removed `generateStaticParams` from the category page: static params plus `searchParams`
+  returned a 500 on filtered category URLs.
+- R8: there is no master spec v2.0. During execution the owner replaced
+  `Commerce_Platform_Master_Spec.md` with `Ecommerce_Project_Blueprint.md`, which is already
+  single-store, so §3.2 no longer applies. "Spec §N" references in history documents point to
+  the old spec. Following blueprint §13.4, `tenant-onboarding.md` became `go-live-checklist.md`
+  (not `store-launch-checklist.md`). ADRs 0006/0007/0008/0010 mention tenants in passing, so
+  they were marked amended as well. The committed OpenAPI snapshot still had the old
+  tenant-host description and `api:contract --check` was failing; it is regenerated.
 
 ---
 

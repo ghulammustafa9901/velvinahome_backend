@@ -1,6 +1,6 @@
 # ADR-0019: Monitoring with PostHog (instead of Sentry)
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history
 - **Date:** 2026-10-01
 - **Spec reference:** §9 (named Sentry), §8 (no secrets in the repository), owner decision 2026-10-01
 

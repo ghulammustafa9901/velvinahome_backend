@@ -1,6 +1,6 @@
 # ADR-0004: Cloudflare R2 with per-tenant prefixes
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history
 - **Date:** 2026-09-26
 - **Spec reference:** §2 (FINAL: S3-compatible, R2 default), §6.9, §4.4
 

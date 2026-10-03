@@ -1,5 +1,10 @@
 # Phase 0 Checkpoint Report
 
+> **Historical record. Superseded in part by [plans/remove-multi-tenancy.md](plans/remove-multi-tenancy.md) and
+> [ADR-0020](adr/0020-single-store-application-without-multi-tenancy.md) (2026-10-03):** the application is now single-store — tenants,
+> the landlord database, the platform panel and isolation tests described here no longer exist.
+
+
 **Date:** 2026-09-26
 **Phase:** 0 — Planning & Architecture
 **Status:** deliverables complete, **awaiting owner approval before any application code is written**

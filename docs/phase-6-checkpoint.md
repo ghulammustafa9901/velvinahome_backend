@@ -1,5 +1,10 @@
 # Phase 6 Checkpoint — Operations & Growth Modules + Migration Tools
 
+> **Historical record. Superseded in part by [plans/remove-multi-tenancy.md](plans/remove-multi-tenancy.md) and
+> [ADR-0020](adr/0020-single-store-application-without-multi-tenancy.md) (2026-10-03):** the application is now single-store — tenants,
+> the landlord database, the platform panel and isolation tests described here no longer exist.
+
+
 **Date:** 2026-10-01 · **Status:** built
 Plan: [plans/phase-6.md](plans/phase-6.md) · Decisions: [ADR-0018](adr/0018-phase-6-reporting-imports-promotions-reminders.md)
 

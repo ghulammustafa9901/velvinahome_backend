@@ -1,127 +1,98 @@
 # PostgreSQL Role & Privilege Design
 
-Implements spec §6.3 (database standards) and §8 (security, database level). Isolation in
-this platform is **by separate database**, and the privilege model is what makes that
-isolation real rather than merely conventional.
+Implements spec §6.3 (database standards) and §8 (security, database level) for one store
+database per installation (ADR-0020). The privilege model — not application discipline — is
+what keeps ledgers append-only and the schema out of the application's reach.
 
 ## 1. Role inventory
 
-| Role | Type | Used by | Privileges |
-|---|---|---|---|
-| `platform_provisioner` | LOGIN | `tenant:create` / `tenant:delete` only, credentials held outside the app runtime | `CREATEDB`, `CREATEROLE`, member of `pg_signal_backend` (so `DROP DATABASE … WITH (FORCE)` can end sessions on a tenant database; it cannot signal superuser sessions). **Not** superuser. Never used to serve a request. Also runs restore drills' scratch databases. |
-| `landlord_app` | LOGIN | the application, landlord connection | DML on landlord tables; no DDL |
-| `landlord_migrator` | LOGIN | deploys only | owns the landlord schema; DDL |
-| `tenant_<slug>_app` | LOGIN | the application, tenant connection | DML on that one tenant database only; no DDL |
-| `tenant_<slug>_migrator` | LOGIN | deploys only | owns that tenant's schema; DDL |
-| `metrics_reader` | LOGIN | the cross-tenant aggregation job | `SELECT` on a narrow allowlist of aggregate-source columns |
-| `backup_reader` | LOGIN | backup tooling | `SELECT` only, all tables of the target database |
+| Role | Used by | Privileges |
+|---|---|---|
+| `store_app` | the application: requests, jobs, commands (`pgsql` connection) | DML on the store database; **no DDL** |
+| `store_migrator` | `php artisan app:migrate` during deploys; backups (`pgsql_migrator` connection) | owns the schema; DDL |
+| `backup_reader` | external backup tooling | `SELECT` only |
 
 Hard rules:
 
-- **No tenant application role has `SUPERUSER`, `CREATEDB`, `CREATEROLE` or `BYPASSRLS`.**
-- Application roles hold **no DDL** anywhere. Schema changes only happen as the migrator role
-  during a deploy, which is what makes "the app cannot alter its own schema" true.
-- `platform_provisioner` credentials live in the deployment secret store, not in the
-  application environment used to serve traffic.
-- Every connection uses TLS (`sslmode=verify-full` in production). Databases are never
-  publicly exposed; connections arrive via PgBouncer on a private network.
+- **No role has `SUPERUSER`, `CREATEDB`, `CREATEROLE` or `BYPASSRLS`.** Databases are created
+  once, by a superuser, with `database/setup/bootstrap-database.sql`.
+- The application role holds **no DDL**. Schema changes only happen as the migrator during a
+  deploy, which is what makes "the app cannot alter its own schema" true.
+- Every connection uses TLS (`sslmode=verify-full` in production). Databases are never publicly
+  exposed; application connections arrive via PgBouncer on a private network.
+- Two installations on one PostgreSQL server use different role and database names (the
+  bootstrap script takes the database name; roles can be renamed per installation).
 
-## 2. Per-tenant database creation (run by `platform_provisioner`)
+## 2. Database creation (`database/setup/bootstrap-database.sql`)
 
-`tenant:create` executes this template. `:db`, `:app_role`, `:mig_role` are derived from the
-tenant slug; passwords are generated (32+ bytes, CSPRNG), stored encrypted in the landlord
-`tenant_databases` table, and never logged or printed.
+Run once per environment as a superuser, and once more for the restore drill's scratch
+database:
 
-```sql
--- 1. Roles
-CREATE ROLE :mig_role LOGIN PASSWORD :'mig_password' NOSUPERUSER NOCREATEDB NOCREATEROLE;
-CREATE ROLE :app_role LOGIN PASSWORD :'app_password' NOSUPERUSER NOCREATEDB NOCREATEROLE;
-
--- 2. Database, owned by the migration role
-CREATE DATABASE :db OWNER :mig_role ENCODING 'UTF8' LC_COLLATE 'en_US.UTF-8' TEMPLATE template0;
-
--- 3. Nobody connects by default; only this tenant's own roles may
-REVOKE CONNECT ON DATABASE :db FROM PUBLIC;
-GRANT  CONNECT ON DATABASE :db TO :app_role, :mig_role, :backup_reader;
-
--- 4. Inside the new database: the public schema belongs to the migrator
-\connect :db
-REVOKE ALL ON SCHEMA public FROM PUBLIC;
-ALTER SCHEMA public OWNER TO :mig_role;
-GRANT USAGE ON SCHEMA public TO :app_role;
-
--- 5. The app gets DML on current and future tables, never DDL
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES    IN SCHEMA public TO :app_role;
-GRANT USAGE, SELECT                  ON ALL SEQUENCES IN SCHEMA public TO :app_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE :mig_role IN SCHEMA public
-  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO :app_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE :mig_role IN SCHEMA public
-  GRANT USAGE, SELECT ON SEQUENCES TO :app_role;
+```bash
+psql -U postgres -f database/setup/bootstrap-database.sql \
+     -v app_password="'...'" -v migrator_password="'...'" -v backup_password="'...'"
+psql -U postgres -f database/setup/bootstrap-database.sql -v db=store_restore_drill \
+     -v app_password="'...'" -v migrator_password="'...'" -v backup_password="'...'"
 ```
 
-Because `CONNECT` is revoked from `PUBLIC` and granted only to that tenant's own roles,
-**tenant A's application role cannot even open a connection to tenant B's database.** That
-is asserted directly by isolation test #1 (see [tenancy.md](tenancy.md) §7).
+What it does (idempotent):
+
+```sql
+CREATE ROLE store_migrator LOGIN ... NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+CREATE ROLE store_app      LOGIN ... NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+CREATE ROLE backup_reader  LOGIN ... NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+CREATE DATABASE store OWNER store_migrator ENCODING 'UTF8' TEMPLATE template0;
+
+REVOKE CONNECT ON DATABASE store FROM PUBLIC;
+GRANT  CONNECT ON DATABASE store TO store_app, store_migrator, backup_reader;
+
+-- inside the database
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+ALTER SCHEMA public OWNER TO store_migrator;
+GRANT USAGE ON SCHEMA public TO store_app, backup_reader;
+ALTER DEFAULT PRIVILEGES FOR ROLE store_migrator IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO store_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE store_migrator IN SCHEMA public
+  GRANT USAGE, SELECT ON SEQUENCES TO store_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE store_migrator IN SCHEMA public
+  GRANT SELECT ON TABLES TO backup_reader;
+```
 
 ## 3. Append-only ledgers enforced by grants (FINAL — spec §6.3)
 
-After every tenant migration run, the migrator executes the ledger lockdown. This is part of
-`tenants:migrate`, not a manual step, so a newly added ledger table can never be left
-writable.
+`app:migrate` runs every pending migration and then the ledger lockdown **in one
+transaction**, so a newly added ledger table is locked down in the same transaction that
+creates it:
 
 ```sql
-REVOKE UPDATE, DELETE, TRUNCATE ON
-  inventory_movements,
-  payment_transactions,
-  webhook_events,
-  order_state_transitions,
-  activity_log,
-  login_audits,
-  stock_snapshots_daily
-FROM :app_role;
+REVOKE UPDATE, DELETE, TRUNCATE ON <every table a module declares append-only> FROM store_app;
 ```
 
-The application role keeps `INSERT` and `SELECT` only. An attempt to update or delete a
-ledger row fails at the database, regardless of application bugs, a compromised application
-account, or someone using a console. A Pest test asserts each ledger table rejects
-`UPDATE`/`DELETE` under the application role, and a second test asserts the revoke list
-covers every table declared append-only in the code (so adding a ledger without locking it
-down fails CI).
+Modules declare their ledgers in `appendOnlyTables()` (e.g. `inventory_movements`,
+`payment_transactions`, `webhook_events`, `order_state_transitions`, `activity_log`,
+`login_audits`, `stock_snapshots_daily`). The application role keeps `INSERT` and `SELECT`
+only; an update or delete fails at the database regardless of application bugs, a compromised
+application account or a console session.
 
-The same lockdown applies in the landlord database to `platform_activity_log` and
-`impersonation_sessions`.
+## 4. Migrations
 
-## 4. Landlord database
-
-```sql
-CREATE ROLE landlord_migrator LOGIN PASSWORD :'...' NOSUPERUSER NOCREATEDB NOCREATEROLE;
-CREATE ROLE landlord_app      LOGIN PASSWORD :'...' NOSUPERUSER NOCREATEDB NOCREATEROLE;
-CREATE DATABASE platform_landlord OWNER landlord_migrator ENCODING 'UTF8' TEMPLATE template0;
-REVOKE CONNECT ON DATABASE platform_landlord FROM PUBLIC;
-GRANT  CONNECT ON DATABASE platform_landlord TO landlord_app, landlord_migrator, backup_reader;
-```
-
-`landlord_app` has **no `CONNECT` on any tenant database**, and tenant application roles have
-no `CONNECT` on the landlord database. The only component that holds both sets of credentials
-is the provisioner path, which is not part of request handling.
-
-Credential columns in `tenant_databases` use Laravel encrypted casts, so the landlord
-database alone is not enough to reach a tenant database — `APP_KEY` is also required.
+- `php artisan app:migrate` connects as `store_migrator`, directly (never through PgBouncer:
+  transactional DDL needs a session).
+- All pending migrations run in **one** transaction: a failure leaves the database exactly as
+  it was, the command exits non-zero, and the release is blocked (`deploy/release.sh`).
+- A plain `php artisan migrate` on the default connection fails by design: `store_app` has no
+  DDL.
+- Module default seeders run after the migrations (idempotent, never overwrite store changes).
 
 ## 5. Connection pooling (PgBouncer)
 
-- **Transaction pooling** mode. It suits many databases with modest concurrency each, which
-  is exactly the tenant-per-database shape.
-- One PgBouncer pool **per tenant database and role**; `max_db_connections` capped per tenant
-  so one busy brand cannot exhaust the server on behalf of the others.
+- **Transaction pooling** mode for application traffic (`DB_POOLER_HOST`).
 - Transaction pooling forbids session-level state, so the application must not rely on
   session `SET`, advisory locks held across statements, or `LISTEN`/`NOTIFY`. Row locks inside
   a transaction (`SELECT ... FOR UPDATE`) are unaffected, which is what the inventory design
   needs.
-- Prepared-statement emulation stays off in PDO for pooled connections
-  (`PDO::ATTR_EMULATE_PREPARES` handling is documented in the connection config).
-- Migrations connect **directly**, bypassing PgBouncer, because transactional DDL and
-  advisory locks need a session connection.
+- PgBouncer ≥ 1.21 with `max_prepared_statements > 0` (PDO uses protocol-level prepared
+  statements).
 
 ## 6. Concurrency rules the privileges assume
 
@@ -129,25 +100,17 @@ database alone is not enough to reach a tenant database — `APP_KEY` is also re
 - Concurrency-sensitive rows take row locks: `SELECT ... FOR UPDATE` on the `stock_levels`
   row, or an atomic conditional `UPDATE ... WHERE on_hand - reserved >= :qty` — never a
   read-then-write without a lock.
-- Lock ordering is documented per Action to avoid deadlocks (stock levels are always locked
-  in ascending `variant_id, location_id` order).
-- `statement_timeout` and `lock_timeout` are set per connection role: short for web requests,
-  longer for queue workers, longest for migrations and reports.
+- Stock levels are always locked in ascending `variant_id, location_id` order.
 
 ## 7. Row-level security
 
-Not required in v1 (spec §6.3): isolation comes from separate databases plus `CONNECT`
-grants, which is a stronger and simpler guarantee than in-database RLS policies. The landlord
-database is deliberately kept free of any table that could hold tenant data, so there is no
-place where RLS would be the last line of defence. Revisit only if a future feature forces
-shared-database data (which would require an ADR).
+Not used: one store per database, no shared tables to partition.
 
-## 8. What gets verified in CI
+## 8. What gets verified in CI (`tests/Feature/Support/DatabasePrivilegeTest.php`, `MigrateTest.php`)
 
-1. A tenant application role cannot `CONNECT` to another tenant's database.
-2. A tenant application role cannot run DDL (`CREATE TABLE` fails).
-3. Every append-only table rejects `UPDATE` and `DELETE` under the application role.
-4. The append-only revoke list matches the set of tables marked append-only in code.
-5. `landlord_app` cannot connect to any tenant database, and no tenant role can connect to
-   the landlord database.
-6. No role used at runtime has `SUPERUSER`, `CREATEDB` or `CREATEROLE`.
+1. The application role cannot run DDL.
+2. Every append-only table rejects `UPDATE`, `DELETE` and `TRUNCATE` under the application role,
+   and the revoke list covers every table declared append-only in code.
+3. Neither the application nor the migration role has `SUPERUSER`, `CREATEDB` or `CREATEROLE`.
+4. Application traffic goes through the pooler; migrations go around it.
+5. A failing migration among several rolls the whole run back and fails `app:migrate`.

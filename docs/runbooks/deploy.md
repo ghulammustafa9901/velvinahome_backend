@@ -1,6 +1,6 @@
 # Runbook: deploy a release
 
-Zero-downtime release of `platform-api` with tenant migrations as a release gate (spec §9,
+Zero-downtime release of `platform-api` with migrations as a release gate (spec §9,
 §13 Phase 7). Hosting is not chosen yet (Phase 7 plan): this runbook and `deploy/release.sh` are
 hosting-neutral — any Linux server with PHP-FPM, a process supervisor and cron. Rollback:
 [`rollback.md`](rollback.md).
@@ -8,8 +8,8 @@ hosting-neutral — any Linux server with PHP-FPM, a process supervisor and cron
 ## How a release works
 
 ```
-build new release ─► cache config/routes/views ─► landlord:migrate ─► tenants:migrate ─┐
-   (old release keeps serving the whole time)                     any tenant fails ──► release blocked, removed
+build new release ─► cache config/routes/views ─► app:migrate (one transaction) ──────┐
+   (old release keeps serving the whole time)                     a migration fails ─► release blocked, removed
                                                                                         │
 switch `current` atomically ─► reload PHP-FPM, restart Horizon ─► /health shows new release? ─► done
                                                                         no ──► switch back automatically
@@ -38,7 +38,8 @@ keeps the storefront compatible with either API release.
    Composer 2, PostgreSQL 17 client tools (`pg_dump`/`pg_restore` for backups), git, nginx,
    supervisor (or systemd), cron.
 2. **Database:** managed PostgreSQL 17, TLS required (`DB_*_SSLMODE=require`); run
-   `database/setup/bootstrap-landlord.sql` once as the superuser (roles: `database-roles.md`).
+   `database/setup/bootstrap-database.sql` once as the superuser, plus once for the restore-drill
+   scratch database (roles: `database-roles.md`; installation: `install-store.md`).
    **PgBouncer ≥ 1.21** in transaction mode with `max_prepared_statements = 200` in front of it,
    and `DB_POOLER_HOST`/`DB_POOLER_PORT` set — without it every request opens a new PostgreSQL
    backend (docs/performance/load-test.md). Migrations bypass the pooler on their own.
@@ -55,31 +56,30 @@ keeps the storefront compatible with either API release.
 7. **Horizon** under supervisor: `command=php /srv/platform-api/current/artisan horizon`,
    `autorestart=true`, `stopwaitsecs=3600` (an import may run that long).
 8. **Scheduler:** cron `* * * * * cd /srv/platform-api/current && php artisan schedule:run`.
-9. **Monitoring:** uptime monitor on `https://<platform host>/health` with `X-Health-Token`;
+9. **Monitoring:** uptime monitor on `https://api.<domain>/health` with `X-Health-Token`;
    PostHog project key in `.env` (ADR-0019).
 10. **Deploy user** may run exactly the FPM reload with sudo (`RELOAD_FPM`, default
     `sudo systemctl reload php8.4-fpm`) and nothing else.
 
 ## Each release
 
-1. CI green on the commit (lint, Larastan, tests incl. architecture + isolation, contract,
+1. CI green on the commit (lint, Larastan, tests incl. architecture, contract,
    dependency audit, deploy scripts).
-2. Take a backup point: `php artisan tenants:backup` (current release) — a nightly one exists, but
+2. Take a backup point: `php artisan db:backup` (current release) — a nightly one exists, but
    a fresh one bounds what a bad migration could cost.
 3. Run, as the deploy user:
 
    ```bash
    export DEPLOY_BASE=/srv/platform-api REPO_URL=git@github.com:<org>/platform-api.git
-   export HEALTH_URL=https://<platform host>/health HEALTH_TOKEN=<from secret store>
+   export HEALTH_URL=https://api.<domain>/health HEALTH_TOKEN=<from secret store>
    /srv/platform-api/current/deploy/release.sh <tag or commit>
    ```
 
    (The very first release has no `current` yet: run `deploy/release.sh` from any checkout.)
 
-4. **Blocked by `tenants:migrate`?** The output names each failed tenant and the error; its
-   transaction rolled back, the old release is still live and nothing else changed. Fix the
-   migration, release again. Tenants that did migrate stay migrated — that is safe because
-   migrations are expand-only.
+4. **Blocked by `app:migrate`?** The output names the error; the whole run rolled back in one
+   transaction, the old release is still live and nothing changed. Fix the migration, release
+   again.
 5. **Rolled back by the health check?** The release stays in `releases/` for inspection.
    Look at PostHog errors tagged with the new release id and `storage/logs`.
 6. Watch PostHog errors and `/health` for 15 minutes.
@@ -89,7 +89,7 @@ keeps the storefront compatible with either API release.
 Deploy **after** the API (the API only ever changes additively). Same pattern: build
 (`pnpm install --frozen-lockfile && pnpm build`) into a new release directory, link the shared
 env file, switch a symlink, restart the Node process (`next start`) under the supervisor with a
-graceful reload. Required env: `API_INTERNAL_URL` (the API over the private network),
+graceful reload. Required env: `API_URL` (the API over the private network), `STOREFRONT_URL`,
 `STOREFRONT_SESSION_SECRET`, `SERVICE_AUTH_SECRET` and `STOREFRONT_REVALIDATE_SECRET` (same values
-as the API), `TRUSTED_PROXY_HOPS` / `CLIENT_IP_HEADER` matching the edge (ASVS V11). A new build
-starts with an empty ISR cache; pages re-render on first request.
+as the API), `TRUSTED_PROXY_HOPS` / `CLIENT_IP_HEADER` matching the edge (ASVS V11). The build
+prerenders pages against `API_URL`, so the API must be reachable from the build.

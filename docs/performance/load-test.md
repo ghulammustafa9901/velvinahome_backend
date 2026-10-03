@@ -5,6 +5,11 @@ Redis 8, Typesense 30 — ADR-0009) against brand `charlie` loaded with **5,005 
 10,543 variants** (`loadtest/generate-catalog.mjs`, imported with `imports:csv`). Tooling and
 how to repeat: [`loadtest/README.md`](../../loadtest/README.md).
 
+> **Single-store update (ADR-0020, 2026-10-03):** this run predates the removal of
+> multi-tenancy. The measurements stay as recorded. Fix 2 (cached host → tenant resolution) no
+> longer exists — there is no landlord lookup at all now, so its saving holds by construction.
+> Fix 3's pooler routing now covers the one `pgsql` connection (`pgsql_migrator` bypasses it).
+
 **Capacity is not measured here.** `php -S` on Windows serves one request at a time and
 PostgreSQL on Windows starts a process per connection, so local numbers are *service times*
 and *hot spots*. Requests per second, saturation point and pool/Typesense sizing are measured
@@ -75,7 +80,7 @@ latencies (read p95 1.13 s) are queueing behind one server process and are not a
 1. PgBouncer in transaction mode in front of PostgreSQL, `DB_POOLER_HOST` set, PgBouncer ≥ 1.21
    with `max_prepared_statements` > 0 — then run the full test suite and the k6 `smoke` profile
    through it (it has not run through a pooler yet: there is none on the development machine).
-2. Load-test brand with the generated catalog; `k6 run -e PROFILE=load` then `-e PROFILE=stress`.
+2. Load-test installation with the generated catalog (`STOREFRONT_URL`/`API_URL` pointing at it); `k6 run -e PROFILE=load` then `-e PROFILE=stress`.
    Record RPS at budget, saturation point, PgBouncer pool usage, Typesense memory per 1,000
    products (ADR-0005 sizing).
 3. Confirm or adjust the budgets above with the owner.

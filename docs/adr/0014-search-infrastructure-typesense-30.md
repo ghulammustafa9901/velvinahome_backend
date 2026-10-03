@@ -1,6 +1,6 @@
 # ADR-0014: Typesense 30 specifics — synonym sets, SKU tokens, local runtime
 
-- **Status:** Accepted (refines ADR-0005)
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history (refines ADR-0005)
 - **Date:** 2026-09-27
 - **Spec reference:** §6.10 (FINAL: Typesense, per-tenant collections, synonyms, exact SKUs)
 

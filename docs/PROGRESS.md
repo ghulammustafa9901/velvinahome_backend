@@ -3,13 +3,17 @@
 Updated continuously (spec §0.2 rule 6). A milestone is only `done` when the app boots,
 migrations run, and the whole test suite passes.
 
-**Current work:** **Single-store conversion** — multi-tenancy is being removed (owner decision
-2026-10-03). Plan: [docs/plans/remove-multi-tenancy.md](plans/remove-multi-tenancy.md); status in the
-section below. Phase 7 is built and waits for owner sign-off and the hosting decision.
-**Test suite:** 394 passing on real PostgreSQL 17, Redis and Typesense 30
-(architecture, unit, feature, isolation, multi-process concurrency); deploy scripts 10/10.
-Larastan level 8 clean, Pint clean. platform-web: ESLint, strict typecheck, Vitest, `next build`, 22 Playwright E2E
-tests on the production build.
+**This is a single-store application** (ADR-0020, 2026-10-03): one installation per client
+store, each with its own database and `.env`. Multi-tenancy was removed and must not be re-added
+(`tests/Architecture/NoTenancyTest.php`). The phase tables below are the build history: tenant,
+landlord, brand and platform-panel items in them no longer exist.
+
+**Current work:** single-store conversion done (section below); Phase 7 is built and waits for
+owner sign-off and the hosting decision.
+**Test suite:** 357 passing on real PostgreSQL 17, Redis and Typesense 30
+(architecture incl. the no-tenancy guard, unit, feature, multi-process concurrency, backup and
+restore drill); deploy scripts 10/10. Larastan level 8 clean, Pint clean. platform-web: ESLint,
+strict typecheck, Vitest 14, `next build`, 19 Playwright E2E tests on the production build.
 
 ---
 
@@ -149,17 +153,17 @@ Plan: [docs/plans/remove-multi-tenancy.md](plans/remove-multi-tenancy.md). Owner
 | R4 | Delete tenancy, add guard test | done | `stancl/tenancy`, `config/tenancy.php` and `PermissionCacheBootstrapper` removed; encrypted columns have no scope; `StaffDirectory` keeps only `ensureOwner()`; `users.landlord_owner_identity_ulid` dropped (forward migration). **Guard test** `tests/Architecture/NoTenancyTest.php` fails on tenancy packages, `tenancy()`/`tenant()`, tenant context classes, `Modules\Platform` or a landlord connection (proven by planting a violation). Pest 343 |
 | R5 | Per-installation naming | done | Disks `media` / `private` under `OBJECT_STORAGE_PREFIX` (data migration rewrites `media.disk`); `config/platform.php` → `config/store.php`; `TenantSettings` → `StoreSettings`; tenant/brand wording removed from code comments; `.env.example` rewritten for per-installation config (`ADMIN_DOMAIN`, `REDIS_PREFIX`, `SCOUT_PREFIX`, `OBJECT_STORAGE_PREFIX`, `BACKUP_*`). Pest 344 |
 | R6 | Install, backup and deploy tooling | done | `store:install` (idempotent: migrate, identity settings, owner account, search collection, checklist; validates every option before writing; currency fixed once prices exist); `store:seed-demo` (Velvina Home on `velvina-home`, wishlist/reviews/blog on, sample catalog, `--restock`); `db:backup [--drill]` (pg_dump + SHA-256 manifest, retention, restore into `<db>_restore_drill` and compare row counts; tampered dumps refused), scheduled nightly / Sundays. Deploy scripts 10/10 (WSL). Pest 356 |
-| R7 | Storefront | not started | |
-| R8 | Documentation | not started | |
+| R7 | Storefront | done | Host-based tenant resolution and `[site]` routes removed: one storefront, `API_URL` + `STOREFRONT_URL` (canonical origin falls back to it); theme from `theme.*` settings (`velvina-home` for the demo); unscoped cache tags; revalidation without `site`; logo in the header; analytics without brand. `STOREFRONT_PRERENDER=0` builds without the API (CI verify). Fixed a 500 on category pages with query strings (static params + searchParams). Vitest 14, Playwright 19 |
+| R8 | Documentation | done | ADR-0020; ADRs 0001/0005/0012/0013 superseded, the rest that mention tenants amended; architecture (`overview`, `installation` new, `database-roles`, `modules`, `data-model`, `api-conventions`), runbooks (`install-store`, `restore-database` new; tenant runbooks deleted), `go-live-checklist.md` (was `tenant-onboarding.md`), ASVS and load-test notes, historical banners on phase plans and checkpoints, README. The old master spec was replaced by the owner with `Ecommerce_Project_Blueprint.md` (already single-store), so no spec v2.0. Stale OpenAPI description regenerated (`api:contract --check` was failing) |
 | R9 | Root CLAUDE.md | not started | |
 
 ## Phase 8
 
 | Phase | Scope | Status |
 |---|---|---|
-| 8 | Launch & Onboarding | not started — needs the hosting decision and Phase 7 sign-off |
+| 8 | Launch & client installations | not started — needs the hosting decision and Phase 7 sign-off. Each client store is its own installation (`runbooks/install-store.md`, `go-live-checklist.md`) |
 
 ## Decision log pointers
 
-- ADRs 0001–0019: [docs/adr/](adr/README.md)
-- Open business decisions (spec §16): tracked in the checkpoint reports
+- ADRs 0001–0020: [docs/adr/](adr/README.md) (ADR-0020 is the current architecture baseline)
+- Open business decisions: blueprint §17 and the checkpoint reports

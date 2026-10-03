@@ -1,6 +1,6 @@
 # ADR-0012: Tenant scoping of cache, sessions and framework singletons
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) (single-store application, 2026-10-03)
 - **Date:** 2026-09-26
 - **Spec reference:** §4.4 (FINAL: everything is tenant-aware), §4.8 (isolation tests)
 

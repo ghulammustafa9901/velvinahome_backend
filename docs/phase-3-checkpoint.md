@@ -1,5 +1,10 @@
 # Phase 3 Checkpoint — Commerce Core
 
+> **Historical record. Superseded in part by [plans/remove-multi-tenancy.md](plans/remove-multi-tenancy.md) and
+> [ADR-0020](adr/0020-single-store-application-without-multi-tenancy.md) (2026-10-03):** the application is now single-store — tenants,
+> the landlord database, the platform panel and isolation tests described here no longer exist.
+
+
 **Date:** 2026-09-27 · **Status:** built; Phase 4 follows on the owner's instruction
 Plan: [plans/phase-3.md](plans/phase-3.md) · Decisions: [ADR-0015](adr/0015-order-payment-and-checkout-mechanics.md)
 

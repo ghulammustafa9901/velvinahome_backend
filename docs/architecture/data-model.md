@@ -1,8 +1,8 @@
-# Data Model — Landlord and Tenant ERDs
+# Data Model
 
-Scope: the **core** tables needed through Phase 3, plus every landlord table. Later modules
+Scope: the **core** tables of the store database (one per installation, ADR-0020). Later modules
 (Reviews, Wishlist, Content beyond pages, Reporting aggregates, Integrations) are listed in
-§5 as planned shapes and will be detailed in their own phase plans.
+§4 as planned shapes and will be detailed in their own phase plans.
 
 ## 0. Conventions that apply to every table (FINAL — spec §6.3)
 
@@ -11,7 +11,7 @@ Scope: the **core** tables needed through Phase 3, plus every landlord table. La
 | Engine | PostgreSQL 17+, UTF-8, single `public` schema per database. |
 | Primary keys | `id BIGSERIAL` internal. **Never exposed.** |
 | Public identifiers | `ulid CHAR(26) NOT NULL UNIQUE` on every entity reachable by API or URL. |
-| Timestamps | `timestamptz`, stored UTC, rendered in the tenant timezone. |
+| Timestamps | `timestamptz`, stored UTC, rendered in the store's timezone. |
 | Money | `BIGINT` in minor units (paisa) plus a `char(3)` currency code. Never float, never decimal-in-PHP-float. Column pairs are named `<thing>_amount` / `<thing>_currency`. |
 | Quantities | `INTEGER` for stock counts, `NUMERIC(12,3)` only where fractional units are genuinely needed (weight). |
 | Foreign keys | On every relationship. `RESTRICT` on anything financial or historical; `CASCADE` only for true child rows (e.g. `order_items` of an order are never deleted — see invariants). |
@@ -23,177 +23,31 @@ Scope: the **core** tables needed through Phase 3, plus every landlord table. La
 
 ---
 
-## 1. Landlord database ERD
-
-Holds platform data only. **No tenant customer, order, product or payment data ever.**
-
-```mermaid
-erDiagram
-    companies ||--o{ tenants : "owns brands"
-    tenants ||--o{ domains : "is served on"
-    tenants ||--|| tenant_databases : "stores credentials for"
-    tenants ||--o{ tenant_feature_flags : "toggles"
-    plans ||--o{ tenants : "assigned to"
-    companies ||--o{ company_owner_identities : "has owners"
-    company_owner_identities ||--o{ company_owner_brand_links : "grants access to"
-    tenants ||--o{ company_owner_brand_links : "accessible brand"
-    platform_users ||--o{ impersonation_sessions : "performs"
-    tenants ||--o{ impersonation_sessions : "target"
-    platform_users ||--o{ platform_activity_log : "acts"
-    tenants ||--o{ tenant_metrics_daily : "aggregates"
-    tenants ||--o{ tenant_backups : "backed up"
-    tenants ||--o{ tenant_migration_runs : "migrated"
-```
-
-### 1.1 `companies` — the contracting/billing party
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | bigserial PK | |
-| `ulid` | char(26) unique | |
-| `legal_name` | text | |
-| `display_name` | text | |
-| `slug` | text unique | |
-| `contact_name`, `contact_email`, `contact_phone` | text | |
-| `country_code` | char(2) | default `PK` |
-| `contract_status` | text | `prospect` / `active` / `suspended` / `ended` (CHECK) |
-| `billing_notes` | text null | |
-| `created_at`, `updated_at` | timestamptz | |
-
-Holds **no brand data** — it only groups brands for contracts, billing, reporting, support.
-
-### 1.2 `tenants` — one row per brand (one website, one database)
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | char(26) PK | the tenant id is a ULID; it appears in DB names, cache prefixes, storage paths, Typesense collections |
-| `company_id` | bigint FK → companies | RESTRICT |
-| `name` | text | brand name, e.g. `Velvina Home` |
-| `slug` | text unique | e.g. `velvina-home` |
-| `status` | text | `provisioning` / `active` / `suspended` / `archived` (CHECK) |
-| `plan_id` | bigint FK → plans, null | |
-| `topology` | text | `shared` / `dedicated` (CHECK) — spec §4.3 |
-| `schema_version` | text null | last successfully applied migration batch marker |
-| `default_currency` | char(3) | default `PKR` |
-| `default_timezone` | text | default `Asia/Karachi` |
-| `default_locale` | text | default `en` |
-| `theme_id` | text | theme package key, e.g. `velvina-home` |
-| `data` | jsonb | stancl/tenancy virtual-column overflow |
-| `provisioning_state` | jsonb | completed provisioning steps, making `tenant:create` re-runnable |
-| `health_status`, `health_checked_at` | text / timestamptz | populated by the health job |
-| `last_backup_at` | timestamptz null | |
-| `created_at`, `updated_at` | timestamptz | |
-
-### 1.3 `domains`
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | bigserial PK | |
-| `tenant_id` | char(26) FK → tenants | CASCADE |
-| `hostname` | text **unique across the whole table** | the resolution key; uniqueness here is what makes hostname resolution unambiguous |
-| `kind` | text | `storefront` / `admin` / `api` (CHECK) |
-| `is_primary` | boolean | one primary per (tenant, kind) — partial unique index |
-| `created_at`, `updated_at` | timestamptz | |
-
-Unknown hostname → 404, never a default tenant (spec §4.2).
-
-### 1.4 `tenant_databases` — connection details, credentials encrypted
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | bigserial PK | |
-| `tenant_id` | char(26) FK → tenants unique | |
-| `host`, `port`, `database` | text / int / text | |
-| `app_username` | text | least-privilege DML role |
-| `app_password` | text | **encrypted at rest** (Laravel encrypted cast) |
-| `migration_username` | text | schema owner, used only during deploys |
-| `migration_password` | text | **encrypted at rest** |
-| `created_at`, `updated_at` | timestamptz | |
-
-`.env.example` carries placeholders only; no real credential ever enters the repo (spec §8).
-
-### 1.5 `plans` and `tenant_feature_flags`
-
-`plans`: `id`, `key` unique, `name`, `default_features jsonb`, timestamps.
-
-`tenant_feature_flags`: `id`, `tenant_id` FK, `key` (e.g. `wishlist`, `reviews`, `blog`,
-`multi_location_inventory`), `enabled boolean`, `value jsonb null`, timestamps.
-Unique on `(tenant_id, key)`. The effective flag set is the plan default overridden by the
-tenant row.
-
-### 1.6 Multi-brand owner access (spec §4.1a)
-
-`company_owner_identities`: `id`, `ulid`, `company_id` FK, `email` unique, `password_hash`,
-`name`, `two_factor_secret` (encrypted), `two_factor_confirmed_at`, `last_login_at`,
-`status`, timestamps.
-
-`company_owner_brand_links`: `id`, `company_owner_identity_id` FK, `tenant_id` FK,
-`tenant_staff_user_ulid` (the ULID of the staff row **inside** that tenant's database),
-`granted_by_platform_user_id` FK, `granted_at`, `revoked_at null`.
-Unique on `(company_owner_identity_id, tenant_id)`.
-
-The link stores only a ULID pointer. Permissions live entirely in the tenant database, so
-no permission data and no brand data crosses into the landlord DB.
-
-### 1.7 Platform team, audit, impersonation
-
-`platform_users`: `id`, `ulid`, `name`, `email` unique, `password_hash`,
-`two_factor_secret` (encrypted), `two_factor_confirmed_at`, `role`, `status`,
-`last_login_at`, timestamps.
-
-`platform_activity_log`: append-only. `id`, `platform_user_id` FK null, `event`,
-`subject_type`, `subject_id`, `tenant_id` null, `properties jsonb`, `ip`, `user_agent`,
-`created_at`.
-
-`impersonation_sessions`: `id`, `ulid`, `platform_user_id` FK, `tenant_id` FK,
-`target_staff_user_ulid`, `reason text NOT NULL`, `started_at`, `expires_at`, `ended_at`,
-`ip`, `user_agent`. A reason is mandatory; the session is time-limited and mirrored into the
-tenant's own activity log.
-
-### 1.8 Operations metadata
-
-`tenant_metrics_daily`: `id`, `tenant_id` FK, `date`, `orders_count`, `gross_sales_amount`,
-`gross_sales_currency`, `sessions_count null`, `computed_at`. Unique on `(tenant_id, date)`.
-**Non-sensitive aggregates only** (spec §4.9) — no customer or order-level rows.
-
-`tenant_backups`: `id`, `tenant_id` FK, `kind` (`logical` / `pitr`), `location`,
-`size_bytes`, `checksum`, `started_at`, `finished_at`, `status`, `error null`.
-
-`tenant_migration_runs`: `id`, `tenant_id` FK, `release_version`, `batch`, `status`
-(`pending`/`success`/`failed`), `error null`, `started_at`, `finished_at`. This is what makes
-"a failed tenant migration blocks the release" reportable per tenant (spec §4.7).
-
-`releases`: `id`, `version`, `git_sha`, `deployed_at`, `deployed_by`, `notes`.
-
----
-
-## 2. Tenant database — identity, settings
-
-Identical schema in every tenant database.
+## 1. Identity, settings
 
 `users` (staff): `id`, `ulid`, `name`, `email` unique, `password_hash` (Argon2id),
 `two_factor_secret` (encrypted), `two_factor_recovery_codes` (encrypted),
-`two_factor_confirmed_at`, `status`, `last_login_at`, `landlord_owner_identity_ulid null`
-(set when this staff row is the local account of a company owner), timestamps, `deleted_at`.
+`two_factor_confirmed_at`, `status`, `last_login_at`, timestamps, `deleted_at`.
 
 `login_audits` (append-only): `id`, `subject_type` (`staff`/`customer`), `email_attempted`,
 `user_id null`, `successful boolean`, `failure_reason null`, `ip`, `user_agent`,
 `created_at`. Indexed on `(email_attempted, created_at)` for throttling forensics.
 
 spatie/laravel-permission tables (`roles`, `permissions`, `model_has_roles`,
-`model_has_permissions`, `role_has_permissions`) live in the tenant DB. Seeded roles per
-tenant: Owner, Manager, Order Handler, Inventory Staff, Content Editor, Accountant.
+`model_has_permissions`, `role_has_permissions`). Seeded roles: Owner, Manager, Order Handler,
+Inventory Staff, Content Editor, Accountant.
 
 spatie/laravel-activitylog `activity_log` (append-only) and Sanctum
-`personal_access_tokens` are tenant-local.
+`personal_access_tokens`.
 
 `settings`: `id`, `group`, `key`, `value jsonb`, `is_encrypted boolean`, timestamps.
-Unique on `(group, key)`. Holds store info, currency, timezone, tax mode, mail branding,
-robots settings.
+Unique on `(group, key)`. Holds the store's identity and configuration (name, URL, logo,
+currency, timezone, theme, tax mode, SEO, mail sender) and feature flags (`features.*`); see
+[installation.md](installation.md).
 
 ---
 
-## 3. Tenant database — Catalog, Inventory (Phase 2)
+## 2. Catalog, Inventory (Phase 2)
 
 ```mermaid
 erDiagram
@@ -252,7 +106,7 @@ descendant_id)`. Closure table chosen over `ltree`; see
 `attribute_values` follow the same conventions.
 
 `media` (spatie/laravel-medialibrary): its own table, `model_type`/`model_id` polymorphic,
-conversions generated by queued jobs, stored under the tenant's object-storage prefix, with
+conversions generated by queued jobs, stored on the `media` disk under the installation's object-storage prefix, with
 `alt_text` in `custom_properties`.
 
 `seo_meta`: `id`, `model_type`, `model_id`, `title null`, `description null`,
@@ -266,7 +120,7 @@ automatically on every slug change — critical for the WooCommerce migration (s
 ### 3.2 Inventory — a ledger (FINAL, spec §6.5)
 
 `locations`: `id`, `ulid`, `name`, `code` unique, `type` (`warehouse`/`shop`/`3pl`),
-`address jsonb`, `is_default`, `is_active`, `priority`, timestamps. Every tenant is seeded
+`address jsonb`, `is_default`, `is_active`, `priority`, timestamps. The store is seeded
 with at least one.
 
 `stock_levels`: `id`, `variant_id` FK, `location_id` FK, `on_hand int NOT NULL DEFAULT 0`,
@@ -308,7 +162,7 @@ Receipts drive the weighted-average `cost_amount` on the variant.
 
 ---
 
-## 4. Tenant database — Commerce core (Phase 3)
+## 3. Commerce core (Phase 3)
 
 ```mermaid
 erDiagram
@@ -357,7 +211,7 @@ Prices here are **cached for display only** and revalidated server-side at every
 
 ### 4.2 Orders — snapshots plus an enforced state machine
 
-`orders`: `id`, `ulid`, `number` unique (human-readable, per-tenant sequence),
+`orders`: `id`, `ulid`, `number` unique (human-readable sequence),
 `customer_id null` FK RESTRICT, `email`, `phone`, `currency`,
 `status` (spatie/laravel-model-states), `payment_status`, `fulfillment_status`,
 `subtotal_amount`, `discount_amount`, `shipping_amount`, `tax_amount`, `total_amount`,
@@ -398,11 +252,11 @@ writes a `return` movement through the Inventory Action, never a direct stock ed
 
 ### 4.3 Payments (FINAL — spec §6.6)
 
-`payment_methods` (per-tenant configuration): `id`, `ulid`, `code`
+`payment_methods` (the store's configuration): `id`, `ulid`, `code`
 (`cod`, `manual_transfer`, `payfast`, `jazzcash`, ...), `label`, `is_enabled`,
 `config jsonb`, `credentials jsonb` **encrypted cast**, `position`, timestamps.
-Each tenant stores **its own merchant credentials**; funds settle to the tenant's own
-merchant account. The platform never collects money on a tenant's behalf.
+The store holds **its own merchant credentials** (encrypted); funds settle to the store's own
+merchant account. The platform never collects money on the store's behalf.
 
 `payments` (attempts): `id`, `ulid`, `order_id` FK RESTRICT, `payment_method_code`,
 `status` (`initiated`/`pending`/`authorized`/`paid`/`failed`/`expired`/`cancelled`),
@@ -459,7 +313,7 @@ enforced by counting here inside the placing transaction.
 Stockists — spec §5.1 rung 4, so custom pages get data without new backend tables).
 
 `notification_templates`: `id`, `key`, `channel`, `subject`, `body`, `is_enabled`,
-timestamps — per-tenant branding.
+timestamps — the store's own branding.
 
 `outbox_messages` (transactional outbox, spec §6.11): `id`, `ulid`, `event_type`,
 `payload jsonb`, `available_at`, `published_at null`, `attempts`, `last_error null`,
@@ -468,7 +322,7 @@ for a rolled-back transaction and nothing is lost.
 
 ---
 
-## 5. Planned later (shapes only)
+## 4. Planned later (shapes only)
 
 | Module | Tables |
 |---|---|
@@ -476,19 +330,19 @@ for a rolled-back transaction and nothing is lost.
 | Wishlist | `wishlists`, `wishlist_items` |
 | Reporting | `report_sales_daily`, `report_product_performance_daily`, `report_inventory_daily`, `report_customer_cohorts` — pre-aggregated, refreshed by scheduled jobs, never heavy live queries on raw orders |
 | Integrations | `integration_credentials` (encrypted), `webhook_endpoints`, `webhook_deliveries`, `integration_logs` |
-| Search admin | `search_synonyms` (per-tenant, managed in the admin — important for Roman Urdu spellings) |
+| Search admin | `search_synonyms` (managed in the admin — important for Roman Urdu spellings) |
 | Import | `import_batches`, `import_rows` (validation report, dry-run support) |
 
 ---
 
-## 6. Invariants the schema must enforce (not merely the code)
+## 5. Invariants the schema must enforce (not merely the code)
 
 1. **`on_hand` changes only through Inventory Actions**, in a transaction that also writes an
    `inventory_movements` row. The admin's "edit stock" is an adjustment with a mandatory
    reason. No other code path may write `stock_levels.on_hand`.
 2. **Ledgers are append-only at the database level** — the application role holds no
    `UPDATE`/`DELETE` on `inventory_movements`, `payment_transactions`, `webhook_events`,
-   `activity_log`, `login_audits`, `platform_activity_log`, `order_state_transitions`.
+   `activity_log`, `login_audits`, `order_state_transitions`.
 3. **Overselling is impossible** unless `product_variants.allow_backorder` is true:
    reservation and deduction use `SELECT ... FOR UPDATE` on the `stock_levels` row or an
    atomic conditional `UPDATE ... WHERE on_hand - reserved >= :qty`, and concurrency tests
@@ -501,5 +355,5 @@ for a rolled-back transaction and nothing is lost.
    an API payload or an OpenAPI schema.
 7. **Idempotency is a constraint, not a convention**: unique `idempotency_key` on `orders`
    and `payments`, unique `(provider, provider_event_id)` on `webhook_events`.
-8. **The landlord DB cannot hold tenant data**: a test asserts the landlord schema contains
-   no table that could store customer, order, product or payment rows.
+8. **One store per database**: there is no landlord or tenant schema, and the architecture
+   test `NoTenancyTest` keeps it that way (ADR-0020).

@@ -1,5 +1,10 @@
 # Phase 3 Plan — Commerce Core
 
+> **Historical record. Superseded in part by [remove-multi-tenancy.md](remove-multi-tenancy.md) and
+> [ADR-0020](../adr/0020-single-store-application-without-multi-tenancy.md) (2026-10-03):** the application is now single-store — tenants,
+> the landlord database, the platform panel and isolation tests described here no longer exist.
+
+
 **Owner decision (2026-09-27):** payment methods for launch are **Cash on Delivery and manual
 bank/wallet transfer**. The `PaymentGateway` contract, webhook intake and reconciliation are
 built so an online gateway (PayFast by default) is an adapter later, not a redesign. The

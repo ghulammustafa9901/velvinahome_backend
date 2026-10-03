@@ -1,5 +1,10 @@
 # Phase 4 Plan — API Stabilization
 
+> **Historical record. Superseded in part by [remove-multi-tenancy.md](remove-multi-tenancy.md) and
+> [ADR-0020](../adr/0020-single-store-application-without-multi-tenancy.md) (2026-10-03):** the application is now single-store — tenants,
+> the landlord database, the platform panel and isolation tests described here no longer exist.
+
+
 **Goal (spec §13):** complete Storefront API v1; consistent errors, pagination and filters;
 rate limits; OpenAPI finalized; TypeScript client generated in CI; contract tests; performance
 review of hot endpoints. **Exit: API v1 contract frozen** — additive changes only afterwards.

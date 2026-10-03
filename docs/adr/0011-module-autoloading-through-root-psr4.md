@@ -1,6 +1,6 @@
 # ADR-0011: Module autoloading through the root composer.json
 
-- **Status:** Accepted (amends the "Physical layout" part of ADR-0007)
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history (amends the "Physical layout" part of ADR-0007)
 - **Date:** 2026-09-26
 - **Spec reference:** §3.3 (FINAL: modular monolith), §3.3 internal layout (YOUR CALL)
 

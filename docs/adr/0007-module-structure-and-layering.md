@@ -1,6 +1,6 @@
 # ADR-0007: Module internal structure and enforced layering
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history
 - **Date:** 2026-09-26
 - **Spec reference:** §3.3 (FINAL: module map; **YOUR CALL**: internal layout), §3.4 (FINAL)
 

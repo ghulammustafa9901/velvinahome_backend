@@ -9,11 +9,10 @@ admin/integration API can be added later without refactoring.
 
 - All routes live under `/api/v1`. **No breaking change is ever made inside a version**,
   because mobile apps cannot be force-updated. Additive changes only.
-- Host strategy: browser traffic reaches the API through the Next.js BFF on the brand's own
-  domain; server-to-server and future mobile traffic use `api.<brand-domain>`. See
-  [ADR-0002](../adr/0002-api-host-strategy.md).
-- The tenant is always resolved from the request hostname, never from a parameter or header
-  (spec §4.2).
+- Host strategy: browser traffic reaches the API through the Next.js BFF on the store's own
+  domain; server-to-server and future mobile traffic use `api.<domain>`. See
+  [ADR-0002](../adr/0002-api-host-strategy.md) and [installation.md](installation.md) §2.
+- One store per installation (ADR-0020): there is no tenant parameter, header or host lookup.
 
 ## 2. Resource shape
 
@@ -43,7 +42,7 @@ Rules:
   the OpenAPI schema (FINAL).
 - **Money is always an object** — `amount` (integer minor units), `currency`, and a
   server-formatted `formatted` string. The client never does currency maths or formatting.
-- Timestamps are ISO-8601 UTC with `Z`. The client renders in the tenant timezone.
+- Timestamps are ISO-8601 UTC with `Z`. The client renders in the store's timezone.
 - Booleans are named as predicates (`in_stock`, `is_default`), never `flag`/`status` ints.
 - Field names are `snake_case` in JSON; the generated TypeScript client exposes them as-is so
   the contract stays literal.
@@ -71,8 +70,8 @@ One shape for every failure, at every endpoint:
 |---|---|---|
 | 400 | `bad_request` | malformed request |
 | 401 | `unauthenticated` | missing/invalid customer token |
-| 403 | `forbidden`, `feature_disabled` | policy denial, or a flag-gated feature off for this tenant |
-| 404 | `not_found` | unknown resource **and** unknown tenant host |
+| 403 | `forbidden`, `feature_disabled` | policy denial, or a flag-gated feature switched off in the store settings |
+| 404 | `not_found` | unknown resource |
 | 409 | `conflict`, `stock_unavailable`, `price_changed`, `idempotency_key_reused` | state conflicts |
 | 422 | `validation_failed` | field validation (`details` populated) |
 | 429 | `rate_limited` | with `Retry-After` |
@@ -129,7 +128,7 @@ Semantics (as built): the key is stored with the order (unique column) together 
 fingerprint of the request. A repeat with the same key and the same body returns the
 **original response** with `200` and `Idempotent-Replayed: true` (the first answer is `201`,
 `Idempotent-Replayed: false`). A repeat with the same key and a different body returns
-`409 idempotency_key_reused`. Keys are per tenant and kept with the order (not expired).
+`409 idempotency_key_reused`. Keys are kept with the order (not expired).
 
 Inbound webhooks are deduplicated separately, by `(provider, provider_event_id)`.
 
@@ -142,15 +141,15 @@ Inbound webhooks are deduplicated separately, by `(provider, provider_event_id)`
 - Public catalog and content endpoints are cache-friendly: `Cache-Control` with a short
   `s-maxage` plus `stale-while-revalidate`, and a weak `ETag`; a matching `If-None-Match`
   gets `304`.
-- Server-side caching is Redis with **tag-based invalidation**, tags scoped per tenant
-  (`t:{tenant}:product:{ulid}`, `t:{tenant}:category:{ulid}`).
+- Server-side caching is Redis with **tag-based invalidation**, namespaced per installation by
+  `REDIS_PREFIX`.
 - Cart, checkout and account endpoints are `Cache-Control: no-store`, always.
 - When catalog, category, page or settings data changes, the backend calls the storefront's
   revalidation endpoint so Next.js ISR tags are purged (spec §6.13).
 
 ## 8. Rate limits (spec §6.1, §8)
 
-Every limiter key includes the tenant id. Defaults, tunable per tenant:
+Defaults:
 
 | Route group | Limit (as built) |
 |---|---|
@@ -174,9 +173,9 @@ A flag-gated endpoint answers `403 feature_disabled` before authentication is ch
 - Guest checkout is supported; an account can be claimed after purchase.
 - Internal Next.js → API calls carry a signed service header (HMAC over method, path, body
   hash and timestamp, short validity window) that is verified server-side. It authenticates
-  the caller; it **never** selects the tenant.
-- Staff and platform users never authenticate through this API. They use Filament session
-  auth on their own domains, with mandatory 2FA.
+  the caller and grants nothing else.
+- Staff never authenticate through this API. They use Filament session auth on the admin host,
+  with mandatory 2FA.
 
 ## 10. OpenAPI and the generated client
 
@@ -241,5 +240,5 @@ GET|POST|DELETE /api/v1/wishlist/items[/{ulid}]  flag `wishlist`
 
 Deferred, additive when needed: `POST /checkout/payments` (online gateways).
 
-Feature-flagged endpoints return `403 feature_disabled` when the tenant has the flag off —
+Feature-flagged endpoints return `403 feature_disabled` when the store has the flag off —
 they are never silently absent, so the client gets a diagnosable answer.

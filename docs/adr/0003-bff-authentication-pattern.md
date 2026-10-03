@@ -1,6 +1,6 @@
 # ADR-0003: Customer authentication through a Next.js BFF
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history
 - **Date:** 2026-09-26
 - **Spec reference:** §6.2 (FINAL), §7.4, §8
 

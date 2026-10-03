@@ -1,5 +1,10 @@
 # Phase 2 Plan — Catalog, Media, Inventory, Search
 
+> **Historical record. Superseded in part by [remove-multi-tenancy.md](remove-multi-tenancy.md) and
+> [ADR-0020](../adr/0020-single-store-application-without-multi-tenancy.md) (2026-10-03):** the application is now single-store — tenants,
+> the landlord database, the platform panel and isolation tests described here no longer exist.
+
+
 **Exit criteria (spec §13):** staff can build a full catalog with stock across locations;
 stock changes are fully traceable; search with typos, filters and facets works per tenant;
 concurrency tests for stock pass.

@@ -1,7 +1,8 @@
 # Security review — OWASP ASVS 4.0.3 Level 2
 
 Phase 7, milestone 7.3 (spec §8: "Use OWASP ASVS Level 2 as the checklist"). Reviewed
-2026-10-01 against `platform-api` and `platform-web` at the Phase 7 commits.
+2026-10-01 against `platform-api` and `platform-web` at the Phase 7 commits. Rows touched by the
+single-store change (ADR-0020, 2026-10-03) are updated in place and marked *(ADR-0020)*.
 
 Each chapter lists **evidence** (where the control lives and which test proves it), what was
 **fixed** in this review, and what remains **open** with an owner. "Hosting" items wait for the
@@ -13,10 +14,10 @@ Legend: ✅ met · 🔧 fixed in this review · ⏳ open (reason given)
 
 | Control | State | Evidence |
 |---|---|---|
-| Documented trust boundaries, components, data flows | ✅ | `docs/architecture/*`, ADR-0001…0019; BFF pattern ADR-0003 |
-| Tenant isolation as an architectural control | ✅ | One database + two roles per brand (`database-roles.md`); isolation suite `tests/Isolation/*`, runbook `verify-isolation.md` |
-| Central, enforced conventions | ✅ | Architecture tests `tests/Architecture/*`: Actions only write, no cross-module internals, only Platform touches landlord, no floats in money |
-| Least-privilege components | ✅ | Runtime roles have DML only; migrations and provisioning use separate roles; provisioner is not superuser |
+| Documented trust boundaries, components, data flows | ✅ | `docs/architecture/*`, ADR index (ADR-0020 current); BFF pattern ADR-0003 |
+| Store data separation as an architectural control *(ADR-0020)* | ✅ | One store per installation, each with its own database, roles, `.env` and key prefixes (`installation.md`); `tests/Architecture/NoTenancyTest.php` keeps shared-installation code out |
+| Central, enforced conventions | ✅ | Architecture tests `tests/Architecture/*`: Actions only write, no cross-module internals, no tenancy, no floats in money |
+| Least-privilege components | ✅ | Runtime role `store_app` has DML only; migrations use `store_migrator`; backups `backup_reader` (`DatabasePrivilegeTest`) |
 
 ## V2 Authentication
 
@@ -51,14 +52,14 @@ per-account lockout and audit, and is not a public sign-up surface.
 |---|---|---|
 | Deny by default; checks enforced server-side inside Actions, not only in UI | ✅ | Policies + permission checks in Actions (`StaffAuthenticationTest` "enforces permissions inside the Action even when the UI is bypassed") |
 | IDOR: customer data scoped to the customer; unguessable ids | ✅ | ULIDs in URLs; guest orders need `X-Order-Token` (HMAC); cart secret per guest cart |
-| Cross-tenant access impossible | ✅ | Separate databases and roles; isolation tests; rate-limit keys include the tenant |
-| Platform operations restricted by platform role | ✅ | `AuthorizesPlatformActor`; `TenantLifecycleTest` (support role cannot suspend) |
+| One installation cannot reach another *(ADR-0020)* | ✅ | Separate databases, roles, credentials and Redis/Horizon/Scout/storage prefixes per installation (`installation.md`) |
+| Operations tooling restricted *(ADR-0020)* | ✅ | Horizon and API docs need `system.monitor` (Owner only; `StaffAdminTest`) |
 
 ## V5 Validation, sanitisation, encoding
 
 | Control | State | Evidence |
 |---|---|---|
-| SQL injection | ✅ | Query builder bindings everywhere. Reviewed every raw expression: `DatabaseSalesLedger` (constant SQL), provisioning/migration DDL (identifiers from validated `TenantDatabaseNames`, always quoted; passwords via PDO quoting) |
+| SQL injection | ✅ | Query builder bindings everywhere. Reviewed every raw expression: `DatabaseSalesLedger` (constant SQL), migration lockdown DDL (constant table names from the module registry, always quoted), restore drill (configured database name, quoted) |
 | Mass assignment | ✅ | Validated DTOs (spark/laravel-data) into Actions; architecture test forbids `$request->all()` |
 | XSS | ✅ | React escaping; the only `dangerouslySetInnerHTML` uses are JSON-LD (`<` escaped) and theme CSS (`<` stripped, tokens validated). Article bodies are rendered as React elements, never as HTML. Emails escape with `e()` |
 | URLs typed by staff | ✅ | `Sections::LINK` rule (http/https/relative only) |
@@ -69,10 +70,10 @@ per-account lockout and audit, and is not a public sign-up surface.
 
 | Control | State | Evidence |
 |---|---|---|
-| Secrets encrypted at rest | ✅ | Tenant DB credentials (landlord, encrypted casts); payment/courier credentials and secret settings (`encrypted` casts, "stores encrypted settings as unreadable ciphertext") |
+| Secrets encrypted at rest | ✅ | Payment/courier/import credentials, 2FA secrets and secret settings (`encrypted` casts, "stores encrypted settings as unreadable ciphertext") |
 | Approved algorithms, no custom crypto | ✅ | Laravel encrypter (AES-256-GCM/CBC+HMAC), HMAC-SHA256 for signatures, Web Crypto AES-GCM for BFF cookies (`lib/crypto.ts` + tests) |
 | Random values from CSPRNG | ✅ | `Str::random`/`random_bytes`, `crypto.randomUUID()` |
-| Key and credential rotation without data loss (6.4.1/6.4.2) | 🔧 | **New** `secrets:reencrypt` moves every stored secret (declared per module, completeness enforced by test) to a new `APP_KEY`; **new** `tenant:rotate-db-passwords`; `SecretsRotationTest`; runbook `rotate-secrets.md` |
+| Key and credential rotation without data loss (6.4.1/6.4.2) | 🔧 | **New** `secrets:reencrypt` moves every stored secret (declared per module, completeness enforced by test) to a new `APP_KEY`; database role passwords rotated per runbook *(ADR-0020)*; `SecretsRotationTest`; runbook `rotate-secrets.md` |
 
 ## V7 Errors and logging
 
@@ -80,7 +81,7 @@ per-account lockout and audit, and is not a public sign-up surface.
 |---|---|---|
 | No stack traces or debug output in responses | ✅ | `ApiErrorRenderer` envelope; `SecurityHeadersTest` "no detail leak when debug is off" |
 | Security events logged with request id; no secrets/PII in error reports | ✅ | Request id propagated storefront → API; `PostHogErrors` scrubs emails, long numbers, SQL (ADR-0019, `MonitoringTest`) |
-| Audit trails cannot be altered by the app | ✅ | Append-only ledgers / audit tables locked by grants (`MigrateLandlord`, `MigrateTenant::lockDownLedgers`) |
+| Audit trails cannot be altered by the app | ✅ | Append-only ledgers / audit tables locked by grants (`MigrateDatabase::lockDownLedgers`, re-applied on every `app:migrate`; `DatabasePrivilegeTest`) |
 | Log retention and central log store | ⏳ | Hosting decision |
 
 ## V8 Data protection
@@ -89,7 +90,7 @@ per-account lockout and audit, and is not a public sign-up surface.
 |---|---|---|
 | Sensitive data not cached publicly | ✅ | Per-customer API calls `no-store`; checkout/account pages `force-dynamic`, `noindex` |
 | Minimal PII in analytics | ✅ | PostHog: no person profiles, no session recording, query strings stripped |
-| Backups restorable and practised | 🔧 | Milestone 7.4: `tenant:restore`, weekly automated drill, `restore-tenant.md` |
+| Backups restorable and practised | 🔧 | `db:backup` nightly, weekly automated `db:backup --drill` with checksum and row-count comparison, `restore-database.md`, `BackupTest` *(ADR-0020)* |
 
 ## V9 Communications
 
@@ -135,15 +136,15 @@ per-account lockout and audit, and is not a public sign-up surface.
 |---|---|---|
 | Security headers on API, panels, storefront | ✅ | `SecurityHeaders` middleware (`SecurityHeadersTest`), `next.config.ts`; storefront now also sends `frame-src 'none'` unless Turnstile is on |
 | No secrets in the repositories | ✅ | `.env.example` placeholders only; keys only in local env files (checked with `git grep`) |
-| Database privileges | 🔧 | Provisioner additionally gets `pg_signal_backend` (bounded: non-superuser sessions only) so `DROP DATABASE … WITH (FORCE)` cannot fail on a connecting session — found by the restore drill tests |
+| Database privileges | ✅ | No provisioner role any more *(ADR-0020)*: the drill empties a scratch database it owns (`DROP SCHEMA public CASCADE`) instead of dropping databases |
 | Production build without debug, cached config | ✅ ⏳ | `deploy/release.sh` caches config/routes/events/views and bakes the release id; `deploy.md` sets `APP_DEBUG=false`. First real run on staging (hosting) |
-| Tenant resolution does not depend on request input or a single landlord round trip | ✅ | Cached host → tenant resolution (plain arrays, ciphertext kept; invalidated on every tenant/domain/credential write); `TenantResolutionTest` |
+| Store identity not taken from request input *(ADR-0020)* | ✅ | No host-based resolution; store name, URL and theme come from settings, secrets from `.env` |
 
 ## Open items (owners)
 
 | Item | Needs | Where tracked |
 |---|---|---|
 | Turnstile keys, Cloudflare WAF, HSTS preload, TLS termination | Cloudflare account + hosting | Phase 7 plan, deploy runbook |
-| TLS to PostgreSQL, encryption at rest, off-site backups / PITR | Hosting | `restore-tenant.md`, `database-roles.md` |
+| TLS to PostgreSQL, encryption at rest, off-site backups / PITR | Hosting | `restore-database.md`, `database-roles.md` |
 | Central log retention | Hosting | `incident-response.md` |
 | Webhook timestamp windows per gateway | Payment adapters (deferred by owner) | ADR-0018 |

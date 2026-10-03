@@ -179,7 +179,7 @@
         }
     },
     "info": {
-        "description": "Storefront API v1. Every request is scoped to the brand of the API host it is sent to (api.<brand>); there is no tenant parameter. Customer endpoints take a Sanctum bearer token held by the storefront BFF.",
+        "description": "Storefront API v1 of the store. Customer endpoints take a Sanctum bearer token held by the storefront BFF.",
         "title": "Commerce Platform",
         "version": "1.0.0-alpha"
     },

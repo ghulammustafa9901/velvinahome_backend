@@ -23,19 +23,18 @@ export DEPLOY_BASE=/srv/platform-api
 It switches `current`, reloads PHP-FPM and restarts Horizon (queued jobs continue on the old
 code). Then:
 
-1. Check `/health` reports the old release id: `curl -H "X-Health-Token: …" https://<platform host>/health`.
+1. Check `/health` reports the old release id: `curl -H "X-Health-Token: …" https://api.<domain>/health`.
 2. Roll the storefront back too if it was released together (its own previous release).
 3. Note the bad release id; fix forward with a new release.
 
-## A failed tenant migration
+## A failed migration
 
-There is nothing to roll back: `tenants:migrate` runs each tenant in one transaction and blocks
-the release on any failure, so the failed tenant's database is unchanged and the old code is
-still live (`deploy.md`, step 4). The tenants that did migrate are on an expand-only schema the
-old code runs on.
+There is nothing to roll back: `app:migrate` runs every pending migration in one transaction and
+blocks the release on any failure, so the database is unchanged and the old code is still live
+(`deploy.md`, step 4).
 
 ## Data damage
 
-When a release damaged data (not just code), a code rollback is not enough: restore the affected
-brand from a backup with [`restore-tenant.md`](restore-tenant.md), and record the incident
+When a release damaged data (not just code), a code rollback is not enough: restore the database
+from a backup with [`restore-database.md`](restore-database.md), and record the incident
 (`incident-response.md`).

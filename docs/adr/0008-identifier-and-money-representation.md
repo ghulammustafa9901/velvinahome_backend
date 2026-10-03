@@ -1,6 +1,6 @@
 # ADR-0008: ULID public identifiers, integer minor-unit money
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) — one store per installation, so tenant, brand and landlord passages below are history
 - **Date:** 2026-09-26
 - **Spec reference:** §6.1 (FINAL: ULIDs public, internal ids never exposed), §6.3 (FINAL: money as integer minor units)
 

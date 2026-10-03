@@ -1,5 +1,10 @@
 # Phase 6 Plan — Operations & Growth Modules + Migration Tools
 
+> **Historical record. Superseded in part by [remove-multi-tenancy.md](remove-multi-tenancy.md) and
+> [ADR-0020](../adr/0020-single-store-application-without-multi-tenancy.md) (2026-10-03):** the application is now single-store — tenants,
+> the landlord database, the platform panel and isolation tests described here no longer exist.
+
+
 **Goal (spec §13):** reporting (aggregations + dashboards); reviews and wishlist; blog and custom
 content types; additional promotions; abandoned-cart notifications; first courier adapter;
 additional payment adapters; WooCommerce and CSV importers; tenant onboarding polish.

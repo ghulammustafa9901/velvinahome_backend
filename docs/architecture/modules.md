@@ -7,9 +7,8 @@ with strictly bounded domain modules under `modules/`.
 
 | Module | Responsibility | Depends on (contracts only) |
 |---|---|---|
-| `Platform` | Landlord concerns: companies, brands/tenants, domains, plans & feature flags, provisioning, platform users | — (landlord DB only) |
 | `Identity` | Staff users, customers, authentication, roles, permissions, 2FA, login audit | — |
-| `Settings` | Tenant settings (store info, currency, timezone, tax mode, feature toggles) | — |
+| `Settings` | Store settings (identity, URL, logo, currency, timezone, theme, tax mode, SEO, mail sender), feature flags, launch checklist | — |
 | `Catalog` | Products, variants, attributes, categories, brands, collections, media | `Settings`, `Seo` |
 | `Pricing` | Prices, compare-at prices, promotions, coupons, cart pricing pipeline | `Catalog`, `Settings` |
 | `Inventory` | Locations, stock levels, movements ledger, reservations, purchasing, transfers, counts | `Catalog` |
@@ -41,7 +40,7 @@ result types). It contains **no domain rules** and depends on nothing.
   higher-level module reacts to **domain events** instead of calling back.
   Example (FINAL, spec §3.4): `Orders` never decrements stock. It emits `OrderPaid`;
   an `Inventory` listener converts the reservation into a sale.
-- Only `Platform` touches the landlord connection. Every other module is tenant-only.
+- No module is tenant-aware: there is one store per installation (ADR-0020).
 
 ## 2. Internal structure of a module (YOUR CALL — decided here, applies to all)
 
@@ -72,7 +71,7 @@ modules/Catalog/
     Console/                 module Artisan commands
     Providers/               CatalogServiceProvider.php
   database/
-    migrations/tenant/       tenant-database migrations
+    migrations/              migrations, loaded by the module provider (`app:migrate` runs them)
     factories/
     seeders/
   routes/
@@ -85,7 +84,6 @@ modules/Catalog/
 
 Notes:
 
-- `Platform` additionally has `database/migrations/landlord/`. No other module may.
 - A module's **public surface** is exactly: `Contracts/`, `Data/`, `Events/`, `Enums/`.
   Everything else is internal. Architecture tests assert nothing outside the module
   imports `Models/`, `Actions/` internals or `Support/` of another module.
@@ -113,7 +111,7 @@ Notes:
    or `Modules\Y\Support\*` for any `Y !== X`.
 3. Thin callers: no class under `Http/Controllers`, `Filament`, `Console` or `Jobs`
    performs writes — they must call an Action.
-4. Landlord isolation: only `Modules\Platform` references the landlord connection name.
+4. No tenancy: no tenancy package, `tenancy()`/`tenant()` helper, tenant context class or landlord connection anywhere (`NoTenancyTest`).
 5. Mass assignment: no occurrence of `$request->all()` / `$request->input()` passed to a
    model `create`/`update`/`fill`.
 6. Strict types: every PHP file declares `strict_types=1`.

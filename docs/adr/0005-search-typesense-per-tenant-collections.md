@@ -1,6 +1,6 @@
 # ADR-0005: Typesense with per-tenant collections, queried server-side
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0020](0020-single-store-application-without-multi-tenancy.md) (single-store application, 2026-10-03)
 - **Date:** 2026-09-26
 - **Spec reference:** §6.10 (FINAL), §4.4
 

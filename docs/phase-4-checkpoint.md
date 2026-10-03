@@ -1,5 +1,10 @@
 # Phase 4 Checkpoint â€” API Stabilization
 
+> **Historical record. Superseded in part by [plans/remove-multi-tenancy.md](plans/remove-multi-tenancy.md) and
+> [ADR-0020](adr/0020-single-store-application-without-multi-tenancy.md) (2026-10-03):** the application is now single-store — tenants,
+> the landlord database, the platform panel and isolation tests described here no longer exist.
+
+
 **Date:** 2026-09-27 Â· **Status:** built; **Storefront API v1 is frozen** (additive changes only)
 Plan: [plans/phase-4.md](plans/phase-4.md) Â· Decisions: [ADR-0016](adr/0016-api-contract-tooling-and-v1-freeze.md)
 Contract: [`docs/api/openapi-v1.json`](api/openapi-v1.json) Â· Conventions: [architecture/api-conventions.md](architecture/api-conventions.md)
