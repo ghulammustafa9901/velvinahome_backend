@@ -174,7 +174,7 @@ jobs:
       - name: API v1 contract unchanged (or changed additively and committed)
         run: php artisan api:contract --check
       # platform-web generates its TypeScript client from this exact document.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: openapi
           path: docs/api/openapi-v1.json
