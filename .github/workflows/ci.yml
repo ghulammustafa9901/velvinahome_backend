@@ -25,7 +25,7 @@ jobs:
     outputs:
       scaffolded: ${{ steps.check.outputs.scaffolded }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: check
         run: |
           if [ -f composer.json ]; then
@@ -41,7 +41,7 @@ jobs:
     if: needs.detect.outputs.scaffolded == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
@@ -55,7 +55,7 @@ jobs:
     if: needs.detect.outputs.scaffolded == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
@@ -101,7 +101,7 @@ jobs:
       PGPASSWORD: postgres
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
@@ -160,7 +160,7 @@ jobs:
       DB_DATABASE: store
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
@@ -185,7 +185,7 @@ jobs:
     if: needs.detect.outputs.scaffolded == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
@@ -197,7 +197,7 @@ jobs:
     name: Deploy scripts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: shellcheck deploy/*.sh deploy/tests/*.sh
       # Release, migration gate, automatic rollback and pruning, with stub php/composer/curl.
       - run: bash deploy/tests/release.test.sh
@@ -206,7 +206,7 @@ jobs:
     name: Documentation checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # These run from Phase 0, because the docs exist from Phase 0.
       - name: No secrets in tracked files
         run: |
